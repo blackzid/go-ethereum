@@ -801,6 +801,8 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 // InsertChain will attempt to insert the given chain in to the canonical chain or, otherwise, create a fork. It an error is returned
 // it will return the index number of the failing block as well an error describing what went wrong (for possible errors see core/errors.go).
 func (self *BlockChain) InsertChain(chain types.Blocks) (int, error) {
+	fmt.Println("InsertChain func")
+
 	self.wg.Add(1)
 	defer self.wg.Done()
 
