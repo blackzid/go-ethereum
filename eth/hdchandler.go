@@ -54,7 +54,14 @@ type RoundManager struct {
 	proposal *BlockProposal
 	timeout_time float64
 	// lock Vote
-
+}
+func NewRoundManager(hm *HeightManager, height int) (*RoundManager, error) {
+	rm := &RoundManager{
+		hm: hm,
+		pm: hm.pm,
+		height: height
+	}
+	
 }
 type HDCProtocolManager struct {
 	networkId int
