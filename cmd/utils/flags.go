@@ -99,6 +99,17 @@ func NewApp(version, usage string) *cli.App {
 // are the same for all commands.
 
 var (
+	// hdc parameters
+	Num_Validators = DirectoryFlag{
+		Name:  "num_validators",
+		Usage: "number of validators",
+		Value: 3,
+	}
+	NodeNum = DirectoryFlag{
+		Name:  "node_num",
+		Usage: "node's specific number",
+	}
+
 	// General settings
 	DataDirFlag = DirectoryFlag{
 		Name:  "datadir",

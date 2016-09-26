@@ -73,6 +73,7 @@ func init() {
 		verString += "-" + gitCommit[:8]
 	}
 	// Construct the version release oracle configuration
+
 	relConfig.Oracle = common.HexToAddress(versionOracle)
 
 	relConfig.Major = uint32(versionMajor)
@@ -83,7 +84,7 @@ func init() {
 	copy(relConfig.Commit[:], commit)
 
 	// Initialize the CLI app and start Geth
-	app = utils.NewApp(verString, "the go-ethereum command line interface")
+	app = utils.NewApp(verString, "the go-hdc command line interface")
 	app.Action = geth
 	app.HideVersion = true // we have a command to print the version
 	app.Commands = []cli.Command{
@@ -211,6 +212,7 @@ participating.
 	app.Flags = append(app.Flags, debug.Flags...)
 
 	app.Before = func(ctx *cli.Context) error {
+		// fmt.Println("CTX:%s", ctx.App.Version)
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		if err := debug.Setup(ctx); err != nil {
 			return err
@@ -395,4 +397,8 @@ func version(c *cli.Context) error {
 	fmt.Printf("GOROOT=%s\n", runtime.GOROOT())
 
 	return nil
+}
+
+func initValidators(ctx *cli.Context) error {
+
 }
