@@ -147,6 +147,8 @@ participating.
 	}
 
 	app.Flags = []cli.Flag{
+		utils.Num_ValidatorsFlag,
+		utils.NodeNumFlag,
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
 		utils.PasswordFileFlag,
