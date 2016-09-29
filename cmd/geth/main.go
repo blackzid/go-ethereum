@@ -400,7 +400,3 @@ func version(c *cli.Context) error {
 
 	return nil
 }
-
-// func initValidators(ctx *cli.Context) error {
-
-// }

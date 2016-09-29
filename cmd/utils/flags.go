@@ -488,6 +488,25 @@ func MakeNodeName(client, version string, ctx *cli.Context) string {
 	}
 	return name
 }
+func MakeValidators(ctx *cli.Context) []*discover.Node {
+	// Otherwise parse and use the CLI bootstrap nodes
+	if !ctx.GlobalIsSet(ValidatorsFlag.Name) {
+		fmt.Println(crypto.GenerateKey())
+
+	}
+
+	bootnodes := []*discover.Node{}
+
+	for _, url := range strings.Split(ctx.GlobalString(BootnodesFlag.Name), ",") {
+		node, err := discover.ParseNode(url)
+		if err != nil {
+			glog.V(logger.Error).Infof("Bootstrap URL %s: %v\n", url, err)
+			continue
+		}
+		bootnodes = append(bootnodes, node)
+	}
+	return bootnodes
+}
 
 // MakeBootstrapNodes creates a list of bootstrap nodes from the command line
 // flags, reverting to pre-configured ones if none have been specified.
@@ -682,7 +701,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
 		Validators:      MakeValidators(ctx),
-		NumValidators:	 ctx.GlobalInt(NumValidatorsFlag.Name)
+		NumValidators:   ctx.GlobalInt(NumValidatorsFlag.Name),
 		NodeNum:         ctx.GlobalInt(NodeNumFlag.Name),
 	}
 	// Configure the Ethereum service
