@@ -106,6 +106,8 @@ var AppHelpFlagGroups = []flagGroup{
 	{
 		Name: "NETWORKING",
 		Flags: []cli.Flag{
+			utils.NumValidatorsFlag,
+			utils.NodeNumFlag,
 			utils.BootnodesFlag,
 			utils.ListenPortFlag,
 			utils.MaxPeersFlag,
