@@ -99,17 +99,6 @@ func NewApp(version, usage string) *cli.App {
 // are the same for all commands.
 
 var (
-	// hdc parameters
-	NumValidatorsFlag = cli.IntFlag{
-		Name:  "num_validators",
-		Usage: "number of validators",
-		Value: 3,
-	}
-	NodeNumFlag = cli.IntFlag{
-		Name:  "node_num",
-		Usage: "node's specific number",
-	}
-
 	// General settings
 	DataDirFlag = DirectoryFlag{
 		Name:  "datadir",
@@ -324,6 +313,23 @@ var (
 	}
 
 	// Network Settings
+
+	// hdc parameters
+	ValidatorsFlag = cli.StringFlag{
+		Name:  "validators' address",
+		Usage: "Comma separated enode URLs for validators",
+		Value: "",
+	}
+	NumValidatorsFlag = cli.IntFlag{
+		Name:  "num_validators",
+		Usage: "number of validators",
+		Value: 3,
+	}
+	NodeNumFlag = cli.IntFlag{
+		Name:  "node_num",
+		Usage: "node's specific number",
+	}
+
 	MaxPeersFlag = cli.IntFlag{
 		Name:  "maxpeers",
 		Usage: "Maximum number of network peers (network disabled if set to 0)",
@@ -675,6 +681,9 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		WSPort:          ctx.GlobalInt(WSPortFlag.Name),
 		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
+		Validators:      MakeValidators(ctx),
+		NumValidators:	 ctx.GlobalInt(NumValidatorsFlag.Name)
+		NodeNum:         ctx.GlobalInt(NodeNumFlag.Name),
 	}
 	// Configure the Ethereum service
 	accman := MakeAccountManager(ctx)

@@ -138,7 +138,12 @@ type Config struct {
 	WSModules []string
 
 	// HDC validators node list
+	NumValidators int
+
 	Validators []*discover.Node
+
+	//HDC validators node number
+	NodeNum int
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
