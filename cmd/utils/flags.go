@@ -488,11 +488,12 @@ func MakeNodeName(client, version string, ctx *cli.Context) string {
 	}
 	return name
 }
+
+// creates hdc-validators
 func MakeValidators(ctx *cli.Context) []*discover.Node {
 	// Otherwise parse and use the CLI bootstrap nodes
 	if !ctx.GlobalIsSet(ValidatorsFlag.Name) {
 		fmt.Println(crypto.GenerateKey())
-
 	}
 
 	bootnodes := []*discover.Node{}

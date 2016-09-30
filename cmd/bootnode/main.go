@@ -20,6 +20,7 @@ package main
 import (
 	"crypto/ecdsa"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
@@ -44,7 +45,7 @@ func main() {
 	flag.Var(glog.GetVModule(), "vmodule", "log verbosity pattern")
 	glog.SetToStderr(true)
 	flag.Parse()
-
+	fmt.Println("Hello")
 	if *genKey != "" {
 		key, err := crypto.GenerateKey()
 		if err != nil {
