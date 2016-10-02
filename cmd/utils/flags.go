@@ -315,9 +315,9 @@ var (
 	// Network Settings
 
 	// hdc parameters
-	ValidatorsFlag = cli.StringFlag{
-		Name:  "validators' address",
-		Usage: "Comma separated enode URLs for validators",
+	HDCBootstrapNodesFlag = cli.StringFlag{
+		Name:  "HDCBootstrapNodes address",
+		Usage: "Comma separated enode URLs for HDCBootstrapNodes",
 		Value: "",
 	}
 	NumValidatorsFlag = cli.IntFlag{
@@ -489,23 +489,20 @@ func MakeNodeName(client, version string, ctx *cli.Context) string {
 	return name
 }
 
-// creates hdc-validators
-func MakeValidators(ctx *cli.Context) []*discover.Node {
-	// Otherwise parse and use the CLI bootstrap nodes
-	if !ctx.GlobalIsSet(ValidatorsFlag.Name) {
-		fmt.Println(crypto.GenerateKey())
-	}
+// creates hdc bootstrap node
+func MakeHDCBootstrapNodes(ctx *cli.Context) []*discover.Node {
 
+	// if !ctx.GlobalIsSet(HDCBootstrapNodesFlag.Name) {
+	// seed := []byte("hdc")
+	// key := crypto.ToECDSA(seed)
+	// addr := ":30301"
+	// natm, _ := nat.Parse("none")
+	// tab, err := discover.ListenUDP(key, addr, natm, "")
+	// if err != nil {
+	// 	Fatalf("%v", err)
+	// }
+	// }
 	bootnodes := []*discover.Node{}
-
-	for _, url := range strings.Split(ctx.GlobalString(BootnodesFlag.Name), ",") {
-		node, err := discover.ParseNode(url)
-		if err != nil {
-			glog.V(logger.Error).Infof("Bootstrap URL %s: %v\n", url, err)
-			continue
-		}
-		bootnodes = append(bootnodes, node)
-	}
 	return bootnodes
 }
 
@@ -683,27 +680,27 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	}
 	// Configure the node's service container
 	stackConf := &node.Config{
-		DataDir:         MustMakeDataDir(ctx),
-		PrivateKey:      MakeNodeKey(ctx),
-		Name:            MakeNodeName(name, version, ctx),
-		NoDiscovery:     ctx.GlobalBool(NoDiscoverFlag.Name),
-		BootstrapNodes:  MakeBootstrapNodes(ctx),
-		ListenAddr:      MakeListenAddress(ctx),
-		NAT:             MakeNAT(ctx),
-		MaxPeers:        ctx.GlobalInt(MaxPeersFlag.Name),
-		MaxPendingPeers: ctx.GlobalInt(MaxPendingPeersFlag.Name),
-		IPCPath:         MakeIPCPath(ctx),
-		HTTPHost:        MakeHTTPRpcHost(ctx),
-		HTTPPort:        ctx.GlobalInt(RPCPortFlag.Name),
-		HTTPCors:        ctx.GlobalString(RPCCORSDomainFlag.Name),
-		HTTPModules:     MakeRPCModules(ctx.GlobalString(RPCApiFlag.Name)),
-		WSHost:          MakeWSRpcHost(ctx),
-		WSPort:          ctx.GlobalInt(WSPortFlag.Name),
-		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
-		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
-		Validators:      MakeValidators(ctx),
-		NumValidators:   ctx.GlobalInt(NumValidatorsFlag.Name),
-		NodeNum:         ctx.GlobalInt(NodeNumFlag.Name),
+		DataDir:           MustMakeDataDir(ctx),
+		PrivateKey:        MakeNodeKey(ctx),
+		Name:              MakeNodeName(name, version, ctx),
+		NoDiscovery:       ctx.GlobalBool(NoDiscoverFlag.Name),
+		BootstrapNodes:    MakeBootstrapNodes(ctx),
+		ListenAddr:        MakeListenAddress(ctx),
+		NAT:               MakeNAT(ctx),
+		MaxPeers:          ctx.GlobalInt(MaxPeersFlag.Name),
+		MaxPendingPeers:   ctx.GlobalInt(MaxPendingPeersFlag.Name),
+		IPCPath:           MakeIPCPath(ctx),
+		HTTPHost:          MakeHTTPRpcHost(ctx),
+		HTTPPort:          ctx.GlobalInt(RPCPortFlag.Name),
+		HTTPCors:          ctx.GlobalString(RPCCORSDomainFlag.Name),
+		HTTPModules:       MakeRPCModules(ctx.GlobalString(RPCApiFlag.Name)),
+		WSHost:            MakeWSRpcHost(ctx),
+		WSPort:            ctx.GlobalInt(WSPortFlag.Name),
+		WSOrigins:         ctx.GlobalString(WSAllowedOriginsFlag.Name),
+		WSModules:         MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
+		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
+		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
+		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
 	}
 	// Configure the Ethereum service
 	accman := MakeAccountManager(ctx)

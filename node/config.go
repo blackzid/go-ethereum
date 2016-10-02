@@ -140,7 +140,7 @@ type Config struct {
 	// HDC validators node list
 	NumValidators int
 
-	Validators []*discover.Node
+	HDCBootstrapNodes []*discover.Node
 
 	//HDC validators node number
 	NodeNum int
