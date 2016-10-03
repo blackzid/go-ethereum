@@ -638,6 +638,12 @@ func MakeEtherbase(accman *accounts.Manager, ctx *cli.Context) common.Address {
 	return account.Address
 }
 
+// create validator addresses
+func MakeValidators(accman *accounts.Manager, account string) (accounts.Account, error) {
+	account, err := accman.NewAccount(password)
+
+}
+
 // MakeMinerExtra resolves extradata for the miner from the set command line flags
 // or returns a default one composed on the client, runtime and OS metadata.
 func MakeMinerExtra(extra []byte, ctx *cli.Context) []byte {
@@ -739,6 +745,8 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		GpobaseCorrectionFactor: ctx.GlobalInt(GpobaseCorrectionFactorFlag.Name),
 		SolcPath:                ctx.GlobalString(SolcPathFlag.Name),
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
+		// hdc
+		Validators: MakeValidators(ctx),
 	}
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
