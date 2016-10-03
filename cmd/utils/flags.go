@@ -712,7 +712,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		WSOrigins:         ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:         MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
 		// hdc parameters
-		HDCPrivateKeyHex:    MakePrivateKeyHex(ctx),
+		HDCPrivateKeyHex:  MakePrivateKeyHex(ctx),
 		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
 		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
 		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
