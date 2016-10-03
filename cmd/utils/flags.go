@@ -637,9 +637,16 @@ func MakeEtherbase(accman *accounts.Manager, ctx *cli.Context) common.Address {
 	}
 	return account.Address
 }
-
+func MakeHDCPrivateKeyHex(ctx) {
+	key := crypto.MakePrivakey(ctx.GlobalInt(NodeNumFlag.Name))
+	return crypto.PriKeyToHex(key)
+}
 // create validator addresses
 func MakeValidators(accman *accounts.Manager, account string) (accounts.Account, error) {
+	num_validators := ctx.GlobalIsSet(NumValidatorsFlag.Name)
+	for i = 0; i < num_validators; i++ {
+
+	}
 	account, err := accman.NewAccount(password)
 
 }
@@ -704,6 +711,8 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		WSPort:            ctx.GlobalInt(WSPortFlag.Name),
 		WSOrigins:         ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:         MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
+		// hdc parameters
+		HDCPrivateKeyHex:    MakePrivateKeyHex(ctx),
 		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
 		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
 		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
@@ -745,8 +754,9 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		GpobaseCorrectionFactor: ctx.GlobalInt(GpobaseCorrectionFactorFlag.Name),
 		SolcPath:                ctx.GlobalString(SolcPathFlag.Name),
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
-		// hdc
-		Validators: MakeValidators(ctx),
+		// hdc parameters
+		Validators: MakeValidators(accman, ctx),
+
 	}
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)

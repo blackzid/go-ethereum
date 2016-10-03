@@ -222,3 +222,10 @@ func zeroBytes(bytes []byte) {
 		bytes[i] = 0
 	}
 }
+
+func MakePrivakey(seed uint64) {
+	return Sha3(seed)
+}
+func PrikeyToHex(key *ecdsa.PrivateKey) string {
+	return hex.EncodeToString(FromECDSA(key))
+} 
