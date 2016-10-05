@@ -323,11 +323,12 @@ var (
 	NumValidatorsFlag = cli.IntFlag{
 		Name:  "num_validators",
 		Usage: "number of validators",
-		Value: 3,
+		Value: 1,
 	}
 	NodeNumFlag = cli.IntFlag{
 		Name:  "node_num",
 		Usage: "node's specific number",
+		Value: 0,
 	}
 
 	MaxPeersFlag = cli.IntFlag{
@@ -637,18 +638,23 @@ func MakeEtherbase(accman *accounts.Manager, ctx *cli.Context) common.Address {
 	}
 	return account.Address
 }
-func MakeHDCPrivateKeyHex(ctx) {
-	key := crypto.MakePrivakey(ctx.GlobalInt(NodeNumFlag.Name))
-	return crypto.PriKeyToHex(key)
+func MakeHDCPrivateKeyHex(ctx *cli.Context) string {
+	key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
+	return crypto.PrikeyToHex(key)
 }
+
 // create validator addresses
-func MakeValidators(accman *accounts.Manager, account string) (accounts.Account, error) {
-	num_validators := ctx.GlobalIsSet(NumValidatorsFlag.Name)
-	for i = 0; i < num_validators; i++ {
-
+func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []accounts.Account {
+	num_validators := ctx.GlobalInt(NumValidatorsFlag.Name)
+	accs := []accounts.Account{}
+	for i := 0; i < num_validators; i++ {
+		s := strconv.Itoa(i)
+		key := crypto.MakePrivatekey(s)
+		if account, err := accman.ImportECDSA(key, ""); err == nil {
+			accs = append(accs, account)
+		}
 	}
-	account, err := accman.NewAccount(password)
-
+	return accs
 }
 
 // MakeMinerExtra resolves extradata for the miner from the set command line flags
@@ -693,26 +699,26 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	}
 	// Configure the node's service container
 	stackConf := &node.Config{
-		DataDir:           MustMakeDataDir(ctx),
-		PrivateKey:        MakeNodeKey(ctx),
-		Name:              MakeNodeName(name, version, ctx),
-		NoDiscovery:       ctx.GlobalBool(NoDiscoverFlag.Name),
-		BootstrapNodes:    MakeBootstrapNodes(ctx),
-		ListenAddr:        MakeListenAddress(ctx),
-		NAT:               MakeNAT(ctx),
-		MaxPeers:          ctx.GlobalInt(MaxPeersFlag.Name),
-		MaxPendingPeers:   ctx.GlobalInt(MaxPendingPeersFlag.Name),
-		IPCPath:           MakeIPCPath(ctx),
-		HTTPHost:          MakeHTTPRpcHost(ctx),
-		HTTPPort:          ctx.GlobalInt(RPCPortFlag.Name),
-		HTTPCors:          ctx.GlobalString(RPCCORSDomainFlag.Name),
-		HTTPModules:       MakeRPCModules(ctx.GlobalString(RPCApiFlag.Name)),
-		WSHost:            MakeWSRpcHost(ctx),
-		WSPort:            ctx.GlobalInt(WSPortFlag.Name),
-		WSOrigins:         ctx.GlobalString(WSAllowedOriginsFlag.Name),
-		WSModules:         MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
+		DataDir:         MustMakeDataDir(ctx),
+		PrivateKey:      MakeNodeKey(ctx),
+		Name:            MakeNodeName(name, version, ctx),
+		NoDiscovery:     ctx.GlobalBool(NoDiscoverFlag.Name),
+		BootstrapNodes:  MakeBootstrapNodes(ctx),
+		ListenAddr:      MakeListenAddress(ctx),
+		NAT:             MakeNAT(ctx),
+		MaxPeers:        ctx.GlobalInt(MaxPeersFlag.Name),
+		MaxPendingPeers: ctx.GlobalInt(MaxPendingPeersFlag.Name),
+		IPCPath:         MakeIPCPath(ctx),
+		HTTPHost:        MakeHTTPRpcHost(ctx),
+		HTTPPort:        ctx.GlobalInt(RPCPortFlag.Name),
+		HTTPCors:        ctx.GlobalString(RPCCORSDomainFlag.Name),
+		HTTPModules:     MakeRPCModules(ctx.GlobalString(RPCApiFlag.Name)),
+		WSHost:          MakeWSRpcHost(ctx),
+		WSPort:          ctx.GlobalInt(WSPortFlag.Name),
+		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
+		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
 		// hdc parameters
-		HDCPrivateKeyHex:  MakePrivateKeyHex(ctx),
+		HDCPrivateKeyHex:  MakeHDCPrivateKeyHex(ctx),
 		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
 		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
 		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
@@ -756,7 +762,6 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
 		// hdc parameters
 		Validators: MakeValidators(accman, ctx),
-
 	}
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)

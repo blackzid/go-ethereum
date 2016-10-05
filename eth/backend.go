@@ -101,6 +101,9 @@ type Config struct {
 
 	TestGenesisBlock *types.Block   // Genesis block to seed the chain database with (testing only!)
 	TestGenesisState ethdb.Database // Genesis state to seed the database with (testing only!)
+
+	// hdc validators
+	Validators []accounts.Account
 }
 
 type Ethereum struct {

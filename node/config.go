@@ -138,7 +138,7 @@ type Config struct {
 	WSModules []string
 
 	// HDc private key hex
-	HDCPrivateKeyHex
+	HDCPrivateKeyHex string
 	// HDC validators node list
 	NumValidators int
 
