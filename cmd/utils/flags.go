@@ -644,17 +644,17 @@ func MakeHDCPrivateKeyHex(ctx *cli.Context) string {
 }
 
 // create validator addresses
-func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []accounts.Account {
+func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []common.Address {
 	num_validators := ctx.GlobalInt(NumValidatorsFlag.Name)
-	accs := []accounts.Account{}
+	validators := []common.Address{}
 	for i := 0; i < num_validators; i++ {
 		s := strconv.Itoa(i)
 		key := crypto.MakePrivatekey(s)
 		if account, err := accman.ImportECDSA(key, ""); err == nil {
-			accs = append(accs, account)
+			validators = append(validators, account.Address)
 		}
 	}
-	return accs
+	return validators
 }
 
 // MakeMinerExtra resolves extradata for the miner from the set command line flags
@@ -763,6 +763,11 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		// hdc parameters
 		Validators: MakeValidators(accman, ctx),
 	}
+
+	// hdc set Etherbase to validator address
+	ethConf.Etherbase = ethConf.Validators[stackConf.NodeNum]
+	fmt.Println(ethConf.Etherbase)
+	fmt.Println(ethConf.Validators[0])
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
 

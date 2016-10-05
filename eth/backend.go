@@ -103,7 +103,7 @@ type Config struct {
 	TestGenesisState ethdb.Database // Genesis state to seed the database with (testing only!)
 
 	// hdc validators
-	Validators []accounts.Account
+	Validators []common.Address
 }
 
 type Ethereum struct {
