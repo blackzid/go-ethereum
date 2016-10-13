@@ -99,13 +99,6 @@ func (signed *Signed) SignECDSA(prv *ecdsa.PrivateKey) (*Signed, error) {
 type Vote struct {
 	signed Signed
 
-	eligibleVotesNum    *big.Int
-	votes               []*Vote
-	processed           bool
-	is_valid            bool
-	has_quorum          bool
-	has_quorum_possible bool
-	has_noquorum        bool
 	height              *big.Int
 	round               *big.Int
 	blockhash           common.Hash
@@ -135,12 +128,12 @@ type LockSet struct {
 	has_noquorum        bool
 }
 
-func NewLockSet(eligibleVotesNum *big.Int, votes []*Vote) *Vote {
+func NewLockSet(eligibleVotesNum *big.Int, votes []*Vote) *LockSet {
 	s := Signed{
 		R: new(big.Int),
 		S: new(big.Int),
 	}
-	return &Vote{
+	return &LockSet{
 		eligibleVotesNum:    eligibleVotesNum,
 		votes:               []*Vote{},
 		processed:           false,
@@ -161,22 +154,23 @@ func (lockset *LockSet) add(vote *Vote, force bool) bool {
 		return false
 	}
 	if !contains(lockset.votes, vote) {
-		return true
-	}
+		;
+	} 
+	return true
 }
 
-func contains(s []*Vote, e Vote) bool {
+func contains(s []*Vote, e *Vote) bool {
 	for _, a := range s {
-		if *a == e {
+		if *a == *e {
 			return true
 		}
 	}
 	return false
 }
 
-func (lockset *LockSet) hr() (big.Int, big.Int) {
+// func (lockset *LockSet) hr() (big.Int, big.Int) {
 
-}
+// }
 
 type BlockProposal struct {
 	signed *Signed
