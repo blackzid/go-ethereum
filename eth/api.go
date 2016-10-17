@@ -324,22 +324,18 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string][]*RPCTrans
 	// Flatten the pending transactions
 	for account, batches := range pending {
 		dump := make(map[string][]*RPCTransaction)
-		for nonce, txs := range batches {
-			nonce := fmt.Sprintf("%d", nonce)
-			for _, tx := range txs {
-				dump[nonce] = append(dump[nonce], newRPCPendingTransaction(tx))
-			}
+		for _, tx := range batches {
+			nonce := fmt.Sprintf("%d", tx.Nonce())
+			dump[nonce] = []*RPCTransaction{newRPCPendingTransaction(tx)}
 		}
 		content["pending"][account.Hex()] = dump
 	}
 	// Flatten the queued transactions
 	for account, batches := range queue {
 		dump := make(map[string][]*RPCTransaction)
-		for nonce, txs := range batches {
-			nonce := fmt.Sprintf("%d", nonce)
-			for _, tx := range txs {
-				dump[nonce] = append(dump[nonce], newRPCPendingTransaction(tx))
-			}
+		for _, tx := range batches {
+			nonce := fmt.Sprintf("%d", tx.Nonce())
+			dump[nonce] = []*RPCTransaction{newRPCPendingTransaction(tx)}
 		}
 		content["queued"][account.Hex()] = dump
 	}
@@ -374,22 +370,18 @@ func (s *PublicTxPoolAPI) Inspect() map[string]map[string]map[string][]string {
 	// Flatten the pending transactions
 	for account, batches := range pending {
 		dump := make(map[string][]string)
-		for nonce, txs := range batches {
-			nonce := fmt.Sprintf("%d", nonce)
-			for _, tx := range txs {
-				dump[nonce] = append(dump[nonce], format(tx))
-			}
+		for _, tx := range batches {
+			nonce := fmt.Sprintf("%d", tx.Nonce())
+			dump[nonce] = []string{format(tx)}
 		}
 		content["pending"][account.Hex()] = dump
 	}
 	// Flatten the queued transactions
 	for account, batches := range queue {
 		dump := make(map[string][]string)
-		for nonce, txs := range batches {
-			nonce := fmt.Sprintf("%d", nonce)
-			for _, tx := range txs {
-				dump[nonce] = append(dump[nonce], format(tx))
-			}
+		for _, tx := range batches {
+			nonce := fmt.Sprintf("%d", tx.Nonce())
+			dump[nonce] = []string{format(tx)}
 		}
 		content["queued"][account.Hex()] = dump
 	}
@@ -987,7 +979,7 @@ func getTransaction(chainDb ethdb.Database, txPool *core.TxPool, txHash common.H
 		}
 	} else {
 		// pending transaction?
-		tx = txPool.GetTransaction(txHash)
+		tx = txPool.Get(txHash)
 		isPending = true
 	}
 
@@ -1399,12 +1391,13 @@ func (s *PublicTransactionPoolAPI) SignTransaction(args SignTransactionArgs) (*S
 // PendingTransactions returns the transactions that are in the transaction pool and have a from address that is one of
 // the accounts this node manages.
 func (s *PublicTransactionPoolAPI) PendingTransactions() []*RPCTransaction {
-	pending := s.txPool.GetTransactions()
+	pending := s.txPool.Pending()
 	transactions := make([]*RPCTransaction, 0, len(pending))
-	for _, tx := range pending {
-		from, _ := tx.FromFrontier()
-		if s.am.HasAddress(from) {
-			transactions = append(transactions, newRPCPendingTransaction(tx))
+	for addr, txs := range pending {
+		if s.am.HasAddress(addr) {
+			for _, tx := range txs {
+				transactions = append(transactions, newRPCPendingTransaction(tx))
+			}
 		}
 	}
 	return transactions
@@ -1438,35 +1431,36 @@ func (s *PublicTransactionPoolAPI) NewPendingTransactions(ctx context.Context) (
 // Resend accepts an existing transaction and a new gas price and limit. It will remove the given transaction from the
 // pool and reinsert it with the new gas price and limit.
 func (s *PublicTransactionPoolAPI) Resend(tx Tx, gasPrice, gasLimit *rpc.HexNumber) (common.Hash, error) {
+	pending := s.txPool.Pending()
+	for addr, txs := range pending {
+		for _, p := range txs {
+			if addr == tx.From && p.SigHash() == tx.tx.SigHash() {
+				if gasPrice == nil {
+					gasPrice = rpc.NewHexNumber(tx.tx.GasPrice())
+				}
+				if gasLimit == nil {
+					gasLimit = rpc.NewHexNumber(tx.tx.Gas())
+				}
 
-	pending := s.txPool.GetTransactions()
-	for _, p := range pending {
-		if pFrom, err := p.FromFrontier(); err == nil && pFrom == tx.From && p.SigHash() == tx.tx.SigHash() {
-			if gasPrice == nil {
-				gasPrice = rpc.NewHexNumber(tx.tx.GasPrice())
-			}
-			if gasLimit == nil {
-				gasLimit = rpc.NewHexNumber(tx.tx.Gas())
-			}
+				var newTx *types.Transaction
+				if tx.tx.To() == nil {
+					newTx = types.NewContractCreation(tx.tx.Nonce(), tx.tx.Value(), gasPrice.BigInt(), gasLimit.BigInt(), tx.tx.Data())
+				} else {
+					newTx = types.NewTransaction(tx.tx.Nonce(), *tx.tx.To(), tx.tx.Value(), gasPrice.BigInt(), gasLimit.BigInt(), tx.tx.Data())
+				}
 
-			var newTx *types.Transaction
-			if tx.tx.To() == nil {
-				newTx = types.NewContractCreation(tx.tx.Nonce(), tx.tx.Value(), gasPrice.BigInt(), gasLimit.BigInt(), tx.tx.Data())
-			} else {
-				newTx = types.NewTransaction(tx.tx.Nonce(), *tx.tx.To(), tx.tx.Value(), gasPrice.BigInt(), gasLimit.BigInt(), tx.tx.Data())
-			}
+				signedTx, err := s.sign(tx.From, newTx)
+				if err != nil {
+					return common.Hash{}, err
+				}
 
-			signedTx, err := s.sign(tx.From, newTx)
-			if err != nil {
-				return common.Hash{}, err
-			}
+				s.txPool.Remove(tx.Hash)
+				if err = s.txPool.Add(signedTx); err != nil {
+					return common.Hash{}, err
+				}
 
-			s.txPool.RemoveTx(tx.Hash)
-			if err = s.txPool.Add(signedTx); err != nil {
-				return common.Hash{}, err
+				return signedTx.Hash(), nil
 			}
-
-			return signedTx.Hash(), nil
 		}
 	}
 
@@ -1575,14 +1569,14 @@ func NewPublicDebugAPI(eth *Ethereum) *PublicDebugAPI {
 }
 
 // DumpBlock retrieves the entire state of the database at a given block.
-func (api *PublicDebugAPI) DumpBlock(number uint64) (state.World, error) {
+func (api *PublicDebugAPI) DumpBlock(number uint64) (state.Dump, error) {
 	block := api.eth.BlockChain().GetBlockByNumber(number)
 	if block == nil {
-		return state.World{}, fmt.Errorf("block #%d not found", number)
+		return state.Dump{}, fmt.Errorf("block #%d not found", number)
 	}
-	stateDb, err := state.New(block.Root(), api.eth.ChainDb())
+	stateDb, err := api.eth.BlockChain().StateAt(block.Root())
 	if err != nil {
-		return state.World{}, err
+		return state.Dump{}, err
 	}
 	return stateDb.RawDump(), nil
 }
@@ -1748,7 +1742,7 @@ func (api *PrivateDebugAPI) traceBlock(block *types.Block, config *vm.Config) (b
 	if err := core.ValidateHeader(api.config, blockchain.AuxValidator(), block.Header(), blockchain.GetHeader(block.ParentHash()), true, false); err != nil {
 		return false, collector.traces, err
 	}
-	statedb, err := state.New(blockchain.GetBlock(block.ParentHash()).Root(), api.eth.ChainDb())
+	statedb, err := blockchain.StateAt(blockchain.GetBlock(block.ParentHash()).Root())
 	if err != nil {
 		return false, collector.traces, err
 	}
@@ -1850,7 +1844,7 @@ func (api *PrivateDebugAPI) TraceTransaction(txHash common.Hash, logger *vm.LogC
 	if parent == nil {
 		return nil, fmt.Errorf("block parent %x not found", block.ParentHash())
 	}
-	stateDb, err := state.New(parent.Root(), api.eth.ChainDb())
+	stateDb, err := api.eth.BlockChain().StateAt(parent.Root())
 	if err != nil {
 		return nil, err
 	}

@@ -363,7 +363,7 @@ func opCalldataCopy(instr instruction, pc *uint64, env Environment, contract *Co
 
 func opExtCodeSize(instr instruction, pc *uint64, env Environment, contract *Contract, memory *Memory, stack *stack) {
 	addr := common.BigToAddress(stack.pop())
-	l := big.NewInt(int64(len(env.Db().GetCode(addr))))
+	l := big.NewInt(int64(env.Db().GetCodeSize(addr)))
 	stack.push(l)
 }
 
@@ -514,7 +514,12 @@ func opCreate(instr instruction, pc *uint64, env Environment, contract *Contract
 		input        = memory.Get(offset.Int64(), size.Int64())
 		gas          = new(big.Int).Set(contract.Gas)
 	)
-	contract.UseGas(contract.Gas)
+	if env.RuleSet().GasTable(env.BlockNumber()).CreateBySuicide != nil {
+		gas.Div(gas, n64)
+		gas = gas.Sub(contract.Gas, gas)
+	}
+
+	contract.UseGas(gas)
 	_, addr, suberr := env.Create(contract, input, gas, contract.Price, value)
 	// Push item on the stack based on the returned error. If the ruleset is
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
@@ -614,7 +619,7 @@ func opSuicide(instr instruction, pc *uint64, env Environment, contract *Contrac
 	balance := env.Db().GetBalance(contract.Address())
 	env.Db().AddBalance(common.BigToAddress(stack.pop()), balance)
 
-	env.Db().Delete(contract.Address())
+	env.Db().Suicide(contract.Address())
 }
 
 // following functions are used by the instruction jump  table

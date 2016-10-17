@@ -30,6 +30,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
@@ -103,17 +104,25 @@ func (self Log) Topics() [][]byte {
 	return t
 }
 
-func StateObjectFromAccount(db ethdb.Database, addr string, account Account) *state.StateObject {
-	obj := state.NewStateObject(common.HexToAddress(addr), db)
-	obj.SetBalance(common.Big(account.Balance))
+func makePreState(db ethdb.Database, accounts map[string]Account) *state.StateDB {
+	statedb, _ := state.New(common.Hash{}, db)
+	for addr, account := range accounts {
+		insertAccount(statedb, addr, account)
+	}
+	return statedb
+}
 
+func insertAccount(state *state.StateDB, saddr string, account Account) {
 	if common.IsHex(account.Code) {
 		account.Code = account.Code[2:]
 	}
-	obj.SetCode(common.Hex2Bytes(account.Code))
-	obj.SetNonce(common.Big(account.Nonce).Uint64())
-
-	return obj
+	addr := common.HexToAddress(saddr)
+	state.SetCode(addr, common.Hex2Bytes(account.Code))
+	state.SetNonce(addr, common.Big(account.Nonce).Uint64())
+	state.SetBalance(addr, common.Big(account.Balance))
+	for a, v := range account.Storage {
+		state.SetState(addr, common.HexToHash(a), common.HexToHash(v))
+	}
 }
 
 type VmEnv struct {
@@ -140,13 +149,22 @@ type VmTest struct {
 }
 
 type RuleSet struct {
-	HomesteadBlock *big.Int
-	DAOForkBlock   *big.Int
-	DAOForkSupport bool
+	HomesteadBlock           *big.Int
+	DAOForkBlock             *big.Int
+	DAOForkSupport           bool
+	HomesteadGasRepriceBlock *big.Int
 }
 
 func (r RuleSet) IsHomestead(n *big.Int) bool {
 	return n.Cmp(r.HomesteadBlock) >= 0
+}
+
+func (r RuleSet) GasTable(num *big.Int) params.GasTable {
+	if r.HomesteadGasRepriceBlock == nil || num == nil || num.Cmp(r.HomesteadGasRepriceBlock) < 0 {
+		return params.GasTableHomestead
+	}
+
+	return params.GasTableHomesteadGasRepriceFork
 }
 
 type Env struct {
@@ -237,11 +255,11 @@ func (self *Env) CanTransfer(from common.Address, balance *big.Int) bool {
 
 	return self.state.GetBalance(from).Cmp(balance) >= 0
 }
-func (self *Env) MakeSnapshot() vm.Database {
-	return self.state.Copy()
+func (self *Env) SnapshotDatabase() int {
+	return self.state.Snapshot()
 }
-func (self *Env) SetSnapshot(copy vm.Database) {
-	self.state.Set(copy.(*state.StateDB))
+func (self *Env) RevertToSnapshot(snapshot int) {
+	self.state.RevertToSnapshot(snapshot)
 }
 
 func (self *Env) Transfer(from, to vm.Account, amount *big.Int) {
