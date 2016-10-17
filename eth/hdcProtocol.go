@@ -29,8 +29,8 @@ const (
 // eth protocol message codes
 const (
 	// Protocol messages belonging to hdc
-	HDCStatusMsg            = 0x10
-	TxMsg                = 0x11
+	HDCStatusMsg         = 0x10
+	HDCTxMsg             = 0x11
 	GetBlockProposalsMsg = 0x12
 	BlockProposalsMsg    = 0x13
 	NewBlockProposalMsg  = 0x14
@@ -69,6 +69,7 @@ var errorToString = map[int]string{
 	ErrExtraStatusMsg:          "Extra status message",
 	ErrSuspendedPeer:           "Suspended peer",
 }
+
 type HDCStatusMsg struct {
 	ProtocolVersion uint32
 	NetworkId       uint32
@@ -76,11 +77,12 @@ type HDCStatusMsg struct {
 	CurrentLockset  *LockSet
 	GenesisBlock    common.Hash
 }
+
 // Requests a BlockProposals message detailing a number of blocks to be sent, each referred to
 // by block number. Note: Don't expect that the peer necessarily give you all these blocks
 // in a single message - you might have to re-request them.
 type getBlockProposals struct {
-	Number uint64      // Number of one particular block being announced
+	Number uint64 // Number of one particular block being announced
 }
 type blockProposalsData struct {
 	BlockProposals []*types.BlockProposal

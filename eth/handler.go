@@ -679,6 +679,19 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			p.MarkTransaction(tx.Hash())
 		}
 		pm.txpool.AddTransactions(txs)
+		//-------------------------------------------------------------------
+		// hdc msg handler
+		//-------------------------------------------------------------------
+	case msg.Code == HDCStatusMsg:
+		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
+	case msg.Code == HDCTxMsg:
+
+	case msg.Code == GetBlockProposalsMsg:
+	case msg.Code == BlockProposalsMsg:
+	case msg.Code == NewBlockProposalMsg:
+	case msg.Code == VotingInstructionMsg:
+	case msg.Code == VoteMsg:
+	case msg.Code == ReadyMsg:
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
