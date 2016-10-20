@@ -3,28 +3,28 @@
 package eth
 
 import (
-	"fmt"
-	"io"
+	// "fmt"
+	// "io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
+	// "github.com/ethereum/go-ethereum/rlp"
 )
 
 // Constants to match up protocol versions and messages
-const (
-	eth62 = 62
-	eth63 = 63
-)
+// const (
+// 	eth62 = 62
+// 	eth63 = 63
+// )
 
 // Official short name of the protocol used during capability negotiation.
 var HDCProtocolName = "hdc"
 
-const (
-	NetworkId          = 1
-	ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
-)
+// const (
+// 	NetworkId          = 1
+// 	ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
+// )
 
 // eth protocol message codes
 const (
@@ -39,42 +39,42 @@ const (
 	ReadyMsg             = 0x17
 )
 
-type errCode int
+// type errCode int
 
-const (
-	ErrMsgTooLarge = iota
-	ErrDecode
-	ErrInvalidMsgCode
-	ErrProtocolVersionMismatch
-	ErrNetworkIdMismatch
-	ErrGenesisBlockMismatch
-	ErrNoStatusMsg
-	ErrExtraStatusMsg
-	ErrSuspendedPeer
-)
+// const (
+// 	ErrMsgTooLarge = iota
+// 	ErrDecode
+// 	ErrInvalidMsgCode
+// 	ErrProtocolVersionMismatch
+// 	ErrNetworkIdMismatch
+// 	ErrGenesisBlockMismatch
+// 	ErrNoStatusMsg
+// 	ErrExtraStatusMsg
+// 	ErrSuspendedPeer
+// )
 
-func (e errCode) String() string {
-	return errorToString[int(e)]
-}
+// func (e errCode) String() string {
+// 	return errorToString[int(e)]
+// }
 
 // XXX change once legacy code is out
-var errorToString = map[int]string{
-	ErrMsgTooLarge:             "Message too long",
-	ErrDecode:                  "Invalid message",
-	ErrInvalidMsgCode:          "Invalid message code",
-	ErrProtocolVersionMismatch: "Protocol version mismatch",
-	ErrNetworkIdMismatch:       "NetworkId mismatch",
-	ErrGenesisBlockMismatch:    "Genesis block mismatch",
-	ErrNoStatusMsg:             "No status message",
-	ErrExtraStatusMsg:          "Extra status message",
-	ErrSuspendedPeer:           "Suspended peer",
-}
+// var errorToString = map[int]string{
+// 	ErrMsgTooLarge:             "Message too long",
+// 	ErrDecode:                  "Invalid message",
+// 	ErrInvalidMsgCode:          "Invalid message code",
+// 	ErrProtocolVersionMismatch: "Protocol version mismatch",
+// 	ErrNetworkIdMismatch:       "NetworkId mismatch",
+// 	ErrGenesisBlockMismatch:    "Genesis block mismatch",
+// 	ErrNoStatusMsg:             "No status message",
+// 	ErrExtraStatusMsg:          "Extra status message",
+// 	ErrSuspendedPeer:           "Suspended peer",
+// }
 
-type HDCStatusMsg struct {
+type HDCStatusData struct {
 	ProtocolVersion uint32
 	NetworkId       uint32
 	TD              *big.Int
-	CurrentLockset  *LockSet
+	CurrentLockset  *types.LockSet
 	GenesisBlock    common.Hash
 }
 
