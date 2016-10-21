@@ -155,5 +155,28 @@ func NewHDC(ctx *node.ServiceContext, config *Config) (*Hydrachain, error) {
 		}
 		glog.V(logger.Info).Infoln("WARNING: Wrote default ethereum genesis block")
 	}
+	core.WriteChainConfig(chainDb, genesis.Hash(), config.ChainConfig)
 
+	hdc.chainConfig = config.ChainConfig
+	hdc.chainConfig.VmConfig = vm.Config{
+		EnableJit: config.EnableJit,
+		ForceJit:  config.ForceJit,
+	}
+
+	hdc.blockchain, err = core.NewBlockChain(chainDb, hdc.chainConfig, nil, hdc.EventMux())
+
+	if err != nil {
+		if err == core.ErrNoGenesis {
+			return nil, fmt.Errorf(`No chain found. Please initialise a new chain using the "init" subcommand.`)
+		}
+		return nil, err
+	}
+
+	newPool := core.NewTxPool(hdc.chainConfig, hdc.EventMux(), hdc.blockchain.State, nil)
+	hdc.txPool = newPool
+
+	if hdc.protocolManager, err = NewProtocolManager(hdc.chainConfig, config.FastSync, config.NetworkId, hdc.eventMux, hdc.txPool, nil, hdc.blockchain, chainDb); err != nil {
+		return nil, err
+	}
+	return hdc, nil
 }
