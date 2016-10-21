@@ -650,6 +650,9 @@ func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []common.Address
 		key := crypto.MakePrivatekey(s)
 		if account, err := accman.ImportECDSA(key, ""); err == nil {
 			validators = append(validators, account.Address)
+		} else {
+			address := crypto.PubkeyToAddress(key.PublicKey)
+			validators = append(validators, address)
 		}
 	}
 	return validators
@@ -754,7 +757,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 
 	// hdc set Etherbase to validator address
 	ethConf.Etherbase = ethConf.Validators[stackConf.NodeNum]
-
+	// fmt.Println("current ehterbase is %s", ethConf.Etherbase.Hex())
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
 
@@ -904,6 +907,7 @@ func MustMakeChainConfigFromDb(ctx *cli.Context, db ethdb.Database) *core.ChainC
 		glog.V(logger.Warn).Info(howtosync)
 		glog.V(logger.Warn).Info(separator)
 	}
+
 	return config
 }
 
@@ -934,7 +938,6 @@ func MakeChain(ctx *cli.Context) (chain *core.BlockChain, chainDb ethdb.Database
 		}
 	}
 	chainConfig := MustMakeChainConfigFromDb(ctx, chainDb)
-
 	pow := pow.PoW(core.FakePow{})
 	if !ctx.GlobalBool(FakePoWFlag.Name) {
 		pow = ethash.New()

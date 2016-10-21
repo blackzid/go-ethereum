@@ -147,6 +147,9 @@ type Ethereum struct {
 	etherbase     common.Address
 	netVersionId  int
 	netRPCService *PublicNetAPI
+
+	// hdc validators
+	hdcValidators []common.Address
 }
 
 func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
@@ -223,6 +226,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		GpobaseStepUp:           config.GpobaseStepUp,
 		GpobaseCorrectionFactor: config.GpobaseCorrectionFactor,
 		httpclient:              httpclient.New(config.DocRoot),
+		hdcvalidators:           config.Validators,
 	}
 	switch {
 	case config.PowTest:

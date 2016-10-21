@@ -248,12 +248,27 @@ func (s *PrivateMinerAPI) Start(threads *rpc.HexNumber) (bool, error) {
 	if threads == nil {
 		threads = rpc.NewHexNumber(runtime.NumCPU())
 	}
-
-	err := s.e.StartMining(threads.Int(), "")
-	if err == nil {
-		return true, nil
+	if containsAddress(s.e.hdcvalidators, s.e.etherbase) {
+		fmt.Println("valid address")
+		err := s.e.StartMining(threads.Int(), "")
+		if err == nil {
+			return true, nil
+		}
+		return false, err
+	} else {
+		fmt.Println("invalid address")
 	}
-	return false, err
+
+	return false, nil
+}
+
+func containsAddress(s []common.Address, e common.Address) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
 
 // Stop the miner
