@@ -10,18 +10,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/logger/glog"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/pow"
 	"gopkg.in/fatih/set.v0"
 )
 
 type HDCBlockValidator struct {
-	config *ChainConfig // Chain configuration options
-	bc     *BlockChain  // Canonical block chain
+	config *ChainConfig   // Chain configuration options
+	bc     *HDCBlockChain // Canonical block chain
 }
 
 // NewBlockValidator returns a new block validator which is safe for re-use
-func NewHDCBlockValidator(config *ChainConfig, blockchain *BlockChain) *HDCBlockValidator {
-	validator := &BlockValidator{
+func NewHDCBlockValidator(config *ChainConfig, blockchain *HDCBlockChain) *HDCBlockValidator {
+	validator := &HDCBlockValidator{
 		config: config,
 		bc:     blockchain,
 	}
@@ -139,7 +138,7 @@ func (v *HDCBlockValidator) VerifyUncles(block, parent *types.Block) error {
 	return nil
 }
 
-func (v *HDCBlockValidator) ValidateHeader(header, parent *types.Header, checkPow bool) error {
+func (v *HDCBlockValidator) ValidateHeader(header, parent *types.Header) error {
 	// Short circuit if the parent is missing.
 	if parent == nil {
 		return ParentError(header.ParentHash)
