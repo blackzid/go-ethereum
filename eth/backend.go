@@ -47,6 +47,8 @@ import (
 	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/pow"
+	"github.com/ethereum/go-ethereum/pow/fakepow"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -104,6 +106,7 @@ type Config struct {
 
 	// hdc validators
 	Validators []common.Address
+	PBFT       bool
 }
 
 type Ethereum struct {
@@ -120,7 +123,7 @@ type Ethereum struct {
 	txMu            sync.Mutex
 	blockchain      *core.BlockChain
 	accountManager  *accounts.Manager
-	pow             *ethash.Ethash
+	pow             pow.PoW //original *ethash.Ethash
 	protocolManager *ProtocolManager
 	SolcPath        string
 	solc            *compiler.Solidity
@@ -226,7 +229,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		GpobaseStepUp:           config.GpobaseStepUp,
 		GpobaseCorrectionFactor: config.GpobaseCorrectionFactor,
 		httpclient:              httpclient.New(config.DocRoot),
-		hdcvalidators:           config.Validators,
+		hdcValidators:           config.Validators,
 	}
 	switch {
 	case config.PowTest:
@@ -240,7 +243,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		eth.pow = ethash.NewShared()
 
 	default:
-		eth.pow = ethash.New()
+		if config.PBFT {
+			eth.pow = fakepow.New()
+		} else {
+			eth.pow = ethash.New()
+		}
 	}
 
 	// load the genesis block or write a new one if no genesis
@@ -280,9 +287,13 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb); err != nil {
 		return nil, err
 	}
-	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
-	eth.miner.SetGasPrice(config.GasPrice)
-	eth.miner.SetExtra(config.ExtraData)
+
+	// hdc setup
+	if !config.PBFT {
+		eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
+		eth.miner.SetGasPrice(config.GasPrice)
+		eth.miner.SetExtra(config.ExtraData)
+	}
 
 	return eth, nil
 }
@@ -290,80 +301,91 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *Ethereum) APIs() []rpc.API {
-	return []rpc.API{
-		{
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   NewPublicEthereumAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   NewPublicAccountAPI(s.accountManager),
-			Public:    true,
-		}, {
-			Namespace: "personal",
-			Version:   "1.0",
-			Service:   NewPrivateAccountAPI(s),
-			Public:    false,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   NewPublicBlockChainAPI(s.chainConfig, s.blockchain, s.miner, s.chainDb, s.gpo, s.eventMux, s.accountManager),
-			Public:    true,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   NewPublicTransactionPoolAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   NewPublicMinerAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
-			Public:    true,
-		}, {
-			Namespace: "miner",
-			Version:   "1.0",
-			Service:   NewPrivateMinerAPI(s),
-			Public:    false,
-		}, {
-			Namespace: "txpool",
-			Version:   "1.0",
-			Service:   NewPublicTxPoolAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "eth",
-			Version:   "1.0",
-			Service:   filters.NewPublicFilterAPI(s.chainDb, s.eventMux),
-			Public:    true,
-		}, {
-			Namespace: "admin",
-			Version:   "1.0",
-			Service:   NewPrivateAdminAPI(s),
-		}, {
-			Namespace: "debug",
-			Version:   "1.0",
-			Service:   NewPublicDebugAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "debug",
-			Version:   "1.0",
-			Service:   NewPrivateDebugAPI(s.chainConfig, s),
-		}, {
-			Namespace: "net",
-			Version:   "1.0",
-			Service:   s.netRPCService,
-			Public:    true,
-		}, {
-			Namespace: "admin",
-			Version:   "1.0",
-			Service:   ethreg.NewPrivateRegistarAPI(s.chainConfig, s.blockchain, s.chainDb, s.txPool, s.accountManager),
-		},
+	if !s.chainConfig.PBFT {
+		return []rpc.API{
+			{
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicEthereumAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicAccountAPI(s.accountManager),
+				Public:    true,
+			}, {
+				Namespace: "personal",
+				Version:   "1.0",
+				Service:   NewPrivateAccountAPI(s),
+				Public:    false,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicBlockChainAPI(s.chainConfig, s.blockchain, s.miner, s.chainDb, s.gpo, s.eventMux, s.accountManager),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicTransactionPoolAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicMinerAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+				Public:    true,
+			}, {
+				Namespace: "miner",
+				Version:   "1.0",
+				Service:   NewPrivateMinerAPI(s),
+				Public:    false,
+			}, {
+				Namespace: "txpool",
+				Version:   "1.0",
+				Service:   NewPublicTxPoolAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   filters.NewPublicFilterAPI(s.chainDb, s.eventMux),
+				Public:    true,
+			}, {
+				Namespace: "admin",
+				Version:   "1.0",
+				Service:   NewPrivateAdminAPI(s),
+			}, {
+				Namespace: "debug",
+				Version:   "1.0",
+				Service:   NewPublicDebugAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "debug",
+				Version:   "1.0",
+				Service:   NewPrivateDebugAPI(s.chainConfig, s),
+			}, {
+				Namespace: "net",
+				Version:   "1.0",
+				Service:   s.netRPCService,
+				Public:    true,
+			}, {
+				Namespace: "admin",
+				Version:   "1.0",
+				Service:   ethreg.NewPrivateRegistarAPI(s.chainConfig, s.blockchain, s.chainDb, s.txPool, s.accountManager),
+			},
+		}
+	} else {
+		return []rpc.API{
+			{
+				Namespace: "hdc",
+				Version:   "1.0",
+				Service:   NewPublicEthereumAPI(s),
+				Public:    true,
+			},
+		}
 	}
 }
 

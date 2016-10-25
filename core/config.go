@@ -28,7 +28,7 @@ var ChainConfigNotFoundErr = errors.New("ChainConfig not found") // general conf
 
 // ChainConfig is the core config which determines the blockchain settings.
 //
-// ChainConfig is stored in the database on a per block basis. This means
+// ChainConfig is stored in the database on a per block basis. Thiprocessors means
 // that any network, identified by its genesis block, can have its own
 // set of configuration options.
 type ChainConfig struct {
@@ -39,6 +39,7 @@ type ChainConfig struct {
 	HomesteadGasRepriceBlock *big.Int `json:"homesteadGasRepriceBlock"` // Homestead gas reprice switch block (nil = no fork)
 
 	VmConfig vm.Config `json:"-"`
+	PBFT     bool
 }
 
 // IsHomestead returns whether num is either equal to the homestead block or greater.

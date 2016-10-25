@@ -328,6 +328,10 @@ var (
 		Usage: "node's specific number",
 		Value: 0,
 	}
+	PBFTFlag = cli.BoolFlag{
+		Name:  "pbft",
+		Usage: "change consensus to pbft with true",
+	}
 
 	MaxPeersFlag = cli.IntFlag{
 		Name:  "maxpeers",
@@ -753,6 +757,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
 		// hdc parameters
 		Validators: MakeValidators(accman, ctx),
+		PBFT:       ctx.GlobalBool(PBFTFlag.Name),
 	}
 
 	// hdc set Etherbase to validator address
@@ -804,138 +809,6 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	}
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		return eth.New(ctx, ethConf)
-	}); err != nil {
-		Fatalf("Failed to register the Ethereum service: %v", err)
-	}
-	if shhEnable {
-		if err := stack.Register(func(*node.ServiceContext) (node.Service, error) { return whisper.New(), nil }); err != nil {
-			Fatalf("Failed to register the Whisper service: %v", err)
-		}
-	}
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return release.NewReleaseService(ctx, relconf)
-	}); err != nil {
-		Fatalf("Failed to register the Geth release oracle service: %v", err)
-	}
-	return stack
-}
-func MakeHDCSystemNode(name, version string, relconf release.Config, extra []byte, ctx *cli.Context) *node.Node {
-	// Avoid conflicting network flags
-	networks, netFlags := 0, []cli.BoolFlag{DevModeFlag, TestNetFlag, OlympicFlag}
-	for _, flag := range netFlags {
-		if ctx.GlobalBool(flag.Name) {
-			networks++
-		}
-	}
-	if networks > 1 {
-		Fatalf("The %v flags are mutually exclusive", netFlags)
-	}
-	// Configure the node's service container
-	stackConf := &node.Config{
-		DataDir:         MustMakeDataDir(ctx),
-		PrivateKey:      MakeNodeKey(ctx),
-		Name:            MakeNodeName(name, version, ctx),
-		NoDiscovery:     ctx.GlobalBool(NoDiscoverFlag.Name),
-		BootstrapNodes:  MakeBootstrapNodes(ctx),
-		ListenAddr:      MakeListenAddress(ctx),
-		NAT:             MakeNAT(ctx),
-		MaxPeers:        ctx.GlobalInt(MaxPeersFlag.Name),
-		MaxPendingPeers: ctx.GlobalInt(MaxPendingPeersFlag.Name),
-		IPCPath:         MakeIPCPath(ctx),
-		HTTPHost:        MakeHTTPRpcHost(ctx),
-		HTTPPort:        ctx.GlobalInt(RPCPortFlag.Name),
-		HTTPCors:        ctx.GlobalString(RPCCORSDomainFlag.Name),
-		HTTPModules:     MakeRPCModules(ctx.GlobalString(RPCApiFlag.Name)),
-		WSHost:          MakeWSRpcHost(ctx),
-		WSPort:          ctx.GlobalInt(WSPortFlag.Name),
-		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
-		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
-		// hdc parameters
-		HDCPrivateKeyHex:  MakeHDCPrivateKeyHex(ctx),
-		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
-		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
-		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
-	}
-	// Configure the Ethereum service
-	accman := MakeAccountManager(ctx)
-	jitEnabled := ctx.GlobalBool(VMEnableJitFlag.Name)
-	hdcConf := &eth.Config{
-		ChainConfig:             MustMakeChainConfig(ctx),
-		FastSync:                ctx.GlobalBool(FastSyncFlag.Name),
-		BlockChainVersion:       ctx.GlobalInt(BlockchainVersionFlag.Name),
-		DatabaseCache:           ctx.GlobalInt(CacheFlag.Name),
-		DatabaseHandles:         MakeDatabaseHandles(),
-		NetworkId:               ctx.GlobalInt(NetworkIdFlag.Name),
-		AccountManager:          accman,
-		Etherbase:               MakeEtherbase(accman, ctx),
-		MinerThreads:            ctx.GlobalInt(MinerThreadsFlag.Name),
-		ExtraData:               MakeMinerExtra(extra, ctx),
-		NatSpec:                 ctx.GlobalBool(NatspecEnabledFlag.Name),
-		DocRoot:                 ctx.GlobalString(DocRootFlag.Name),
-		EnableJit:               jitEnabled,
-		ForceJit:                ctx.GlobalBool(VMForceJitFlag.Name),
-		GasPrice:                common.String2Big(ctx.GlobalString(GasPriceFlag.Name)),
-		GpoMinGasPrice:          common.String2Big(ctx.GlobalString(GpoMinGasPriceFlag.Name)),
-		GpoMaxGasPrice:          common.String2Big(ctx.GlobalString(GpoMaxGasPriceFlag.Name)),
-		GpoFullBlockRatio:       ctx.GlobalInt(GpoFullBlockRatioFlag.Name),
-		GpobaseStepDown:         ctx.GlobalInt(GpobaseStepDownFlag.Name),
-		GpobaseStepUp:           ctx.GlobalInt(GpobaseStepUpFlag.Name),
-		GpobaseCorrectionFactor: ctx.GlobalInt(GpobaseCorrectionFactorFlag.Name),
-		SolcPath:                ctx.GlobalString(SolcPathFlag.Name),
-		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
-		// hdc parameters
-		Validators: MakeValidators(accman, ctx),
-	}
-
-	// hdc set Etherbase to validator address
-	hdcConf.Etherbase = ethConf.Validators[stackConf.NodeNum]
-	// fmt.Println("current ehterbase is %s", ethConf.Etherbase.Hex())
-	// Configure the Whisper service
-	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
-
-	// Override any default configs in dev mode or the test net
-	switch {
-	case ctx.GlobalBool(OlympicFlag.Name):
-		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
-			hdcConf.NetworkId = 1
-		}
-		hdcConf.Genesis = core.OlympicGenesisBlock()
-
-	case ctx.GlobalBool(TestNetFlag.Name):
-		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
-			hdcConf.NetworkId = 2
-		}
-		hdcConf.Genesis = core.TestNetGenesisBlock()
-		state.StartingNonce = 1048576 // (2**20)
-
-	case ctx.GlobalBool(DevModeFlag.Name):
-		// Override the base network stack configs
-		if !ctx.GlobalIsSet(DataDirFlag.Name) {
-			stackConf.DataDir = filepath.Join(os.TempDir(), "/ethereum_dev_mode")
-		}
-		if !ctx.GlobalIsSet(MaxPeersFlag.Name) {
-			stackConf.MaxPeers = 0
-		}
-		if !ctx.GlobalIsSet(ListenPortFlag.Name) {
-			stackConf.ListenAddr = ":0"
-		}
-		// Override the Ethereum protocol configs
-		ethConf.Genesis = core.OlympicGenesisBlock()
-		if !ctx.GlobalIsSet(GasPriceFlag.Name) {
-			hdcConf.GasPrice = new(big.Int)
-		}
-		if !ctx.GlobalIsSet(WhisperEnabledFlag.Name) {
-			shhEnable = true
-		}
-		hdcConf.PowTest = true
-	}
-	// Assemble and return the protocol stack
-	stack, err := node.New(stackConf)
-	if err != nil {
-		Fatalf("Failed to create the protocol stack: %v", err)
-	}
-	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
-		return eth.HDCNew(ctx, hdcConf)
 	}); err != nil {
 		Fatalf("Failed to register the Ethereum service: %v", err)
 	}
@@ -1039,7 +912,7 @@ func MustMakeChainConfigFromDb(ctx *cli.Context, db ethdb.Database) *core.ChainC
 		glog.V(logger.Warn).Info(howtosync)
 		glog.V(logger.Warn).Info(separator)
 	}
-
+	config.PBFT = ctx.GlobalBool(PBFTFlag.Name)
 	return config
 }
 

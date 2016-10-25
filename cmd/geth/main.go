@@ -149,6 +149,7 @@ participating.
 	app.Flags = []cli.Flag{
 		utils.NumValidatorsFlag,
 		utils.NodeNumFlag,
+		utils.PBFTFlag,
 		utils.IdentityFlag,
 		utils.UnlockedAccountFlag,
 		utils.PasswordFileFlag,
@@ -271,7 +272,7 @@ func makeDefaultExtra() []byte {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func geth(ctx *cli.Context) error {
-	node := utils.MakeHDCSystemNode(clientIdentifier, verString, relConfig, makeDefaultExtra(), ctx)
+	node := utils.MakeSystemNode(clientIdentifier, verString, relConfig, makeDefaultExtra(), ctx)
 	startNode(ctx, node)
 	node.Wait()
 

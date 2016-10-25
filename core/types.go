@@ -76,3 +76,27 @@ type Backend interface {
 	DappDb() ethdb.Database
 	EventMux() *event.TypeMux
 }
+
+// hdc interface
+type HDCValidator interface {
+	HDCHeaderValidator
+	ValidateBlock(block *types.Block) error
+	ValidateState(block, parent *types.Block, state *state.StateDB, receipts types.Receipts, usedGas *big.Int) error
+}
+
+type HDCHeaderValidator interface {
+	ValidateHeader(header, parent *types.Header) error
+}
+
+type HDCProcessor interface {
+	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, vm.Logs, *big.Int, error)
+}
+
+type HDCBackend interface {
+	AccountManager() *accounts.Manager
+	BlockChain() *BlockChain
+	TxPool() *TxPool
+	ChainDb() ethdb.Database
+	DappDb() ethdb.Database
+	EventMux() *event.TypeMux
+}

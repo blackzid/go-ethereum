@@ -178,6 +178,10 @@ func (s *PublicEthereumAPI) Syncing() (interface{}, error) {
 	}, nil
 }
 
+func (s *PublicEthereumAPI) Validators() []common.Address {
+	return s.e.hdcValidators
+}
+
 // PublicMinerAPI provides an API to control the miner.
 // It offers only methods that operate on data that pose no security risk when it is publicly accessible.
 type PublicMinerAPI struct {
@@ -248,16 +252,16 @@ func (s *PrivateMinerAPI) Start(threads *rpc.HexNumber) (bool, error) {
 	if threads == nil {
 		threads = rpc.NewHexNumber(runtime.NumCPU())
 	}
-	if containsAddress(s.e.hdcvalidators, s.e.etherbase) {
-		fmt.Println("valid address")
-		err := s.e.StartMining(threads.Int(), "")
-		if err == nil {
-			return true, nil
-		}
-		return false, err
-	} else {
-		fmt.Println("invalid address")
+	// if containsAddress(s.e.hdcValidators, s.e.etherbase) {
+	// 	fmt.Println("valid address")
+	err := s.e.StartMining(threads.Int(), "")
+	if err == nil {
+		return true, nil
 	}
+	return false, err
+	// } else {
+	// 	fmt.Println("invalid address")
+	// }
 
 	return false, nil
 }
