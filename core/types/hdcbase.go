@@ -211,10 +211,14 @@ func (lockset *LockSet) add(vote *Vote, force bool) bool {
 	//
 	// FIX ME
 	//
-	if !containsVote(lockset.votes, vote) {
+	if !lockset.contain(vote) {
 		lockset.votes = append(lockset.votes, vote)
 	}
 	return true
+}
+
+func (lockset *LockSet) contain(vote Vote) bool {
+	return containsVote(lockset.votes, voet)
 }
 
 func containsVote(s []*Vote, e *Vote) bool {
