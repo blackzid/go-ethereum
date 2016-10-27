@@ -113,7 +113,12 @@ type Vote struct {
 	blockhash common.Hash
 }
 type Votes []*Vote
-
+type VoteBlock struct {
+	Vote
+}
+type VoteNil struct {
+	Vote
+}
 // implements sort interface
 
 func NewVote(height int, round int, blockhash common.Hash) *Vote {
@@ -302,7 +307,9 @@ func NewReady(nonce *big.Int, currentLockSet *LockSet) *Ready {
 		currentLockSet: currentLockSet,
 	}
 }
-
+type Proposal interface {
+	sign(prv *ecdsa.PrivateKey)
+}
 type BlockProposal struct {
 	signed *Signed
 
@@ -312,6 +319,7 @@ type BlockProposal struct {
 	signing_lockset *LockSet
 	round_lockset   *LockSet
 	rawhash         common.Hash
+	blockhash       common.Hash
 }
 
 func (bp *BlockProposal) SigHash() common.Hash {
@@ -336,6 +344,7 @@ func NewBlockProposal(height int, round int, block *Block, signing_lockset *Lock
 		block:           block,
 		signing_lockset: signing_lockset,
 		round_lockset:   round_lockset,
+		blockhash:       block.Hash(),
 	}
 }
 func (bp *BlockProposal) lockset() *LockSet {
@@ -375,12 +384,14 @@ func containsAddress(s []common.Address, e common.Address) bool {
 	return false
 }
 
+
 type VotingInstruction struct {
 	signed *Signed
 
 	height        int
 	round         int
 	round_lockset *LockSet
+	blockhash     common.Hash
 }
 
 func NewVotingInstruction(height int, round int, round_lockset *LockSet) *VotingInstruction {
@@ -388,11 +399,16 @@ func NewVotingInstruction(height int, round int, round_lockset *LockSet) *Voting
 		R: new(big.Int),
 		S: new(big.Int),
 	}
+	b, hash := round_lockset.quorumPossible()
+	if b == false {
+		panic("hash error")
+	}
 	return &VotingInstruction{
 		signed:        s,
 		height:        height,
 		round:         round,
 		round_lockset: round_lockset,
+		blockhash:     hash
 	}
 }
 func (vi *VotingInstruction) validateVotes(validators []common.Address) {
@@ -404,4 +420,10 @@ func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 			panic("invalid signer")
 		}
 	}
+}
+func (vi *VotingInstruction) sign(prv *ecdsa.PrivateKey) {
+	vi.signed.SignECDSA(prv)
+}
+func (vi *VotingInstruction) blockhash() common.Hash {
+	return vi.block.Hash()
 }

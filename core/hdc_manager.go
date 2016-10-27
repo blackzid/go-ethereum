@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/pow"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/miner"
 	"github.com/hashicorp/golang-lru"
 )
 
@@ -55,6 +56,7 @@ type ConsensusManager struct {
 	heights                   []*HeightManager
 	last_valid_lockset        *LockSet
 	last_committing_lockset   *LockSet
+	proposalLock              *typtes.Block
 }
 
 func NewConsensusManager(heightmanager *HeightManager, round int) *RoundManager {
@@ -76,11 +78,20 @@ func (cm *ConsensusManager) height() int {
 func (cm *ConsensusManager) round() int {
 	return cm.heights[cm.height()].round
 }
+func (cm *ConsensusManager) sign(bp *BlockProposal) {
+	bp.sign(cm.privkey)
+}
+func (cm *ConsensusManager) set_proposal_lock(block *type.Block) {
+	
+	// TODO: update this
+	cm.proposalLock = block
+}
 
 type HeightManager struct {
 	cm     *ConsensusManager
 	round  int
 	height int
+	lastVoteLock *Vote // voteblock
 }
 
 type RoundManager struct {
@@ -89,8 +100,8 @@ type RoundManager struct {
 	round        int
 	height       int
 	lockset      *LockSet
-	proposal     *BlockProposal
-	lock         *Vote
+	proposal     Proposal
+	voteLock         *Vote
 	timeout_time float64
 }
 
@@ -158,17 +169,24 @@ func (rm *RoundManager) propose() *BlockProposal {
 		glog.V(logger.Error).Infof("no valid round lockset for height")
 		return nil
 	}
-	var proposal *BlockProposal
+	var proposal Proposal
 	if round_lockset.height == rm.height && round_lockset.hasQuorum() {
 		glog.V(logger.Error).Infof("have quorum on height, not proposing")
 		return nil
-	} else if rm.round == 0 || round_lockset.hasQuorum() {
-		proposal = mk_proposal()
+	} else if rm.round == 0 || round_lockset.noQuorum() {
+		proposal = rm.mk_proposal()
 	} else if round_lockset.quorumPossible() {
-		return nil
+		proposal = types.NewVotingInstruction(rm.height, rm.round, round_lockset)
+		rm.cm.sign(proposal)
+	} else {
+		panic('invalid round_lockset')
 	}
+	rm.proposal = proposal
+	glog.V(logger.Info).Infof("created proposal")
 
+	return proposal
 }
+
 func (rm *RoundManager) mk_proposal() {
 	var round_lockset *LockSet
 	signing_lockset := rm.cm.last_committing_lockset.copy()
@@ -183,27 +201,154 @@ func (rm *RoundManager) mk_proposal() {
 	if round_lockset != nil || rm.round == 0 {
 		panic("mk_proposal error")
 	}
-	// block := rm.cm.chain.
+	block := newBlock(rm.cm)
+	blockproposal := types.NewBlockProposal(rm.height, rm.round, block, signing_lockset, round_lockset)
+	rm.cm.sign(blockProposal)
+	rm.cm.set_proposal_lock(block)
+	return blockProposal
 }
+func (rm *RoundManager) vote() {
+	if rm.voteLock != nil {
+		glog.V(logger.Info).Infof("voted ")
+		return nil
+	}
+	glog.V(logger.Info).Infof("in vote")
+	lastVoteLock := rm.hm.lastVoteLock
+	var vote *Vote 
+	if rm.proposal != nil {
+		switch t := rm.proposal.(type) {
+		case default:
+			// assert isinstance(self.proposal, BlockProposal)
+			// assert isinstance(self.proposal.block, Block)  # already linked to chain
+			// assert self.proposal.lockset.has_noquorum or self.round == 0
+			// assert self.proposal.block.prevhash == self.cm.head.hash
+			glog.V(logger.Info).Infoln("voting proposed block")
+			v := types.NewVote(rm.height, rm.round, rm.proposal.blockhash)
+			vote = &VoteBlock{v}
+		case *VotingInstruction:
+			if !rm.proposal.lockset.quorumPossible() {
+				panic("vote error")
+			}
+			glog.V(logger.Info).Infoln("voting on instruction")
+			v := types.NewVote(rm.height, rm.round, rm.proposal.blockhash)
+			vote = &VoteBlock{v}
+		case *BlockProposal:
+			glog.V(logger.Info).Infoln("voting on last vote")
+			v := types.NewVote(rm.height, rm.round, lastVoteLock.blockhash)
+			vote = &VoteBLock{v}
+		}
 
+	}
+}
 func newBlock(cm *ConsensusManager) *types.Block {
+	config := cm.chain.chainConfig
+	coinbase := common.Address{}
+	eth := cm.contract.eth
+	worker := &worker{
+		config:         config,
+		eth:            eth,
+		mux:            eth.EventMux(),
+		chainDb:        eth.ChainDb(),
+		recv:           make(chan *Result, resultQueueSize),
+		gasPrice:       new(big.Int),
+		chain:          eth.BlockChain(),
+		proc:           eth.BlockChain().Validator(),
+		possibleUncles: make(map[common.Hash]*types.Block),
+		coinbase:       coinbase,
+		txQueue:        make(map[common.Hash]*types.Transaction),
+		agents:         make(map[Agent]struct{}),
+		fullValidation: false,
+	}
+	return worker.newBlock()
+	// worker.events = worker.mux.Subscribe(core.ChainHeadEvent{}, core.ChainSideEvent{}, core.TxPreEvent{})
+
+}
+func (self *miner.worker) newBlock() *types.Block{
+	self.mu.Lock()
+	defer self.mu.Unlock()
+	self.uncleMu.Lock()
+	defer self.uncleMu.Unlock()
+	self.currentMu.Lock()
+	defer self.currentMu.Unlock()
+
 	tstart := time.Now()
-	parent := cm.chain.CurrentBlock()
+	parent := self.chain.CurrentBlock()
 	tstamp := tstart.Unix()
 	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
 		tstamp = parent.Time().Int64() + 1
 	}
+	// this will ensure we're not going off too far in the future
+	if now := time.Now().Unix(); tstamp > now+4 {
+		wait := time.Duration(tstamp-now) * time.Second
+		glog.V(logger.Info).Infoln("We are too far in the future. Waiting for", wait)
+		time.Sleep(wait)
+	}
+
 	num := parent.Number()
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		Difficulty: core.CalcDifficulty(cm.chain.config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
+		Difficulty: core.CalcDifficulty(self.config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
 		GasLimit:   core.CalcGasLimit(parent),
 		GasUsed:    new(big.Int),
-		Coinbase:   cm.coinbase,
-		Extra:      []byte{},
+		Coinbase:   self.coinbase,
+		Extra:      self.extra,
 		Time:       big.NewInt(tstamp),
 	}
-	txs := types.NewTransactionsByPriceAndNonce(cm.contract.eth.TxPool().Pending())
+	previous := self.current
+	// Could potentially happen if starting to mine in an odd state.
+	err := self.makeCurrent(parent, header)
+	if err != nil {
+		glog.V(logger.Info).Infoln("Could not create new env for mining, retrying on next block.")
+		return
+	}
+	// Create the current work task and check any fork transitions needed
+	work := self.current
 
+	txs := types.NewTransactionsByPriceAndNonce(self.eth.TxPool().Pending())
+	work.commitTransactions(self.mux, txs, self.gasPrice, self.chain)
+
+	self.eth.TxPool().RemoveBatch(work.lowGasTxs)
+	self.eth.TxPool().RemoveBatch(work.failedTxs)
+
+	// compute uncles for the new block.
+	var (
+		uncles    []*types.Header
+		badUncles []common.Hash
+	)
+	for hash, uncle := range self.possibleUncles {
+		if len(uncles) == 2 {
+			break
+		}
+		if err := self.commitUncle(work, uncle.Header()); err != nil {
+			if glog.V(logger.Ridiculousness) {
+				glog.V(logger.Detail).Infof("Bad uncle found and will be removed (%x)\n", hash[:4])
+				glog.V(logger.Detail).Infoln(uncle)
+			}
+			badUncles = append(badUncles, hash)
+		} else {
+			glog.V(logger.Debug).Infof("commiting %x as uncle\n", hash[:4])
+			uncles = append(uncles, uncle.Header())
+		}
+	}
+	for _, hash := range badUncles {
+		delete(self.possibleUncles, hash)
+	}
+
+	if atomic.LoadInt32(&self.mining) == 1 {
+		// commit state root after all state transitions.
+		core.AccumulateRewards(work.state, header, uncles)
+		header.Root = work.state.IntermediateRoot()
+	}
+
+	// create the new block whose nonce will be mined.
+	work.Block = types.NewBlock(header, work.txs, uncles, work.receipts)
+
+	// We only care about logging if we're actually mining.
+	if atomic.LoadInt32(&self.mining) == 1 {
+		glog.V(logger.Info).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
+		self.logLocalMinedBlocks(work, previous)
+	}
+
+	return work.Block
 }
