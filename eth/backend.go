@@ -117,6 +117,7 @@ type Ethereum struct {
 	// DB interfaces
 	chainDb ethdb.Database // Block chain database
 	dappDb  ethdb.Database // Dapp database
+	hdcDb   ethdb.Database // hdc database
 
 	// Handlers
 	txPool          *core.TxPool
@@ -177,6 +178,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	}
 	if db, ok := dappDb.(*ethdb.LDBDatabase); ok {
 		db.Meter("eth/db/dapp/")
+	}
+
+	hdcDb, err := ctx.OpenDatabase("hdcdata", config.DatabaseCache, config.DatabaseHandles)
+	if db, ok := hdcDb.(*ethdb.LDBDatabase); ok {
+		db.Meter("eth/db/hdc/")
 	}
 	glog.V(logger.Info).Infof("Protocol Versions: %v, Network Id: %v", ProtocolVersions, config.NetworkId)
 
