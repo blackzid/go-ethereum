@@ -69,7 +69,7 @@ type ConsensusManager struct {
 	privkey                   *ecdsa.PrivateKey
 	contract                  *ConsensusContract
 	tracked_protocol_failures []string
-	heights                   []*HeightManager
+	heights                   map[int]*HeightManager
 	last_valid_lockset        *types.LockSet
 	last_committing_lockset   *types.LockSet
 	proposalLock              *typtes.Block
@@ -85,6 +85,7 @@ func NewConsensusManager(heightmanager *HeightManager, round int) *RoundManager 
 		round_timeout_factor: 1.5,
 		transaction_timeout:  0.5,
 		readyValidators:      make(map[common.Address]struct{}),
+		heights: 			  make(map[int]*HeightManager)
 		readyNonce:           0,
 		blockCandidates:      make(map[common.Hash]types.Proposal),
 	}
@@ -229,10 +230,44 @@ func (cm *ConsensusManager) process() {
 		cm.setupAlarm()
 	}
 	cm.commit()
+	cm.heights[cm.Height()].process()
+	cm.cleanup()
 }
-func (cm *ConsensusManager) commit() {
-	glog.V(logger.Info).Infoln("in process")
-
+func (cm *ConsensusManager) commit() bool {
+	glog.V(logger.Info).Infoln("in commit")
+	for hash, p := range cm.blockCandidates {
+		ls = cm.heights[p.height].lastQuorumLockset()
+		_, hash := ls.lockset.hasQuorum()
+		if p.blockhash == hash {
+			cm.storeProposal(p)
+			cm.storeLastCommittingLockset(ls)
+			success := cm.e.commitBlock(p.block)
+			if success {
+				glog.V(logger.Info).Infoln("commited")
+				cm.commit()
+				return true
+			} else {
+				glog.V(logger.Info).Infoln("could not commit")
+			}
+		} else {
+			glog.V(logger.Info).Infoln("no quorum for ", p)
+			if ls != nil {
+				glog.V(logger.Info).Infoln("votes ", ls.votes)
+			}
+		}
+	}
+}
+func (cm *ConsensusManager) cleanup() {
+	for hash, p := range cm.blockCandidates {
+		if cm.Head().Number() <= p.height {
+			delete(cm.blockCandidates, hash)
+		}
+	}
+	for i, h := range cm.heights {
+		cm.heights[i].height < cm.Head().Number() {
+			delete(cm.heights, i)
+		}
+	}
 }
 func (cm *ConsensusManager) sign(s *types.Signed) {
 	s.sign(cm.privkey)
