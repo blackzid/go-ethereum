@@ -28,8 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/hashicorp/golang-lru"
-
-	"github.com/ethereum/go-ethereum/eth"
+	// "github.com/ethereum/go-ethereum/eth"
 )
 
 type ConsensusContract struct {
@@ -76,18 +75,23 @@ type ConsensusManager struct {
 	proposalLock              *typtes.Block
 	readyNonce                int
 	blockCandidates           map[common.Hash]types.Proposal
-	pm                        *eth.HDCProtocolManager
+	hdcDb                     ethdb.Database
+
+	// create bock mu
+	mu        sync.Mutex
+	currentMu sync.Mutex
+	uncleMu   sync.Mutex
 }
 
-func NewConsensusManager(pm *eth.HDCProtocolManager, cc *ConsensusContract, privkeyhex string) *ConsensusManager {
+func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string) *ConsensusManager {
 	return &ConsensusManager{
 		allow_empty_blocks:   false,
 		num_initial_blocks:   10,
 		round_timeout:        3,
 		round_timeout_factor: 1.5,
 		transaction_timeout:  0.5,
-		pm:                   pm,
-		chain:                pm.blockchain,
+		hdcDb:                db,
+		chain:                chain,
 		privkey:              crypto.HexToECDSA(privkeyhex),
 		readyValidators:      make(map[common.Address]struct{}),
 		heights:              make(map[int]*HeightManager),
@@ -134,7 +138,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 	if err != nil {
 		return err
 	}
-	if err := cm.pm.hdcDb.Put("last_committing_lockset", bytes); err != nil {
+	if err := cm.hdcDb.Put("last_committing_lockset", bytes); err != nil {
 		glog.Fatalf("failed to store last committing lockset into database: %v", err)
 		return err
 	}
@@ -142,7 +146,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 }
 func (cm *ConsensusManager) loadLastCommittingLockset() *types.LockSet {
 	key := fmt.Sprintf("last_committing_lockset")
-	data, _ := cm.pm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get(key)
 	if len(data) == 0 {
 		return nil
 	}
@@ -160,7 +164,7 @@ func (cm *ConsensusManager) storeProposal(p types.Proposal) {
 		return err
 	}
 	key := fmt.Sprintf("blockproposal:%s", p.blockhash)
-	if err := cm.pm.hdcDb.Put(key, bytes); err != nil {
+	if err := cm.hdcDb.Put(key, bytes); err != nil {
 		glog.Fatalf("failed to store proposal into database: %v", err)
 		return err
 	}
@@ -169,7 +173,7 @@ func (cm *ConsensusManager) storeProposal(p types.Proposal) {
 
 func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.pm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get(key)
 	if len(data) == 0 {
 		return nil
 	}
@@ -182,7 +186,7 @@ func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 }
 func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.pm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get(key)
 	if len(data) != 0 {
 		return true
 	}
@@ -249,7 +253,7 @@ func (cm *ConsensusManager) commit() bool {
 		if p.blockhash == hash {
 			cm.storeProposal(p)
 			cm.storeLastCommittingLockset(ls)
-			success := cm.pm.commitBlock(p.block)
+			// success := cm.pm.commitBlock(p.block)
 			if success {
 				glog.V(logger.Info).Infoln("commited")
 				cm.commit()
@@ -660,6 +664,7 @@ func newBlock(cm *ConsensusManager) *types.Block {
 	config := cm.chain.chainConfig
 	coinbase := common.Address{}
 	eth := cm.contract.eth
+
 	worker := &worker{
 		config:         config,
 		eth:            eth,
@@ -675,20 +680,15 @@ func newBlock(cm *ConsensusManager) *types.Block {
 		agents:         make(map[Agent]struct{}),
 		fullValidation: false,
 	}
-	return worker.newBlock()
-	// worker.events = worker.mux.Subscribe(core.ChainHeadEvent{}, core.ChainSideEvent{}, core.TxPreEvent{})
 
-}
-func (self *miner.worker) newBlock() *types.Block {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	self.uncleMu.Lock()
-	defer self.uncleMu.Unlock()
-	self.currentMu.Lock()
-	defer self.currentMu.Unlock()
-
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.uncleMu.Lock()
+	defer cm.uncleMu.Unlock()
+	cm.currentMu.Lock()
+	defer cm.currentMu.Unlock()
 	tstart := time.Now()
-	parent := self.chain.CurrentBlock()
+	parent := cm.chain.CurrentBlock()
 	tstamp := tstart.Unix()
 	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
 		tstamp = parent.Time().Int64() + 1
@@ -699,6 +699,24 @@ func (self *miner.worker) newBlock() *types.Block {
 		glog.V(logger.Info).Infoln("We are too far in the future. Waiting for", wait)
 		time.Sleep(wait)
 	}
+	num := parent.Number()
+	header := &types.Header{
+		ParentHash: parent.Hash(),
+		Number:     num.Add(num, common.Big1),
+		Difficulty: core.CalcDifficulty(self.config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
+		GasLimit:   core.CalcGasLimit(parent),
+		GasUsed:    new(big.Int),
+		Coinbase:   self.coinbase,
+		Extra:      self.extra,
+		Time:       big.NewInt(tstamp),
+	}
+
+	block := types.NewBlock(header, work.txs, uncles, work.receipts)
+	return worker.newBlock()
+	// worker.events = worker.mux.Subscribe(core.ChainHeadEvent{}, core.ChainSideEvent{}, core.TxPreEvent{})
+
+}
+func (self *miner.worker) newBlock() *types.Block {
 
 	num := parent.Number()
 	header := &types.Header{
