@@ -28,6 +28,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/hashicorp/golang-lru"
+
+	"github.com/ethereum/go-ethereum/eth"
 )
 
 type ConsensusContract struct {
@@ -62,7 +64,6 @@ type ConsensusManager struct {
 	round_timeout             int
 	round_timeout_factor      float64
 	transaction_timeout       float64
-	e                         *Ethereum
 	chain                     *BlockChain
 	coinbase                  common.Address
 	readyValidators           map[common.Address]struct{}
@@ -75,17 +76,21 @@ type ConsensusManager struct {
 	proposalLock              *typtes.Block
 	readyNonce                int
 	blockCandidates           map[common.Hash]types.Proposal
+	pm                        *eth.HDCProtocolManager
 }
 
-func NewConsensusManager(heightmanager *HeightManager, round int) *RoundManager {
+func NewConsensusManager(pm *eth.HDCProtocolManager, cc *ConsensusContract, privkeyhex string) *ConsensusManager {
 	return &ConsensusManager{
 		allow_empty_blocks:   false,
 		num_initial_blocks:   10,
 		round_timeout:        3,
 		round_timeout_factor: 1.5,
 		transaction_timeout:  0.5,
+		pm:                   pm,
+		chain:                pm.blockchain,
+		privkey:              crypto.HexToECDSA(privkeyhex),
 		readyValidators:      make(map[common.Address]struct{}),
-		heights: 			  make(map[int]*HeightManager)
+		heights:              make(map[int]*HeightManager),
 		readyNonce:           0,
 		blockCandidates:      make(map[common.Hash]types.Proposal),
 	}
@@ -114,7 +119,8 @@ func (cm *ConsensusManager) initializeLocksets() {
 	for _, v := range lastCommittingLockset.votes {
 		cm.addVote(v)
 	}
-	result, _ := cm.heights[cm.Head().header.Number].hasQuorum()
+	result, _ = cm.heights[cm.Head().header.Number].hasQuorum()
+
 	if result {
 		panic("initialize_locksets error")
 	}
@@ -128,7 +134,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 	if err != nil {
 		return err
 	}
-	if err := cm.e.hdcDb.Put("last_committing_lockset", bytes); err != nil {
+	if err := cm.pm.hdcDb.Put("last_committing_lockset", bytes); err != nil {
 		glog.Fatalf("failed to store last committing lockset into database: %v", err)
 		return err
 	}
@@ -136,7 +142,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 }
 func (cm *ConsensusManager) loadLastCommittingLockset() *types.LockSet {
 	key := fmt.Sprintf("last_committing_lockset")
-	data, _ := cm.e.hdcDb.Get(key)
+	data, _ := cm.pm.hdcDb.Get(key)
 	if len(data) == 0 {
 		return nil
 	}
@@ -154,7 +160,7 @@ func (cm *ConsensusManager) storeProposal(p types.Proposal) {
 		return err
 	}
 	key := fmt.Sprintf("blockproposal:%s", p.blockhash)
-	if err := cm.e.hdcDb.Put(key, bytes); err != nil {
+	if err := cm.pm.hdcDb.Put(key, bytes); err != nil {
 		glog.Fatalf("failed to store proposal into database: %v", err)
 		return err
 	}
@@ -163,7 +169,7 @@ func (cm *ConsensusManager) storeProposal(p types.Proposal) {
 
 func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.e.hdcDb.Get(key)
+	data, _ := cm.pm.hdcDb.Get(key)
 	if len(data) == 0 {
 		return nil
 	}
@@ -176,7 +182,7 @@ func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 }
 func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.e.hdcDb.Get(key)
+	data, _ := cm.pm.hdcDb.Get(key)
 	if len(data) != 0 {
 		return true
 	}
@@ -232,6 +238,8 @@ func (cm *ConsensusManager) process() {
 	cm.commit()
 	cm.heights[cm.Height()].process()
 	cm.cleanup()
+	cm.synchronizer.process()
+	cm.setup_alarm()
 }
 func (cm *ConsensusManager) commit() bool {
 	glog.V(logger.Info).Infoln("in commit")
@@ -241,7 +249,7 @@ func (cm *ConsensusManager) commit() bool {
 		if p.blockhash == hash {
 			cm.storeProposal(p)
 			cm.storeLastCommittingLockset(ls)
-			success := cm.e.commitBlock(p.block)
+			success := cm.pm.commitBlock(p.block)
 			if success {
 				glog.V(logger.Info).Infoln("commited")
 				cm.commit()
@@ -264,7 +272,7 @@ func (cm *ConsensusManager) cleanup() {
 		}
 	}
 	for i, h := range cm.heights {
-		cm.heights[i].height < cm.Head().Number() {
+		if cm.heights[i].height < cm.Head().Number() {
 			delete(cm.heights, i)
 		}
 	}

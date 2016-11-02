@@ -117,7 +117,6 @@ type Ethereum struct {
 	// DB interfaces
 	chainDb ethdb.Database // Block chain database
 	dappDb  ethdb.Database // Dapp database
-	hdcDb   ethdb.Database // hdc database
 
 	// Handlers
 	txPool          *core.TxPool
@@ -125,7 +124,7 @@ type Ethereum struct {
 	blockchain      *core.BlockChain
 	accountManager  *accounts.Manager
 	pow             pow.PoW //original *ethash.Ethash
-	protocolManager *ProtocolManager
+	protocolManager *HDCProtocolManager
 	SolcPath        string
 	solc            *compiler.Solidity
 	gpo             *GasPriceOracle
@@ -290,11 +289,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	newPool := core.NewTxPool(eth.chainConfig, eth.EventMux(), eth.blockchain.State, eth.blockchain.GasLimit)
 	eth.txPool = newPool
 
-	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb); err != nil {
+	// hdc setup
+
+	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb, validators, config.privateKeyHex, eth); err != nil {
 		return nil, err
 	}
 
-	// hdc setup
 	if !config.PBFT {
 		eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
 		eth.miner.SetGasPrice(config.GasPrice)

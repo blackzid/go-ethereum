@@ -756,8 +756,9 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		SolcPath:                ctx.GlobalString(SolcPathFlag.Name),
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
 		// hdc parameters
-		Validators: MakeValidators(accman, ctx),
-		PBFT:       ctx.GlobalBool(PBFTFlag.Name),
+		Validators:    MakeValidators(accman, ctx),
+		PBFT:          ctx.GlobalBool(PBFTFlag.Name),
+		privateKeyHex: stackConf.HDCPrivateKeyHex,
 	}
 
 	// hdc set Etherbase to validator address
