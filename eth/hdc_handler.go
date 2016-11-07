@@ -65,7 +65,7 @@ type HDCProtocolManager struct {
 	privateKeyHex     string
 }
 
-func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, validators []common.Address, privatekeyhex string, eth *eth.Ethereum, extra []byte, gasPrice *big.Int) (*HDCProtocolManager, error) {
+func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, validators []common.Address, privatekeyhex string, eth *Ethereum, extra []byte, gasPrice *big.Int) (*HDCProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &HDCProtocolManager{
 		networkId:   networkId,

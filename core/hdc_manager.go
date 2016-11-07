@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/ecdsa"
+	"bytes"
 	// "errors"
 	"fmt"
 	// "io"
@@ -31,7 +32,10 @@ import (
 )
 
 type ConsensusContract struct {
-	eth        Backend
+	// eth eth.Ethereum
+	eventMux   *event.TypeMux
+	coinbase   common.Address
+	txpool     *TxPool
 	validators []common.Address
 }
 
@@ -44,7 +48,7 @@ func (cc *ConsensusContract) isValidators(v common.Address) bool {
 	return containsAddress(cc.validators, v)
 }
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
-	return p == cc.proposer(p.height, p.round)
+	return p.Sender() == cc.proposer(p.Height(), p.Round())
 }
 
 func containsAddress(s []common.Address, e common.Address) bool {
@@ -86,7 +90,8 @@ type ConsensusManager struct {
 }
 
 func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
-	eth := cc.eth
+
+	privkey, _ := crypto.HexToECDSA(privkeyhex)
 	return &ConsensusManager{
 		allow_empty_blocks:   false,
 		num_initial_blocks:   10,
@@ -95,7 +100,7 @@ func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusCont
 		transaction_timeout:  0.5,
 		hdcDb:                db,
 		chain:                chain,
-		privkey:              crypto.HexToECDSA(privkeyhex),
+		privkey:              privkey,
 		readyValidators:      make(map[common.Address]struct{}),
 		heights:              make(map[int]*HeightManager),
 		readyNonce:           0,
@@ -103,8 +108,8 @@ func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusCont
 		contract:             cc,
 		extraData:            extraData,
 		gasPrice:             gasPrice,
-		mux:                  eth.EventMux(),
-		coinbase:             eth.etherbase,
+		mux:                  cc.eventMux,
+		coinbase:             cc.coinbase,
 	}
 }
 
@@ -114,24 +119,26 @@ func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusCont
 func (cm *ConsensusManager) initializeLocksets() {
 	// initializing locksets
 	// sign genesis
-	v := types.NewVote(0, 0, cm.chain.genesisBlock.Hash())
-	vote := &VoteBlock{Vote: v}
-	cm.addVote(vote)
+	v := types.NewVote(0, 0, cm.chain.genesisBlock.Hash(), 1) // voteBlock
+	cm.addVote(v)
 	// add initial lockset
-	var headProposal *types.BlockProposal
-	headProposal = cm.loadProposal(cm.Head().Hash())
-	for _, v := range headProposal.signingLockset.votes {
+	// var headProposal *types.BlockProposal
+	headProposal := cm.loadProposal(cm.Head().Hash()).(*types.BlockProposal)
+	ls := headProposal.SigningLockset()
+	for _, v := range ls.Votes() {
 		cm.addVote(v)
 	}
-	result, _ := cm.heights[cm.Head().header.Number-1].hasQuorum()
+	headNumber := int(cm.Head().Header().Number.Int64())
+	result, _ := cm.heights[headNumber-1].hasQuorum()
 	if result {
 		panic("initialize_locksets error")
 	}
 	lastCommittingLockset := cm.loadLastCommittingLockset()
-	for _, v := range lastCommittingLockset.votes {
+	for _, v := range lastCommittingLockset.Votes() {
 		cm.addVote(v)
 	}
-	result, _ = cm.heights[cm.Head().header.Number].hasQuorum()
+	headNumber = int(cm.Head().Header().Number.Int64())
+	result, _ = cm.heights[headNumber].hasQuorum()
 
 	if result {
 		panic("initialize_locksets error")
@@ -146,7 +153,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 	if err != nil {
 		return err
 	}
-	if err := cm.hdcDb.Put("last_committing_lockset", bytes); err != nil {
+	if err := cm.hdcDb.Put([]byte("last_committing_lockset"), bytes); err != nil {
 		glog.Fatalf("failed to store last committing lockset into database: %v", err)
 		return err
 	}
@@ -154,7 +161,7 @@ func (cm *ConsensusManager) storeLastCommittingLockset(ls *types.LockSet) error 
 }
 func (cm *ConsensusManager) loadLastCommittingLockset() *types.LockSet {
 	key := fmt.Sprintf("last_committing_lockset")
-	data, _ := cm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get([]byte(key))
 	if len(data) == 0 {
 		return nil
 	}
@@ -166,13 +173,14 @@ func (cm *ConsensusManager) loadLastCommittingLockset() *types.LockSet {
 	return lockset
 }
 
-func (cm *ConsensusManager) storeProposal(p types.Proposal) {
+func (cm *ConsensusManager) storeProposal(p types.Proposal) error {
 	bytes, err := rlp.EncodeToBytes(p)
 	if err != nil {
 		return err
 	}
-	key := fmt.Sprintf("blockproposal:%s", p.blockhash)
-	if err := cm.hdcDb.Put(key, bytes); err != nil {
+	bp := p.(*types.BlockProposal)
+	key := fmt.Sprintf("blockproposal:%s", bp.Blockhash())
+	if err := cm.hdcDb.Put([]byte(key), bytes); err != nil {
 		glog.Fatalf("failed to store proposal into database: %v", err)
 		return err
 	}
@@ -181,7 +189,7 @@ func (cm *ConsensusManager) storeProposal(p types.Proposal) {
 
 func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get([]byte(key))
 	if len(data) == 0 {
 		return nil
 	}
@@ -194,7 +202,7 @@ func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
 }
 func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
-	data, _ := cm.hdcDb.Get(key)
+	data, _ := cm.hdcDb.Get([]byte(key))
 	if len(data) != 0 {
 		return true
 	}
@@ -205,12 +213,12 @@ func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 func (cm *ConsensusManager) Head() *types.Block {
 	return cm.chain.currentBlock
 }
-func (cm *ConsensusManager) Now() float64 {
-	return time.Now().UnixNano()
+func (cm *ConsensusManager) Now() int64 {
+	return time.Now().Unix()
 }
 func (cm *ConsensusManager) Height() int {
 	h := cm.chain.currentBlock.NumberU64()
-	return h
+	return int(h)
 }
 func (cm *ConsensusManager) Round() int {
 	return cm.heights[cm.height()].round
@@ -620,7 +628,7 @@ func (rm *RoundManager) vote() *types.Vote {
 		return nil
 	}
 	glog.V(logger.Info).Infof("in vote")
-	lastVoteLock := rm.hm.lastVoteLock
+	lastVoteLock := rm.hm.LastVoteLock()
 	var vote *types.Vote
 	if rm.proposal != nil {
 		switch t := rm.proposal.(type) {
@@ -629,15 +637,13 @@ func (rm *RoundManager) vote() *types.Vote {
 			// assert isinstance(self.proposal.block, Block)  # already linked to chain
 			// assert self.proposal.lockset.has_noquorum or self.round == 0
 			// assert self.proposal.block.prevhash == self.cm.head.hash
-			switch vt := lastVoteLock.(type) {
+			switch vt := lastVoteLock.voteType {
 			default: // vote to proposed vote
 				glog.V(logger.Info).Infoln("voting proposed block")
-				v := types.NewVote(rm.height, rm.round, rm.proposal.blockhash)
-				vote = &VoteBlock{v}
-			case *types.VoteBlock: //repeat vote
+				vote := types.NewVote(rm.height, rm.round, rm.proposal.blockhash, 1)
+			case 1: //repeat vote
 				glog.V(logger.Info).Infoln("voting on last vote")
-				v := types.NewVote(rm.height, rm.round, lastVoteLock.blockhash)
-				vote = &VoteBLock{v}
+				vote := types.NewVote(rm.height, rm.round, lastVoteLock.blockhash, 1)
 			}
 
 		case *types.VotingInstruction: // vote for votinginstruction
@@ -645,19 +651,16 @@ func (rm *RoundManager) vote() *types.Vote {
 				panic("vote error")
 			}
 			glog.V(logger.Info).Infoln("voting on instruction")
-			v := types.NewVote(rm.height, rm.round, rm.proposal.blockhash)
-			vote = &VoteBlock{v}
+			vote := types.NewVote(rm.height, rm.round, rm.proposal.blockhash, 1)
 		}
 	} else if rm.timeout_time != 0 && rm.cm.Now() > rm.timeout_time {
-		switch vt := lastVoteLock.(type) {
+		switch vt := lastVoteLock.voteType {
 		default: // vote nil
 			glog.V(logger.Info).Infoln("voting proposed block")
-			v := types.NewVote(rm.height, rm.round, rm.proposal.blockhash)
-			vote = &types.VoteNil{v}
-		case *types.VoteBlock: // repeat vote
+			vote := types.NewVote(rm.height, rm.round, rm.proposal.blockhash, 2)
+		case 1: // repeat vote
 			glog.V(logger.Info).Infoln("voting on last vote")
-			v := types.NewVote(rm.height, rm.round, lastVoteLock.blockhash)
-			vote = &types.VoteBLock{v}
+			vote := types.NewVote(rm.height, rm.round, lastVoteLock.blockhash, 1)
 		}
 	} else {
 		panic("voting error")
@@ -670,7 +673,8 @@ func (rm *RoundManager) vote() *types.Vote {
 
 func (cm *ConsensusManager) newBlock() *types.Block {
 	config := cm.chain.chainConfig
-	eth := cm.contract.eth
+	// eth := cm.contract.eth
+	contract := cm.contract
 
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -719,11 +723,11 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 		createdAt: time.Now(),
 	}
 
-	txs := types.NewTransactionsByPriceAndNonce(eth.TxPool().Pending())
+	txs := types.NewTransactionsByPriceAndNonce(contract.txpool.Pending())
 	work.commitTransactions(cm.mux, txs, cm.gasPrice, cm.chain)
 
-	eth.TxPool().RemoveBatch(work.lowGasTxs)
-	eth.TxPool().RemoveBatch(work.failedTxs)
+	contract.txpool.RemoveBatch(work.lowGasTxs)
+	contract.txpool.RemoveBatch(work.failedTxs)
 
 	// compute uncles for the new block.
 	// var (

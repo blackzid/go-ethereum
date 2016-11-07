@@ -111,18 +111,20 @@ type Vote struct {
 	height    int
 	round     int
 	blockhash common.Hash
+	voteType  int // 0: vote , 1: voteblock , 2: votenil
 }
 type Votes []*Vote
-type VoteBlock struct {
-	Vote
-}
-type VoteNil struct {
-	Vote
-}
+
+// type VoteBlock struct {
+// 	Vote
+// }
+// type VoteNil struct {
+// 	Vote
+// }
 
 // implements sort interface
 
-func NewVote(height int, round int, blockhash common.Hash) *Vote {
+func NewVote(height int, round int, blockhash common.Hash, voteType int) *Vote {
 	s := &Signed{
 		R: new(big.Int),
 		S: new(big.Int),
@@ -132,6 +134,7 @@ func NewVote(height int, round int, blockhash common.Hash) *Vote {
 		round:     round,
 		blockhash: blockhash,
 		signed:    s,
+		voteType:  voteType,
 	}
 }
 
@@ -158,6 +161,7 @@ func NewLockSet(eligibleVotesNum int, votes Votes) *LockSet {
 		signed:           s,
 	}
 }
+func (ls *LockSet) Votes() Votes { return ls.votes }
 
 type HashCount struct {
 	blockhash common.Hash
@@ -280,7 +284,7 @@ func (lockset *LockSet) quorumPossible() (bool, common.Hash) {
 /////////////////////////////////////////////
 
 func genesisSigningLockset(genesis *common.Address, prv *ecdsa.PrivateKey) *LockSet {
-	v := NewVote(0, 0, genesis.Hash())
+	v := NewVote(0, 0, genesis.Hash(), 0)
 	v.signed.SignECDSA(prv)
 	ls := NewLockSet(1, Votes{})
 	ls.add(v, false)
@@ -314,6 +318,9 @@ func (r *Ready) sign(prv *ecdsa.PrivateKey) {
 
 type Proposal interface {
 	sign(prv *ecdsa.PrivateKey)
+	Height() int
+	Round() int
+	Sender() common.Address
 }
 type BlockProposal struct {
 	signed *Signed
@@ -325,16 +332,6 @@ type BlockProposal struct {
 	round_lockset  *LockSet
 	rawhash        common.Hash
 	blockhash      common.Hash
-}
-
-func (bp *BlockProposal) SigHash() common.Hash {
-	return rlpHash([]interface{}{
-		bp.signed.sender,
-		bp.height,
-		bp.round,
-		bp.signingLockset,
-		bp.round_lockset,
-	})
 }
 
 func NewBlockProposal(height int, round int, block *Block, signingLockset *LockSet, round_lockset *LockSet) *BlockProposal {
@@ -352,7 +349,21 @@ func NewBlockProposal(height int, round int, block *Block, signingLockset *LockS
 		blockhash:      block.Hash(),
 	}
 }
+func (bp *BlockProposal) Height() int              { return bp.height }
+func (bp *BlockProposal) Round() int               { return bp.round }
+func (bp *BlockProposal) Sender() common.Address   { return *bp.signed.sender }
+func (bp *BlockProposal) SigningLockset() *LockSet { return bp.signingLockset }
+func (bp *BlockProposal) Blockhash() common.Hash   { return bp.blockhash }
 
+func (bp *BlockProposal) SigHash() common.Hash {
+	return rlpHash([]interface{}{
+		bp.signed.sender,
+		bp.height,
+		bp.round,
+		bp.signingLockset,
+		bp.round_lockset,
+	})
+}
 func (bp *BlockProposal) lockset() *LockSet {
 	if bp.round_lockset != nil {
 		return bp.round_lockset
@@ -417,6 +428,9 @@ func NewVotingInstruction(height int, round int, round_lockset *LockSet) *Voting
 		blockhash:     hash,
 	}
 }
+func (vi *VotingInstruction) Height() int            { return vi.height }
+func (vi *VotingInstruction) Round() int             { return vi.round }
+func (vi *VotingInstruction) Sender() common.Address { return *vi.signed.sender }
 
 func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 	if vi.round_lockset.eligibleVotesNum != len(validators) {
