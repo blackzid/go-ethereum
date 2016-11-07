@@ -223,8 +223,8 @@ func (lockset *LockSet) add(vote *Vote, force bool) bool {
 	return true
 }
 
-func (lockset *LockSet) contain(vote Vote) bool {
-	return containsVote(lockset.votes, voet)
+func (lockset *LockSet) contain(vote *Vote) bool {
+	return containsVote(lockset.votes, vote)
 }
 
 func containsVote(s []*Vote, e *Vote) bool {
@@ -430,7 +430,4 @@ func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 }
 func (vi *VotingInstruction) sign(prv *ecdsa.PrivateKey) {
 	vi.signed.SignECDSA(prv)
-}
-func (vi *VotingInstruction) blockhash() common.Hash {
-	return vi.block.Hash()
 }

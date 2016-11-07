@@ -2,13 +2,13 @@ package core
 
 import (
 	"crypto/ecdsa"
-	"errors"
+	// "errors"
 	"fmt"
-	"io"
+	// "io"
 	"math"
 	"math/big"
-	mrand "math/rand"
-	"runtime"
+	// mrand "math/rand"
+	// "runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,17 +22,16 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/logger"
 	"github.com/ethereum/go-ethereum/logger/glog"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/miner"
-	"github.com/ethereum/go-ethereum/pow"
+	// "github.com/ethereum/go-ethereum/metrics"
+	// "github.com/ethereum/go-ethereum/pow"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/hashicorp/golang-lru"
-	// "github.com/ethereum/go-ethereum/eth"
+	"gopkg.in/fatih/set.v0"
+	// "github.com/ethereum/go-ethereum/trie"
+	// "github.com/hashicorp/golang-lru"
 )
 
 type ConsensusContract struct {
-	eth        core.Backend
+	eth        Backend
 	validators []common.Address
 }
 
@@ -45,7 +44,7 @@ func (cc *ConsensusContract) isValidators(v common.Address) bool {
 	return containsAddress(cc.validators, v)
 }
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
-	return v == cc.proposer(p.height, p.round)
+	return p == cc.proposer(p.height, p.round)
 }
 
 func containsAddress(s []common.Address, e common.Address) bool {
@@ -72,7 +71,7 @@ type ConsensusManager struct {
 	heights                   map[int]*HeightManager
 	last_valid_lockset        *types.LockSet
 	last_committing_lockset   *types.LockSet
-	proposalLock              *typtes.Block
+	proposalLock              *types.Block
 	readyNonce                int
 	blockCandidates           map[common.Hash]types.Proposal
 	hdcDb                     ethdb.Database
@@ -81,9 +80,13 @@ type ConsensusManager struct {
 	mu        sync.Mutex
 	currentMu sync.Mutex
 	uncleMu   sync.Mutex
+	mux       *event.TypeMux
+	extraData []byte
+	gasPrice  *big.Int
 }
 
-func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string) *ConsensusManager {
+func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
+	eth := cc.eth
 	return &ConsensusManager{
 		allow_empty_blocks:   false,
 		num_initial_blocks:   10,
@@ -97,6 +100,11 @@ func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusCont
 		heights:              make(map[int]*HeightManager),
 		readyNonce:           0,
 		blockCandidates:      make(map[common.Hash]types.Proposal),
+		contract:             cc,
+		extraData:            extraData,
+		gasPrice:             gasPrice,
+		mux:                  eth.EventMux(),
+		coinbase:             eth.etherbase,
 	}
 }
 
@@ -408,10 +416,10 @@ func (cm *ConsensusManager) lastBlockProposal() *types.BlockProposal {
 }
 
 type HeightManager struct {
-	cm               *ConsensusManager
-	rounds           []*RoundManager
-	height           int
-	lastValidLockset *types.LockSet
+	cm     *ConsensusManager
+	rounds []*RoundManager
+	height int
+	// lastValidLockset *types.LockSet
 }
 
 func NewHeightManager(consensusmanager *ConsensusManager, height int) *HeightManager {
@@ -423,7 +431,7 @@ func NewHeightManager(consensusmanager *ConsensusManager, height int) *HeightMan
 }
 
 func (hm *HeightManager) Round() int {
-	l := hm.lastValidLockset.round()
+	l := hm.lastValidLockset().round()
 	return l + 1
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
@@ -660,26 +668,9 @@ func (rm *RoundManager) vote() *types.Vote {
 	return vote
 }
 
-func newBlock(cm *ConsensusManager) *types.Block {
+func (cm *ConsensusManager) newBlock() *types.Block {
 	config := cm.chain.chainConfig
-	coinbase := common.Address{}
 	eth := cm.contract.eth
-
-	worker := &worker{
-		config:         config,
-		eth:            eth,
-		mux:            eth.EventMux(),
-		chainDb:        eth.ChainDb(),
-		recv:           make(chan *Result, resultQueueSize),
-		gasPrice:       new(big.Int),
-		chain:          eth.BlockChain(),
-		proc:           eth.BlockChain().Validator(),
-		possibleUncles: make(map[common.Hash]*types.Block),
-		coinbase:       coinbase,
-		txQueue:        make(map[common.Hash]*types.Transaction),
-		agents:         make(map[Agent]struct{}),
-		fullValidation: false,
-	}
 
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -699,24 +690,6 @@ func newBlock(cm *ConsensusManager) *types.Block {
 		glog.V(logger.Info).Infoln("We are too far in the future. Waiting for", wait)
 		time.Sleep(wait)
 	}
-	num := parent.Number()
-	header := &types.Header{
-		ParentHash: parent.Hash(),
-		Number:     num.Add(num, common.Big1),
-		Difficulty: core.CalcDifficulty(self.config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
-		GasLimit:   core.CalcGasLimit(parent),
-		GasUsed:    new(big.Int),
-		Coinbase:   self.coinbase,
-		Extra:      self.extra,
-		Time:       big.NewInt(tstamp),
-	}
-
-	block := types.NewBlock(header, work.txs, uncles, work.receipts)
-	return worker.newBlock()
-	// worker.events = worker.mux.Subscribe(core.ChainHeadEvent{}, core.ChainSideEvent{}, core.TxPreEvent{})
-
-}
-func (self *miner.worker) newBlock() *types.Block {
 
 	num := parent.Number()
 	header := &types.Header{
@@ -725,49 +698,56 @@ func (self *miner.worker) newBlock() *types.Block {
 		Difficulty: core.CalcDifficulty(self.config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
 		GasLimit:   core.CalcGasLimit(parent),
 		GasUsed:    new(big.Int),
-		Coinbase:   self.coinbase,
-		Extra:      self.extra,
+		Coinbase:   cm.coinbase,
+		Extra:      cm.extra,
 		Time:       big.NewInt(tstamp),
 	}
-	previous := self.current
+	// previous := self.current
 	// Could potentially happen if starting to mine in an odd state.
 	err := self.makeCurrent(parent, header)
 	if err != nil {
 		glog.V(logger.Info).Infoln("Could not create new env for mining, retrying on next block.")
 		return
 	}
-	// Create the current work task and check any fork transitions needed
-	work := self.current
+	work := &Work{
+		config:    config,
+		state:     state,
+		ancestors: set.New(),
+		family:    set.New(),
+		uncles:    set.New(),
+		header:    header,
+		createdAt: time.Now(),
+	}
 
-	txs := types.NewTransactionsByPriceAndNonce(self.eth.TxPool().Pending())
-	work.commitTransactions(self.mux, txs, self.gasPrice, self.chain)
+	txs := types.NewTransactionsByPriceAndNonce(eth.TxPool().Pending())
+	work.commitTransactions(cm.mux, txs, cm.gasPrice, cm.chain)
 
-	self.eth.TxPool().RemoveBatch(work.lowGasTxs)
-	self.eth.TxPool().RemoveBatch(work.failedTxs)
+	eth.TxPool().RemoveBatch(work.lowGasTxs)
+	eth.TxPool().RemoveBatch(work.failedTxs)
 
 	// compute uncles for the new block.
-	var (
-		uncles    []*types.Header
-		badUncles []common.Hash
-	)
-	for hash, uncle := range self.possibleUncles {
-		if len(uncles) == 2 {
-			break
-		}
-		if err := self.commitUncle(work, uncle.Header()); err != nil {
-			if glog.V(logger.Ridiculousness) {
-				glog.V(logger.Detail).Infof("Bad uncle found and will be removed (%x)\n", hash[:4])
-				glog.V(logger.Detail).Infoln(uncle)
-			}
-			badUncles = append(badUncles, hash)
-		} else {
-			glog.V(logger.Debug).Infof("commiting %x as uncle\n", hash[:4])
-			uncles = append(uncles, uncle.Header())
-		}
-	}
-	for _, hash := range badUncles {
-		delete(self.possibleUncles, hash)
-	}
+	// var (
+	var uncles []*types.Header
+	// 	badUncles []common.Hash
+	// )
+	// for hash, uncle := range self.possibleUncles {
+	// 	if len(uncles) == 2 {
+	// 		break
+	// 	}
+	// 	if err := self.commitUncle(work, uncle.Header()); err != nil {
+	// 		if glog.V(logger.Ridiculousness) {
+	// 			glog.V(logger.Detail).Infof("Bad uncle found and will be removed (%x)\n", hash[:4])
+	// 			glog.V(logger.Detail).Infoln(uncle)
+	// 		}
+	// 		badUncles = append(badUncles, hash)
+	// 	} else {
+	// 		glog.V(logger.Debug).Infof("commiting %x as uncle\n", hash[:4])
+	// 		uncles = append(uncles, uncle.Header())
+	// 	}
+	// }
+	// for _, hash := range badUncles {
+	// 	delete(self.possibleUncles, hash)
+	// }
 
 	if atomic.LoadInt32(&self.mining) == 1 {
 		// commit state root after all state transitions.
@@ -781,8 +761,109 @@ func (self *miner.worker) newBlock() *types.Block {
 	// We only care about logging if we're actually mining.
 	if atomic.LoadInt32(&self.mining) == 1 {
 		glog.V(logger.Info).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
-		self.logLocalMinedBlocks(work, previous)
+		// self.logLocalMinedBlocks(work, previous)
 	}
 
 	return work.Block
+}
+
+type Work struct {
+	config        *ChainConfig
+	state         *state.StateDB // apply state changes here
+	ancestors     *set.Set       // ancestor set (used for checking uncle parent validity)
+	family        *set.Set       // family set (used for checking uncle invalidity)
+	uncles        *set.Set       // uncle set
+	tcount        int            // tx count in cycle
+	ownedAccounts *set.Set
+	lowGasTxs     types.Transactions
+	failedTxs     types.Transactions
+	// localMinedBlocks *uint64RingBuffer // the most recent block numbers that were mined locally (used to check block inclusion)
+
+	Block *types.Block // the new block
+
+	header   *types.Header
+	txs      []*types.Transaction
+	receipts []*types.Receipt
+
+	createdAt time.Time
+}
+
+func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, gasPrice *big.Int, bc *core.BlockChain) {
+	gp := new(core.GasPool).AddGas(env.header.GasLimit)
+
+	var coalescedLogs vm.Logs
+	for {
+		// Retrieve the next transaction and abort if all done
+		tx := txs.Peek()
+		if tx == nil {
+			break
+		}
+		// Error may be ignored here. The error has already been checked
+		// during transaction acceptance is the transaction pool.
+		from, _ := tx.From()
+
+		// Ignore any transactions (and accounts subsequently) with low gas limits
+		if tx.GasPrice().Cmp(gasPrice) < 0 && !env.ownedAccounts.Has(from) {
+			// Pop the current low-priced transaction without shifting in the next from the account
+			glog.V(logger.Info).Infof("Transaction (%x) below gas price (tx=%v ask=%v). All sequential txs from this address(%x) will be ignored\n", tx.Hash().Bytes()[:4], common.CurrencyToString(tx.GasPrice()), common.CurrencyToString(gasPrice), from[:4])
+
+			env.lowGasTxs = append(env.lowGasTxs, tx)
+			txs.Pop()
+
+			continue
+		}
+		// Start executing the transaction
+		env.state.StartRecord(tx.Hash(), common.Hash{}, 0)
+
+		err, logs := env.commitTransaction(tx, bc, gp)
+		switch {
+		case core.IsGasLimitErr(err):
+			// Pop the current out-of-gas transaction without shifting in the next from the account
+			glog.V(logger.Detail).Infof("Gas limit reached for (%x) in this block. Continue to try smaller txs\n", from[:4])
+			txs.Pop()
+
+		case err != nil:
+			// Pop the current failed transaction without shifting in the next from the account
+			glog.V(logger.Detail).Infof("Transaction (%x) failed, will be removed: %v\n", tx.Hash().Bytes()[:4], err)
+			env.failedTxs = append(env.failedTxs, tx)
+			txs.Pop()
+
+		default:
+			// Everything ok, collect the logs and shift in the next transaction from the same account
+			coalescedLogs = append(coalescedLogs, logs...)
+			env.tcount++
+			txs.Shift()
+		}
+	}
+	if len(coalescedLogs) > 0 || env.tcount > 0 {
+		go func(logs vm.Logs, tcount int) {
+			if len(logs) > 0 {
+				mux.Post(core.PendingLogsEvent{Logs: logs})
+			}
+			if tcount > 0 {
+				mux.Post(core.PendingStateEvent{})
+			}
+		}(coalescedLogs, env.tcount)
+	}
+}
+
+func (env *Work) commitTransaction(tx *types.Transaction, bc *core.BlockChain, gp *core.GasPool) (error, vm.Logs) {
+	snap := env.state.Snapshot()
+
+	// this is a bit of a hack to force jit for the miners
+	config := env.config.VmConfig
+	if !(config.EnableJit && config.ForceJit) {
+		config.EnableJit = false
+	}
+	config.ForceJit = false // disable forcing jit
+
+	receipt, logs, _, err := core.ApplyTransaction(env.config, bc, gp, env.state, env.header, tx, env.header.GasUsed, config)
+	if err != nil {
+		env.state.RevertToSnapshot(snap)
+		return err, nil
+	}
+	env.txs = append(env.txs, tx)
+	env.receipts = append(env.receipts, receipt)
+
+	return nil, logs
 }

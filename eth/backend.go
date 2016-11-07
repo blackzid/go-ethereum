@@ -291,7 +291,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 
 	// hdc setup
 
-	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb, validators, config.privateKeyHex, eth); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb, validators, config.privateKeyHex, eth, config.ExtraData, config.GasPrice); err != nil {
 		return nil, err
 	}
 
