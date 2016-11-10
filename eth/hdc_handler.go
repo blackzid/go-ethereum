@@ -1,8 +1,8 @@
 package eth
 
 import (
-	"encoding/json"
-	"errors"
+	// "encoding/json"
+	// "errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -22,7 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/pow"
-	"github.com/ethereum/go-ethereum/rlp"
+	// "github.com/ethereum/go-ethereum/rlp"
 )
 
 type HDCProtocolManager struct {
@@ -65,7 +65,7 @@ type HDCProtocolManager struct {
 	privateKeyHex     string
 }
 
-func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, validators []common.Address, privatekeyhex string, eth *Ethereum, extra []byte, gasPrice *big.Int) (*HDCProtocolManager, error) {
+func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, validators []common.Address, privatekeyhex string, eth *Ethereum, extra []byte, gasPrice *big.Int, hdcDb ethdb.Database) (*HDCProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &HDCProtocolManager{
 		networkId:   networkId,
@@ -82,6 +82,7 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 		// hdc parameters
 		privateKeyHex: privatekeyhex,
 		validators:    validators,
+		hdcDb:         hdcDb,
 	}
 	// Figure out whether to allow fast sync or not
 	if fastSync && blockchain.CurrentBlock().NumberU64() > 0 {
@@ -153,11 +154,8 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 	}
 
 	manager.validators = validators
-	manager.consensusContract = &core.ConsensusContract{
-		eth:        eth,
-		validators: validators,
-	}
-	manager.consensusManager = core.NewConsensusManager(manager, manager.consensusContract, manager.privateKeyHex, extra, gasPrice)
+	manager.consensusContract = core.NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
+	manager.consensusManager = core.NewConsensusManager(blockchain, hdcDb, manager.consensusContract, manager.privateKeyHex, extra, gasPrice)
 	return manager, nil
 }
 
@@ -187,27 +185,27 @@ func (pm *HDCProtocolManager) removePeer(id string) {
 	}
 }
 
-func (pm *ProtocolManager) Start() {
+func (pm *HDCProtocolManager) Start() {
 	// broadcast transactions
-	pm.txSub = pm.eventMux.Subscribe(core.TxPreEvent{})
-	go pm.txBroadcastLoop()
+	// pm.txSub = pm.eventMux.Subscribe(core.TxPreEvent{})
+	// go pm.txBroadcastLoop()
 	// broadcast mined blocks
-	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
-	go pm.minedBroadcastLoop()
+	// pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	// go pm.minedBroadcastLoop()
 
 	// start sync handlers
-	go pm.syncer()
-	go pm.txsyncLoop()
+	// go pm.syncer()
+	// go pm.txsyncLoop()
 
 	// start consensus mangaer
-	consensus_manager.process()
+	pm.consensusManager.Process()
 }
 
-func (pm *ProtocolManager) Stop() {
+func (pm *HDCProtocolManager) Stop() {
 	glog.V(logger.Info).Infoln("Stopping ethereum protocol handler...")
 
-	pm.txSub.Unsubscribe()         // quits txBroadcastLoop
-	pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
+	pm.txSub.Unsubscribe() // quits txBroadcastLoop
+	// pm.minedBlockSub.Unsubscribe() // quits blockBroadcastLoop
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -228,11 +226,11 @@ func (pm *ProtocolManager) Stop() {
 	glog.V(logger.Info).Infoln("Ethereum protocol handler stopped")
 }
 
-func (pm *ProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
+func (pm *HDCProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	return newPeer(pv, p, newMeteredMsgWriter(rw))
 }
 
-func (pm *ProtocolManager) handle(p *peer) error {
+func (pm *HDCProtocolManager) handle(p *peer) error {
 	glog.V(logger.Debug).Infof("%v: peer connected [%s]", p, p.Name())
 
 	// Execute the Ethereum handshake
@@ -258,7 +256,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	pm.syncTransactions(p)
+	// pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
 	for {
@@ -268,7 +266,7 @@ func (pm *ProtocolManager) handle(p *peer) error {
 		}
 	}
 }
-func (pm *ProtocolManager) handleMsg(p *peer) error {
+func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
 	msg, err := p.rw.ReadMsg()
 	if err != nil {
@@ -302,7 +300,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	return nil
 }
 
-func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
+func (pm *HDCProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	hash := block.Hash()
 	peers := pm.peers.PeersWithoutBlock(hash)
 
@@ -332,7 +330,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 	}
 }
 
-func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) {
+func (pm *HDCProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) {
 	// Broadcast transaction to a batch of peers not knowing about it
 	peers := pm.peers.PeersWithoutTx(hash)
 	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
@@ -342,7 +340,7 @@ func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) 
 	glog.V(logger.Detail).Infoln("broadcast tx to", len(peers), "peers")
 }
 
-func (self *ProtocolManager) txBroadcastLoop() {
+func (self *HDCProtocolManager) txBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range self.txSub.Chan() {
 		event := obj.Data.(core.TxPreEvent)
@@ -350,15 +348,15 @@ func (self *ProtocolManager) txBroadcastLoop() {
 	}
 }
 
-type EthNodeInfo struct {
-	Network    int         `json:"network"`    // Ethereum network ID (0=Olympic, 1=Frontier, 2=Morden)
-	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
-	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
-	Head       common.Hash `json:"head"`       // SHA3 hash of the host's best owned block
-}
+// type EthNodeInfo struct {
+// 	Network    int         `json:"network"`    // Ethereum network ID (0=Olympic, 1=Frontier, 2=Morden)
+// 	Difficulty *big.Int    `json:"difficulty"` // Total difficulty of the host's blockchain
+// 	Genesis    common.Hash `json:"genesis"`    // SHA3 hash of the host's genesis block
+// 	Head       common.Hash `json:"head"`       // SHA3 hash of the host's best owned block
+// }
 
 // NodeInfo retrieves some protocol metadata about the running host node.
-func (self *ProtocolManager) NodeInfo() *EthNodeInfo {
+func (self *HDCProtocolManager) NodeInfo() *EthNodeInfo {
 	return &EthNodeInfo{
 		Network:    self.networkId,
 		Difficulty: self.blockchain.GetTd(self.blockchain.CurrentBlock().Hash()),

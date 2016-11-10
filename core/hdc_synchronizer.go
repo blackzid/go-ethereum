@@ -17,7 +17,7 @@ type HDCSynchronizer struct {
 	// lastActiveProtocol   types.Proposal
 }
 
-func NewHDCSynchronizer(cm *ConsensusManager) HDCSynchronizer {
+func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 	return &HDCSynchronizer{
 		timeout:   5,
 		cm:        cm,
@@ -29,14 +29,14 @@ func (self *HDCSynchronizer) Missing() []int {
 	if ls == nil {
 		return []int{}
 	}
-	maxHeight := ls.height
+	maxHeight := ls.Height()
 	current := self.cm.Head().Number()
-	if maxHeight < current {
+	if maxHeight < int(current.Int64()) {
 		return []int{}
 	}
 	var missing []int
-	for _, v := range maxHeight - current {
-		missing = append(missing, current+v)
+	for i := int(current.Int64()); i < maxHeight; i++ {
+		missing = append(missing, i)
 	}
 	return missing
 
@@ -49,10 +49,12 @@ func (self *HDCSynchronizer) request() bool {
 	} else if len(missing) == 0 {
 		return false
 	}
+	return false
 }
 
 func (self *HDCSynchronizer) onProposal() types.Proposal {
 	glog.V(logger.Info).Infoln("synchronizer on proposal")
+	return nil
 }
 func (self *HDCSynchronizer) process() {
 	self.request()

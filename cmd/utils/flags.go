@@ -758,7 +758,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		// hdc parameters
 		Validators:    MakeValidators(accman, ctx),
 		PBFT:          ctx.GlobalBool(PBFTFlag.Name),
-		privateKeyHex: stackConf.HDCPrivateKeyHex,
+		PrivateKeyHex: stackConf.HDCPrivateKeyHex,
 	}
 
 	// hdc set Etherbase to validator address

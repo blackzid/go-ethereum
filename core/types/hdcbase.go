@@ -111,7 +111,7 @@ type Vote struct {
 	height    int
 	round     int
 	blockhash common.Hash
-	voteType  int // 0: vote , 1: voteblock , 2: votenil
+	VoteType  int // 0: vote , 1: voteblock , 2: votenil
 }
 type Votes []*Vote
 
@@ -134,10 +134,35 @@ func NewVote(height int, round int, blockhash common.Hash, voteType int) *Vote {
 		round:     round,
 		blockhash: blockhash,
 		signed:    s,
-		voteType:  voteType,
+		VoteType:  voteType,
 	}
 }
+func (v *Vote) Height() int            { return v.height }
+func (v *Vote) Round() int             { return v.round }
+func (v *Vote) Blockhash() common.Hash { return v.blockhash }
 
+func (v *Vote) Sender() common.Address {
+	if v.signed.sender != nil {
+		return *v.signed.sender
+	} else {
+		addr, err := recoverSender(v.signed)
+		if err != nil {
+			glog.V(logger.Error).Infof("sender() error ", err)
+			panic("recoversender error")
+		} else {
+			v.signed.sender = &addr
+			return addr
+		}
+	}
+}
+func (v *Vote) Sign(prv *ecdsa.PrivateKey) {
+	s, err := v.signed.SignECDSA(prv)
+	if err != nil {
+		panic(err)
+	} else {
+		v.signed = s
+	}
+}
 func (vote *Vote) hr() (int, int) {
 	return vote.height, vote.round
 }
@@ -149,19 +174,26 @@ type LockSet struct {
 	processed        bool
 }
 
-func NewLockSet(eligibleVotesNum int, votes Votes) *LockSet {
+func NewLockSet(eligibleVotesNum int, vs Votes) *LockSet {
 	s := &Signed{
 		R: new(big.Int),
 		S: new(big.Int),
 	}
-	return &LockSet{
+	ls := &LockSet{
 		eligibleVotesNum: eligibleVotesNum,
 		votes:            []*Vote{},
 		processed:        false,
 		signed:           s,
 	}
+	for _, v := range vs {
+		ls.Add(v, false)
+	}
+	return ls
 }
-func (ls *LockSet) Votes() Votes { return ls.votes }
+
+// TODO FIXME
+func (ls *LockSet) Copy() *LockSet { return NewLockSet(ls.eligibleVotesNum, ls.votes) }
+func (ls *LockSet) Votes() Votes   { return ls.votes }
 
 type HashCount struct {
 	blockhash common.Hash
@@ -188,6 +220,9 @@ func (lockset *LockSet) sortByBlockhash() HashCounts {
 }
 
 func (lockset *LockSet) hr() (int, int) {
+	if len(lockset.votes) == 0 {
+		panic("no vote for hr()")
+	}
 	hset := make(map[int]struct{})
 	rset := make(map[int]struct{})
 
@@ -196,24 +231,28 @@ func (lockset *LockSet) hr() (int, int) {
 		rset[v.round] = struct{}{}
 	}
 	if len(hset) != 1 && len(rset) != 1 {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", "different hr in lockset")
+		glog.V(logger.Error).Infof("different hr in lockset")
 	}
 	return lockset.votes[0].round, lockset.votes[0].round
 }
+func (lockset *LockSet) Sender() common.Address { return *lockset.signed.sender }
 
-func (lockset *LockSet) height() int {
+func (lockset *LockSet) Height() int {
 	h, _ := lockset.hr()
 	return h
 }
-func (lockset *LockSet) round() int {
+func (lockset *LockSet) Round() int {
 	_, r := lockset.hr()
 	return r
+}
+func (lockset *LockSet) Sign(prv *ecdsa.PrivateKey) {
+	lockset.signed.SignECDSA(prv)
 }
 
 var ErrInvalidVote = errors.New("no signature")
 
-func (lockset *LockSet) add(vote *Vote, force bool) bool {
-
+func (lockset *LockSet) Add(vote *Vote, force bool) bool {
+	// glog.V(logger.Info).Infoln(*vote.signed.sender)
 	if vote.signed.sender == nil {
 		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
 		return false
@@ -221,13 +260,13 @@ func (lockset *LockSet) add(vote *Vote, force bool) bool {
 	//
 	// FIX ME
 	//
-	if !lockset.contain(vote) {
+	if !lockset.Contain(vote) {
 		lockset.votes = append(lockset.votes, vote)
 	}
 	return true
 }
 
-func (lockset *LockSet) contain(vote *Vote) bool {
+func (lockset *LockSet) Contain(vote *Vote) bool {
 	return containsVote(lockset.votes, vote)
 }
 
@@ -239,13 +278,16 @@ func containsVote(s []*Vote, e *Vote) bool {
 	}
 	return false
 }
-func (lockset *LockSet) isValid() bool {
-	lockset.hr() // check votes' validation
-	return float64(len(lockset.votes)) > 2/3.*float64(lockset.eligibleVotesNum)
+func (lockset *LockSet) IsValid() bool {
+	if float64(len(lockset.votes)) > 2/3.*float64(lockset.eligibleVotesNum) {
+		lockset.hr() // check votes' validation
+		return true
+	}
+	return false
 }
 
-func (lockset *LockSet) hasQuorum() (bool, common.Hash) {
-	lockset.isValid()
+func (lockset *LockSet) HasQuorum() (bool, common.Hash) {
+	lockset.IsValid()
 	hs := lockset.sortByBlockhash()
 	if float64(hs[0].count) > 2/3.*float64(lockset.eligibleVotesNum) {
 		return true, hs[0].blockhash
@@ -254,8 +296,8 @@ func (lockset *LockSet) hasQuorum() (bool, common.Hash) {
 	}
 }
 
-func (lockset *LockSet) noQuorum() bool {
-	lockset.isValid()
+func (lockset *LockSet) NoQuorum() bool {
+	lockset.IsValid()
 	hs := lockset.sortByBlockhash()
 	if float64(hs[0].count) < 1/3.*float64(lockset.eligibleVotesNum) {
 		return true
@@ -264,11 +306,11 @@ func (lockset *LockSet) noQuorum() bool {
 	}
 }
 
-func (lockset *LockSet) quorumPossible() (bool, common.Hash) {
-	if result, hs := lockset.hasQuorum(); result != false {
+func (lockset *LockSet) QuorumPossible() (bool, common.Hash) {
+	if result, hs := lockset.HasQuorum(); result != false {
 		return false, hs
 	}
-	lockset.isValid()
+	lockset.IsValid()
 	hs := lockset.sortByBlockhash()
 	if float64(hs[0].count) > 1/3.*float64(lockset.eligibleVotesNum) {
 		return true, hs[0].blockhash
@@ -287,8 +329,8 @@ func genesisSigningLockset(genesis *common.Address, prv *ecdsa.PrivateKey) *Lock
 	v := NewVote(0, 0, genesis.Hash(), 0)
 	v.signed.SignECDSA(prv)
 	ls := NewLockSet(1, Votes{})
-	ls.add(v, false)
-	if result, _ := ls.quorumPossible(); result == false {
+	ls.Add(v, false)
+	if result, _ := ls.QuorumPossible(); result == false {
 		panic("Genesis Signing Lockset error")
 	}
 	return ls
@@ -312,15 +354,19 @@ func NewReady(nonce *big.Int, currentLockSet *LockSet) *Ready {
 		currentLockSet: currentLockSet,
 	}
 }
-func (r *Ready) sign(prv *ecdsa.PrivateKey) {
+func (r *Ready) Sender() common.Address { return *r.signed.sender }
+
+func (r *Ready) Sign(prv *ecdsa.PrivateKey) {
 	r.signed.SignECDSA(prv)
 }
 
 type Proposal interface {
-	sign(prv *ecdsa.PrivateKey)
+	Sign(prv *ecdsa.PrivateKey)
 	Height() int
 	Round() int
 	Sender() common.Address
+	Blockhash() common.Hash
+	LockSet() *LockSet
 }
 type BlockProposal struct {
 	signed *Signed
@@ -354,6 +400,13 @@ func (bp *BlockProposal) Round() int               { return bp.round }
 func (bp *BlockProposal) Sender() common.Address   { return *bp.signed.sender }
 func (bp *BlockProposal) SigningLockset() *LockSet { return bp.signingLockset }
 func (bp *BlockProposal) Blockhash() common.Hash   { return bp.blockhash }
+func (bp *BlockProposal) LockSet() *LockSet {
+	if bp.round_lockset != nil {
+		return bp.round_lockset
+	} else {
+		return bp.signingLockset
+	}
+}
 
 func (bp *BlockProposal) SigHash() common.Hash {
 	return rlpHash([]interface{}{
@@ -364,14 +417,7 @@ func (bp *BlockProposal) SigHash() common.Hash {
 		bp.round_lockset,
 	})
 }
-func (bp *BlockProposal) lockset() *LockSet {
-	if bp.round_lockset != nil {
-		return bp.round_lockset
-	} else {
-		return bp.signingLockset
-	}
-}
-func (bp *BlockProposal) sign(prv *ecdsa.PrivateKey) {
+func (bp *BlockProposal) Sign(prv *ecdsa.PrivateKey) {
 	bp.signed.SignECDSA(prv)
 }
 func (bp *BlockProposal) validateVotes(validators_H []common.Address, validators_prevH []common.Address) bool {
@@ -416,7 +462,7 @@ func NewVotingInstruction(height int, round int, round_lockset *LockSet) *Voting
 		R: new(big.Int),
 		S: new(big.Int),
 	}
-	b, hash := round_lockset.quorumPossible()
+	b, hash := round_lockset.QuorumPossible()
 	if b == false {
 		panic("hash error")
 	}
@@ -431,7 +477,8 @@ func NewVotingInstruction(height int, round int, round_lockset *LockSet) *Voting
 func (vi *VotingInstruction) Height() int            { return vi.height }
 func (vi *VotingInstruction) Round() int             { return vi.round }
 func (vi *VotingInstruction) Sender() common.Address { return *vi.signed.sender }
-
+func (vi *VotingInstruction) Blockhash() common.Hash { return vi.blockhash }
+func (vi *VotingInstruction) LockSet() *LockSet      { return vi.round_lockset }
 func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 	if vi.round_lockset.eligibleVotesNum != len(validators) {
 		panic("lockset num_eligible_votes mismatch")
@@ -442,6 +489,6 @@ func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 		}
 	}
 }
-func (vi *VotingInstruction) sign(prv *ecdsa.PrivateKey) {
+func (vi *VotingInstruction) Sign(prv *ecdsa.PrivateKey) {
 	vi.signed.SignECDSA(prv)
 }
