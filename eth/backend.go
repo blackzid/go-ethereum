@@ -153,7 +153,7 @@ type Ethereum struct {
 	netRPCService *PublicNetAPI
 
 	// hdc validators
-	pbft          bool
+	PBFT          bool
 	hdcValidators []common.Address
 }
 
@@ -236,7 +236,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		GpobaseStepUp:           config.GpobaseStepUp,
 		GpobaseCorrectionFactor: config.GpobaseCorrectionFactor,
 		httpclient:              httpclient.New(config.DocRoot),
-		pbft:                    config.PBFT,
+		PBFT:                    config.PBFT,
 		hdcValidators:           config.Validators,
 	}
 	switch {
@@ -298,11 +298,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		return nil, err
 	}
 
-	// if !config.PBFT {
-	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
-	eth.miner.SetGasPrice(config.GasPrice)
-	eth.miner.SetExtra(config.ExtraData)
-	// }
+	if !config.PBFT {
+		eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
+		eth.miner.SetGasPrice(config.GasPrice)
+		eth.miner.SetExtra(config.ExtraData)
+	}
 
 	return eth, nil
 }
@@ -310,6 +310,50 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 // APIs returns the collection of RPC services the ethereum package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *Ethereum) APIs() []rpc.API {
+	if s.PBFT {
+		return []rpc.API{
+			{
+				Namespace: "hdc",
+				Version:   "1.0",
+				Service:   NewPublicEthereumAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicAccountAPI(s.accountManager),
+				Public:    true,
+			}, {
+				Namespace: "personal",
+				Version:   "1.0",
+				Service:   NewPrivateAccountAPI(s),
+				Public:    false,
+			}, {
+				Namespace: "admin",
+				Version:   "1.0",
+				Service:   NewPrivateAdminAPI(s),
+			}, {
+				Namespace: "debug",
+				Version:   "1.0",
+				Service:   NewPublicDebugAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "debug",
+				Version:   "1.0",
+				Service:   NewPrivateDebugAPI(s.chainConfig, s),
+			}, {
+				Namespace: "net",
+				Version:   "1.0",
+				Service:   s.netRPCService,
+				Public:    true,
+			}, {
+				Namespace: "admin",
+				Version:   "1.0",
+				Service:   ethreg.NewPrivateRegistarAPI(s.chainConfig, s.blockchain, s.chainDb, s.txPool, s.accountManager),
+			},
+		}
+
+	}
+
 	return []rpc.API{
 		{
 			Namespace: "eth",
@@ -439,7 +483,7 @@ func (s *Ethereum) Protocols() []p2p.Protocol {
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
 func (s *Ethereum) Start(srvr *p2p.Server) error {
-	if s.AutoDAG && !s.pbft {
+	if s.AutoDAG && !s.PBFT {
 		s.StartAutoDAG()
 	}
 	s.protocolManager.Start()

@@ -83,3 +83,6 @@ type GasPriceChanged struct{ Price *big.Int }
 // Mining operation events
 type StartMining struct{}
 type TopMining struct{}
+
+// HDC events
+type NewProposalEvent struct{ Proposal types.Proposal }

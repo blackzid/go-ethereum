@@ -67,6 +67,7 @@ type peer struct {
 
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
+
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -416,4 +417,27 @@ func (ps *peerSet) Close() {
 		p.Disconnect(p2p.DiscQuitting)
 	}
 	ps.closed = true
+}
+
+// HDC Methods
+func (p *peer) SendReadyMsg(r *types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, readyData{Ready: r})
+}
+func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
+	return p2p.Send(p.rw, NewBlockProposalMsg, newBlockProposals{BlockProposal: bp})
+}
+func (p *peer) SendVotingInstruction(r types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+}
+func (p *peer) SendNewBlockProposal(r types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+}
+func (p *peer) SendNewBlockProposal(r types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+}
+func (p *peer) SendNewBlockProposal(r types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+}
+func (p *peer) SendNewBlockProposal(r types.Ready) error {
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
 }
