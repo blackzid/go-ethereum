@@ -426,18 +426,16 @@ func (p *peer) SendReadyMsg(r *types.Ready) error {
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
 	return p2p.Send(p.rw, NewBlockProposalMsg, newBlockProposals{BlockProposal: bp})
 }
-func (p *peer) SendVotingInstruction(r types.Ready) error {
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+func (p *peer) SendVotingInstruction(vi *types.VotingInstruction) error {
+	return p2p.Send(p.rw, VotingInstructionMsg, votingInstructionData{VotingInstruction: vi})
 }
-func (p *peer) SendNewBlockProposal(r types.Ready) error {
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+func (p *peer) SendVoteBlock(v *types.VoteBlock) error {
+	return p2p.Send(p.rw, ReadyMsg, voteBlockData{Vote: v})
 }
-func (p *peer) SendNewBlockProposal(r types.Ready) error {
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+func (p *peer) SendVoteNil(v *types.VoteNil) error {
+	return p2p.Send(p.rw, ReadyMsg, voteNilData{Vote: v})
 }
-func (p *peer) SendNewBlockProposal(r types.Ready) error {
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
-}
-func (p *peer) SendNewBlockProposal(r types.Ready) error {
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
-}
+
+// func (p *peer) SendTransaction(r types.Ready) error {
+// 	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+// }

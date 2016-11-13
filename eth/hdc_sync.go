@@ -1,4 +1,4 @@
-package core
+package eth
 
 import (
 	// "github.com/ethereum/go-ethereum/common"

@@ -1,4 +1,4 @@
-package core
+package eth
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -35,7 +36,7 @@ type ConsensusContract struct {
 	// eth eth.Ethereum
 	eventMux   *event.TypeMux
 	coinbase   common.Address
-	txpool     *TxPool
+	txpool     *core.TxPool
 	validators []common.Address
 }
 
@@ -80,12 +81,13 @@ func containsAddress(s []common.Address, e common.Address) bool {
 }
 
 type ConsensusManager struct {
+	pm                        *HDCProtocolManager
 	allow_empty_blocks        bool
 	num_initial_blocks        int
 	round_timeout             int
 	round_timeout_factor      float64
 	transaction_timeout       float64
-	chain                     *BlockChain
+	chain                     *core.BlockChain
 	coinbase                  common.Address
 	readyValidators           map[common.Address]struct{}
 	privkey                   *ecdsa.PrivateKey
@@ -97,7 +99,7 @@ type ConsensusManager struct {
 	readyNonce                int
 	blockCandidates           map[common.Hash]*types.BlockProposal
 	hdcDb                     ethdb.Database
-
+	broadcastFilter           *set.Set
 	// create bock mu
 	mu        sync.Mutex
 	currentMu sync.Mutex
@@ -107,7 +109,7 @@ type ConsensusManager struct {
 	gasPrice  *big.Int
 }
 
-func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
+func NewConsensusManager(chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
 
 	privkey, _ := crypto.HexToECDSA(privkeyhex)
 	cm := &ConsensusManager{
@@ -128,6 +130,7 @@ func NewConsensusManager(chain *BlockChain, db ethdb.Database, cc *ConsensusCont
 		gasPrice:             gasPrice,
 		mux:                  cc.eventMux,
 		coinbase:             cc.coinbase,
+		broadcastFilter:      set.New(),
 	}
 	cm.readyValidators[cm.coinbase] = struct{}{}
 	cm.initializeLocksets()
@@ -381,8 +384,8 @@ func (cm *ConsensusManager) setProposalLock(block *types.Block) {
 	cm.proposalLock = block
 }
 
-func (cm *ConsensusManager) broadcast(message interface{}) bool {
-	return false
+func (cm *ConsensusManager) broadcast(msg interface{}) {
+	cm.pm.Broadcast(msg)
 }
 func (cm *ConsensusManager) isReady() bool {
 	return len(cm.readyValidators) > len(cm.contract.validators)*2/3
@@ -422,7 +425,7 @@ func (cm *ConsensusManager) addVote(v *types.Vote) bool {
 	glog.V(logger.Info).Infoln("addVote: ", cm.heights[v.Height()])
 	return cm.heights[v.Height()].addVote(v, false)
 }
-func (cm *ConsensusManager) addProposal(p types.Proposal) bool {
+func (cm *ConsensusManager) AddProposal(p types.Proposal) bool {
 	if p.Height() < cm.Height() {
 		glog.V(logger.Info).Infoln("proposal from past")
 	}
@@ -936,7 +939,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 }
 
 type Work struct {
-	config        *ChainConfig
+	config        *core.ChainConfig
 	state         *state.StateDB // apply state changes here
 	ancestors     *set.Set       // ancestor set (used for checking uncle parent validity)
 	family        *set.Set       // family set (used for checking uncle invalidity)
@@ -956,7 +959,7 @@ type Work struct {
 	createdAt time.Time
 }
 
-func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, gasPrice *big.Int, bc *BlockChain) {
+func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, gasPrice *big.Int, bc *core.BlockChain) {
 	gp := new(GasPool).AddGas(env.header.GasLimit)
 
 	var coalescedLogs vm.Logs
@@ -1015,7 +1018,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	}
 }
 
-func (env *Work) commitTransaction(tx *types.Transaction, bc *BlockChain, gp *GasPool) (error, vm.Logs) {
+func (env *Work) commitTransaction(tx *types.Transaction, bc *core.BlockChain, gp *GasPool) (error, vm.Logs) {
 	snap := env.state.Snapshot()
 
 	// this is a bit of a hack to force jit for the miners
@@ -1025,7 +1028,7 @@ func (env *Work) commitTransaction(tx *types.Transaction, bc *BlockChain, gp *Ga
 	}
 	config.ForceJit = false // disable forcing jit
 
-	receipt, logs, _, err := ApplyTransaction(env.config, bc, gp, env.state, env.header, tx, env.header.GasUsed, config)
+	receipt, logs, _, err := core.ApplyTransaction(env.config, bc, gp, env.state, env.header, tx, env.header.GasUsed, config)
 	if err != nil {
 		env.state.RevertToSnapshot(snap)
 		return err, nil

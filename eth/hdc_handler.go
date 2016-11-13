@@ -193,7 +193,7 @@ func (pm *HDCProtocolManager) Start() {
 	pm.txSub = pm.eventMux.Subscribe(core.TxPreEvent{})
 	go pm.txBroadcastLoop()
 	// broadcast mined blocks
-	pm.newProposalSub = pm.eventMux.Subscribe(core.NewProposalEvent{})
+	pm.msgSub = pm.eventMux.Subscribe(core.NewMsgEvent{})
 	go pm.proposalBroadcastLoop()
 
 	// start sync handlers
@@ -259,7 +259,7 @@ func (pm *HDCProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
-	// pm.syncTransactions(p)
+	pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
 	for {
@@ -287,12 +287,29 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
 		glog.V(logger.Info).Infoln("GetBlockProposalsMsg")
+
+		// consensus_manager.synchronizer.receive_blockproposals(proposals)
+
 	case msg.Code == BlockProposalsMsg:
 		glog.V(logger.Info).Infoln("BlockProposalsMsg")
 	case msg.Code == NewBlockProposalMsg:
 		glog.V(logger.Info).Infoln("NewBlockProposalMsg")
+		var bp newBlockProposals
+		if err := msg.Decode(&bp); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		if isValid := pm.consensusManager.AddProposal(bp.BlockProposal); isValid {
+			pm.Broadcast(bp)
+		}
+		pm.consensusManager.Process()
+
 	case msg.Code == VotingInstructionMsg:
 		glog.V(logger.Info).Infoln("VotingInstructionMsg")
+		var bi votingInstructionData
+		if err := msg.Decode(&bp); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+
 	case msg.Code == VoteMsg:
 		glog.V(logger.Info).Infoln("VoteMsg")
 	case msg.Code == ReadyMsg:
@@ -361,12 +378,12 @@ func (self *HDCProtocolManager) txBroadcastLoop() {
 		self.BroadcastTx(event.Tx.Hash(), event.Tx)
 	}
 }
-func (self *ProtocolManager) msgBroadcastLoop() {
+func (self *HDCProtocolManager) msgBroadcastLoop() {
 	// automatically stops if unsubscribe
-	for obj := range self.minedBlockSub.Chan() {
+	for obj := range self.msgSub.Chan() {
 		switch ev := obj.Data.(type) {
-		case core.NewProposalEvent:
-
+		case core.NewMsgEvent:
+			self.Broadcast(ev)
 		}
 	}
 }

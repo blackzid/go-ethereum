@@ -85,4 +85,4 @@ type StartMining struct{}
 type TopMining struct{}
 
 // HDC events
-type NewProposalEvent struct{ Proposal types.Proposal }
+type NewMsgEvent struct{ msg interface{} }

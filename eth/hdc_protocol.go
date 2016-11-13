@@ -12,13 +12,6 @@ import (
 	// "github.com/ethereum/go-ethereum/rlp"
 )
 
-// Constants to match up protocol versions and messages
-// const (
-// 	eth62 = 62
-// 	eth63 = 63
-// )
-
-// Official short name of the protocol used during capability negotiation.
 var HDCProtocolName = "hdc"
 
 // const (
@@ -35,8 +28,9 @@ const (
 	BlockProposalsMsg    = 0x13
 	NewBlockProposalMsg  = 0x14
 	VotingInstructionMsg = 0x15
-	VoteMsg              = 0x16
-	ReadyMsg             = 0x17
+	VoteBlockMsg         = 0x16
+	VoteNilMsg           = 0x17
+	ReadyMsg             = 0x18
 )
 
 type HDCStatusData struct {
@@ -62,8 +56,11 @@ type newBlockProposals struct {
 type votingInstructionData struct {
 	VotingInstruction *types.VotingInstruction
 }
-type voteData struct {
-	Vote *types.Vote
+type voteBlockData struct {
+	Vote *types.VoteBlock
+}
+type voteNilData struct {
+	Vote *types.VoteNil
 }
 type readyData struct {
 	Ready *types.Ready
