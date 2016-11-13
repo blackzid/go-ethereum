@@ -68,18 +68,20 @@ type peer struct {
 	knownTxs    *set.Set // Set of transaction hashes known to be known by this peer
 	knownBlocks *set.Set // Set of block hashes known to be known by this peer
 
+	broadcastFilter *set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 	id := p.ID()
 
 	return &peer{
-		Peer:        p,
-		rw:          rw,
-		version:     version,
-		id:          fmt.Sprintf("%x", id[:8]),
-		knownTxs:    set.New(),
-		knownBlocks: set.New(),
+		Peer:            p,
+		rw:              rw,
+		version:         version,
+		id:              fmt.Sprintf("%x", id[:8]),
+		knownTxs:        set.New(),
+		knownBlocks:     set.New(),
+		broadcastFilter: set.New(),
 	}
 }
 
@@ -421,19 +423,28 @@ func (ps *peerSet) Close() {
 
 // HDC Methods
 func (p *peer) SendReadyMsg(r *types.Ready) error {
+	p.broadcastFilter.Add(r.Hash())
 	return p2p.Send(p.rw, ReadyMsg, readyData{Ready: r})
 }
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
+	p.broadcastFilter.Add(bp.Hash())
 	return p2p.Send(p.rw, NewBlockProposalMsg, newBlockProposals{BlockProposal: bp})
 }
 func (p *peer) SendVotingInstruction(vi *types.VotingInstruction) error {
+	p.broadcastFilter.Add(vi.Hash())
 	return p2p.Send(p.rw, VotingInstructionMsg, votingInstructionData{VotingInstruction: vi})
 }
-func (p *peer) SendVoteBlock(v *types.VoteBlock) error {
-	return p2p.Send(p.rw, ReadyMsg, voteBlockData{Vote: v})
+func (p *peer) SendVote(v *types.VoteBlock) error {
+	p.broadcastFilter.Add(v.Hash())
+	return p2p.Send(p.rw, VoteMsg, voteBlockData{Vote: v})
 }
-func (p *peer) SendVoteNil(v *types.VoteNil) error {
-	return p2p.Send(p.rw, ReadyMsg, voteNilData{Vote: v})
+func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
+	p.broadcastFilter.Add(bp.Hash())
+	return p2p.Send(p.rw, BlockProposalsMsg, bps)
+}
+func (p *peer) RequestBlockProposals(blocknumbers []int) error {
+	glog.V(logger.Debug).Infof(" fetching block proposals")
+	return p2p.Send(p.rw, GetBlockProposalsMsg, blocknumbers)
 }
 
 // func (p *peer) SendTransaction(r types.Ready) error {

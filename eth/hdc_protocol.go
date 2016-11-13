@@ -14,23 +14,21 @@ import (
 
 var HDCProtocolName = "hdc"
 
-// const (
-// 	NetworkId          = 1
-// 	ProtocolMaxMsgSize = 10 * 1024 * 1024 // Maximum cap on the size of a protocol message
-// )
+const (
+	MaxGetproposalsCount = 10
+)
 
 // eth protocol message codes
 const (
 	// Protocol messages belonging to hdc
-	HDCStatusMsg         = 0x10
-	HDCTxMsg             = 0x11
+	// HDCStatusMsg         = 0x10
+	// HDCTxMsg             = 0x11
 	GetBlockProposalsMsg = 0x12
 	BlockProposalsMsg    = 0x13
 	NewBlockProposalMsg  = 0x14
 	VotingInstructionMsg = 0x15
-	VoteBlockMsg         = 0x16
-	VoteNilMsg           = 0x17
-	ReadyMsg             = 0x18
+	VoteMsg              = 0x16
+	ReadyMsg             = 0x17
 )
 
 type HDCStatusData struct {
@@ -44,9 +42,7 @@ type HDCStatusData struct {
 // Requests a BlockProposals message detailing a number of blocks to be sent, each referred to
 // by block number. Note: Don't expect that the peer necessarily give you all these blocks
 // in a single message - you might have to re-request them.
-type getBlockProposals struct {
-	Number uint64 // Number of one particular block being announced
-}
+
 type blockProposalsData struct {
 	BlockProposals []*types.BlockProposal
 }
@@ -56,12 +52,10 @@ type newBlockProposals struct {
 type votingInstructionData struct {
 	VotingInstruction *types.VotingInstruction
 }
-type voteBlockData struct {
-	Vote *types.VoteBlock
+type voteData struct {
+	Vote *types.Vote
 }
-type voteNilData struct {
-	Vote *types.VoteNil
-}
+
 type readyData struct {
 	Ready *types.Ready
 }

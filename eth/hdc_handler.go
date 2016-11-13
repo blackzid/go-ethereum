@@ -287,33 +287,107 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
 		glog.V(logger.Info).Infoln("GetBlockProposalsMsg")
-
-		// consensus_manager.synchronizer.receive_blockproposals(proposals)
+		var query []int
+		if err := msg.Decode(&query); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		var found []*types.BlockProposal
+		for i, height := range query {
+			if height > int(pm.blockchain.CurrentBlock().NumberU64()) {
+				break
+			}
+			bp = pm.consensusManager.getBlockProposalByHeight(height)
+			found = append(found, bp)
+		}
+		if len(found) != 0 {
+			p.SendBlockProposals(found)
+		}
 
 	case msg.Code == BlockProposalsMsg:
 		glog.V(logger.Info).Infoln("BlockProposalsMsg")
-	case msg.Code == NewBlockProposalMsg:
-		glog.V(logger.Info).Infoln("NewBlockProposalMsg")
-		var bp newBlockProposals
-		if err := msg.Decode(&bp); err != nil {
+		var proposals []*types.BlockProposal
+		if err := msg.Decode(&proposals); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		if isValid := pm.consensusManager.AddProposal(bp.BlockProposal); isValid {
+		pm.consensusManager.synchronizer.receiveBlockproposals(proposals)
+
+	case msg.Code == NewBlockProposalMsg:
+		glog.V(logger.Info).Infoln("NewBlockProposalMsg")
+		var bpData newBlockProposals
+		if err := msg.Decode(&bpData); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		bp := bpData.BlockProposal
+		if p.broadcastFilter.Has(bp.Hash()) {
+			glog.V(logger.Info).Infoln("votinginstruction filtered")
+			return nil
+		}
+		if isValid := pm.consensusManager.AddProposal(bp); isValid {
 			pm.Broadcast(bp)
 		}
 		pm.consensusManager.Process()
 
 	case msg.Code == VotingInstructionMsg:
 		glog.V(logger.Info).Infoln("VotingInstructionMsg")
-		var bi votingInstructionData
-		if err := msg.Decode(&bp); err != nil {
+		var viData votingInstructionData
+		if err := msg.Decode(&viData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-
+		vi := viData.VotingInstruction
+		if p.broadcastFilter.Has(vi.Hash()) {
+			glog.V(logger.Info).Infoln("votinginstruction filtered")
+			return nil
+		}
+		if isValid := pm.consensusManager.AddProposal(vi); isValid {
+			pm.Broadcast(vi)
+		}
+		pm.consensusManager.Process()
 	case msg.Code == VoteMsg:
 		glog.V(logger.Info).Infoln("VoteMsg")
+		var v voteData
+		if err := msg.Decode(&v); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		vote := voteData.Vote
+		if p.broadcastFilter.Has(vote.Hash()) {
+			glog.V(logger.Info).Infoln("vote filtered")
+			return nil
+		}
+		if isValid := pm.consensusManager.AddVote(vote); isValid {
+			pm.Broadcast(vote)
+		}
+		pm.consensusManager.Process()
 	case msg.Code == ReadyMsg:
 		glog.V(logger.Info).Infoln("ReadyMsg received")
+		var r readyData
+		if err := msg.Decode(&r); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		ready := r.Ready
+		if p.broadcastFilter.Has(ready.Hash()) {
+			glog.V(logger.Info).Infoln("ready filtered")
+			return nil
+		}
+		pm.consensusManager.AddReady(ready)
+		pm.Broadcast(ready)
+		pm.consensusManager.Process()
+	case msg.Code == TxMsg:
+		// Transactions arrived, make sure we have a valid and fresh chain to handle them
+		if atomic.LoadUint32(&pm.synced) == 0 {
+			break
+		}
+		// Transactions can be processed, parse all of them and deliver to the pool
+		var txs []*types.Transaction
+		if err := msg.Decode(&txs); err != nil {
+			return errResp(ErrDecode, "msg %v: %v", msg, err)
+		}
+		for i, tx := range txs {
+			// Validate and mark the remote transaction
+			if tx == nil {
+				return errResp(ErrDecode, "transaction %d is nil", i)
+			}
+			p.MarkTransaction(tx.Hash())
+		}
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
