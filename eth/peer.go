@@ -422,24 +422,48 @@ func (ps *peerSet) Close() {
 }
 
 // HDC Methods
+
+type Rd struct {
+	Sender           *common.Address
+	R, S             *big.Int
+	EligibleVotesNum uint64
+}
+type RdData struct {
+	Rd *Rd
+}
+
 func (p *peer) SendReadyMsg(r *types.Ready) error {
+	glog.V(logger.Info).Infoln("send Ready msg", r)
 	p.broadcastFilter.Add(r.Hash())
-	return p2p.Send(p.rw, ReadyMsg, readyData{Ready: r})
+
+	n := big.NewInt(12312)
+	n2 := big.NewInt(222)
+
+	sender := r.Sender()
+	rd := &Rd{
+		Sender:           &sender,
+		R:                n,
+		S:                n2,
+		EligibleVotesNum: 5646,
+	}
+	return p2p.Send(p.rw, ReadyMsg, []interface{}{rd})
 }
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
 	p.broadcastFilter.Add(bp.Hash())
-	return p2p.Send(p.rw, NewBlockProposalMsg, newBlockProposals{BlockProposal: bp})
+	return p2p.Send(p.rw, NewBlockProposalMsg, &newBlockProposals{BlockProposal: bp})
 }
 func (p *peer) SendVotingInstruction(vi *types.VotingInstruction) error {
 	p.broadcastFilter.Add(vi.Hash())
-	return p2p.Send(p.rw, VotingInstructionMsg, votingInstructionData{VotingInstruction: vi})
+	return p2p.Send(p.rw, VotingInstructionMsg, &votingInstructionData{VotingInstruction: vi})
 }
-func (p *peer) SendVote(v *types.VoteBlock) error {
+func (p *peer) SendVote(v *types.Vote) error {
 	p.broadcastFilter.Add(v.Hash())
-	return p2p.Send(p.rw, VoteMsg, voteBlockData{Vote: v})
+	return p2p.Send(p.rw, VoteMsg, &voteData{Vote: v})
 }
 func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
-	p.broadcastFilter.Add(bp.Hash())
+	for _, bp := range bps {
+		p.broadcastFilter.Add(bp.Hash())
+	}
 	return p2p.Send(p.rw, BlockProposalsMsg, bps)
 }
 func (p *peer) RequestBlockProposals(blocknumbers []int) error {
@@ -450,3 +474,14 @@ func (p *peer) RequestBlockProposals(blocknumbers []int) error {
 // func (p *peer) SendTransaction(r types.Ready) error {
 // 	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
 // }
+func (ps *peerSet) PeersWithoutHash(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.broadcastFilter.Has(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}

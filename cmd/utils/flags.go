@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"math"
 	"math/big"
+	// "net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -313,11 +314,6 @@ var (
 	// Network Settings
 
 	// hdc parameters
-	HDCBootstrapNodesFlag = cli.StringFlag{
-		Name:  "HDCBootstrapNodes address",
-		Usage: "Comma separated enode URLs for HDCBootstrapNodes",
-		Value: "",
-	}
 	NumValidatorsFlag = cli.IntFlag{
 		Name:  "num_validators",
 		Usage: "number of validators",
@@ -476,6 +472,9 @@ func MakeNodeKey(ctx *cli.Context) *ecdsa.PrivateKey {
 		if key, err = crypto.HexToECDSA(hex); err != nil {
 			Fatalf("Option %q: %v", NodeKeyHexFlag.Name, err)
 		}
+	case ctx.GlobalBool(PBFTFlag.Name):
+		nodeNum := ctx.GlobalString(NodeNumFlag.Name)
+		key = crypto.MakePrivatekey(nodeNum)
 	}
 	return key
 }
@@ -494,19 +493,17 @@ func MakeNodeName(client, version string, ctx *cli.Context) string {
 
 // creates hdc bootstrap node
 func MakeHDCBootstrapNodes(ctx *cli.Context) []*discover.Node {
-
-	// if !ctx.GlobalIsSet(HDCBootstrapNodesFlag.Name) {
-	// seed := []byte("hdc")
-	// key := crypto.ToECDSA(seed)
-	// addr := ":30301"
-	// natm, _ := nat.Parse("none")
-	// tab, err := discover.ListenUDP(key, addr, natm, "")
-	// if err != nil {
-	// 	Fatalf("%v", err)
-	// }
-	// }
-	bootnodes := []*discover.Node{}
-	return bootnodes
+	// basePort := uint16(30303)
+	// bootstrapNodes := []*discover.Node{}
+	// nodeNum := ctx.GlobalString(NodeNumFlag.Name)
+	// key := crypto.MakePrivatekey(nodeNum)
+	// node := discover.NewNode(discover.PubkeyID(&key.PublicKey), net.ParseIP("localhost"), basePort, basePort)
+	// bootstrapNodes = append(bootstrapNodes, node)
+	// glog.V(logger.Error).Infoln("Bootstrap String ", node.String())
+	// return bootstrapNodes
+	return []*discover.Node{
+		discover.MustParseNode("enode://d67104e65b61fca1fc73a74175667c11f16c037fa8e414499189df9d68706aca6e1a1b4ea02b702f101eb609c4cd2964d4790047a06458ba8a1a19040ab1fe0d@[::]:30303"),
+	}
 }
 
 // MakeBootstrapNodes creates a list of bootstrap nodes from the command line
@@ -623,22 +620,27 @@ func MakeAddress(accman *accounts.Manager, account string) (accounts.Account, er
 
 // MakeEtherbase retrieves the etherbase either from the directly specified
 // command line flags or from the keystore if CLI indexed.
-func MakeEtherbase(accman *accounts.Manager, ctx *cli.Context) common.Address {
-	accounts := accman.Accounts()
-	if !ctx.GlobalIsSet(EtherbaseFlag.Name) && len(accounts) == 0 {
-		glog.V(logger.Error).Infoln("WARNING: No etherbase set and no accounts found as default")
-		return common.Address{}
+func MakeEtherbase(validators []common.Address, ctx *cli.Context) common.Address {
+	// accounts := accman.Accounts()
+	// if !ctx.GlobalIsSet(EtherbaseFlag.Name) && len(accounts) == 0 {
+	// 	glog.V(logger.Error).Infoln("WARNING: No etherbase set and no accounts found as default")
+	// 	return common.Address{}
+	// }
+	// etherbase := ctx.GlobalString(EtherbaseFlag.Name)
+	// if etherbase == "" {
+	// 	return common.Address{}
+	// }
+	// // If the specified etherbase is a valid address, return it
+	// account, err := MakeAddress(accman, etherbase)
+	// if err != nil {
+	// 	Fatalf("Option %q: %v", EtherbaseFlag.Name, err)
+	// }
+	for i := 0; i < len(validators); i++ {
+		if i == ctx.GlobalInt(NodeNumFlag.Name) {
+			return validators[i]
+		}
 	}
-	etherbase := ctx.GlobalString(EtherbaseFlag.Name)
-	if etherbase == "" {
-		return common.Address{}
-	}
-	// If the specified etherbase is a valid address, return it
-	account, err := MakeAddress(accman, etherbase)
-	if err != nil {
-		Fatalf("Option %q: %v", EtherbaseFlag.Name, err)
-	}
-	return account.Address
+	return common.Address{}
 }
 func MakeHDCPrivateKeyHex(ctx *cli.Context) string {
 	key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
@@ -649,14 +651,13 @@ func MakeHDCPrivateKeyHex(ctx *cli.Context) string {
 func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []common.Address {
 	num_validators := ctx.GlobalInt(NumValidatorsFlag.Name)
 	validators := []common.Address{}
+
 	for i := 0; i < num_validators; i++ {
 		s := strconv.Itoa(i)
-		key := crypto.MakePrivatekey(s)
-		if account, err := accman.ImportECDSA(key, ""); err == nil {
-			validators = append(validators, account.Address)
-		} else {
-			address := crypto.PubkeyToAddress(key.PublicKey)
-			validators = append(validators, address)
+		privatekey := crypto.MakePrivatekey(s)
+		validators = append(validators, crypto.PubkeyToAddress(privatekey.PublicKey))
+		if i == ctx.GlobalInt(NodeNumFlag.Name) {
+			accman.ImportECDSA(privatekey, "")
 		}
 	}
 	return validators
@@ -708,7 +709,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		PrivateKey:      MakeNodeKey(ctx),
 		Name:            MakeNodeName(name, version, ctx),
 		NoDiscovery:     ctx.GlobalBool(NoDiscoverFlag.Name),
-		BootstrapNodes:  MakeBootstrapNodes(ctx),
+		BootstrapNodes:  MakeHDCBootstrapNodes(ctx),
 		ListenAddr:      MakeListenAddress(ctx),
 		NAT:             MakeNAT(ctx),
 		MaxPeers:        ctx.GlobalInt(MaxPeersFlag.Name),
@@ -723,10 +724,9 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		WSOrigins:       ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:       MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
 		// hdc parameters
-		HDCPrivateKeyHex:  MakeHDCPrivateKeyHex(ctx),
-		HDCBootstrapNodes: MakeHDCBootstrapNodes(ctx),
-		NumValidators:     ctx.GlobalInt(NumValidatorsFlag.Name),
-		NodeNum:           ctx.GlobalInt(NodeNumFlag.Name),
+		HDCPrivateKeyHex: MakeHDCPrivateKeyHex(ctx),
+		NumValidators:    ctx.GlobalInt(NumValidatorsFlag.Name),
+		NodeNum:          ctx.GlobalInt(NodeNumFlag.Name),
 	}
 	// Configure the Ethereum service
 	accman := MakeAccountManager(ctx)
@@ -739,7 +739,6 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		DatabaseHandles:         MakeDatabaseHandles(),
 		NetworkId:               ctx.GlobalInt(NetworkIdFlag.Name),
 		AccountManager:          accman,
-		Etherbase:               MakeEtherbase(accman, ctx),
 		MinerThreads:            ctx.GlobalInt(MinerThreadsFlag.Name),
 		ExtraData:               MakeMinerExtra(extra, ctx),
 		NatSpec:                 ctx.GlobalBool(NatspecEnabledFlag.Name),
@@ -759,11 +758,13 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		Validators:    MakeValidators(accman, ctx),
 		PBFT:          ctx.GlobalBool(PBFTFlag.Name),
 		PrivateKeyHex: stackConf.HDCPrivateKeyHex,
+		// Etherbase:     MakeEtherbase(accman, ctx),
+
 	}
 
 	// hdc set Etherbase to validator address
-	ethConf.Etherbase = ethConf.Validators[stackConf.NodeNum]
-	// fmt.Println("current ehterbase is %s", ethConf.Etherbase.Hex())
+	ethConf.Etherbase = MakeEtherbase(ethConf.Validators, ctx)
+	stackConf.HTTPPort = stackConf.HTTPPort + ctx.GlobalInt(NodeNumFlag.Name)
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
 
@@ -808,6 +809,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	if err != nil {
 		Fatalf("Failed to create the protocol stack: %v", err)
 	}
+
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		return eth.New(ctx, ethConf)
 	}); err != nil {
@@ -823,6 +825,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 	}); err != nil {
 		Fatalf("Failed to register the Geth release oracle service: %v", err)
 	}
+
 	return stack
 }
 

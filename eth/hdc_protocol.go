@@ -23,12 +23,12 @@ const (
 	// Protocol messages belonging to hdc
 	// HDCStatusMsg         = 0x10
 	// HDCTxMsg             = 0x11
-	GetBlockProposalsMsg = 0x12
-	BlockProposalsMsg    = 0x13
-	NewBlockProposalMsg  = 0x14
-	VotingInstructionMsg = 0x15
-	VoteMsg              = 0x16
-	ReadyMsg             = 0x17
+	ReadyMsg             = 0x08
+	GetBlockProposalsMsg = 0x09
+	BlockProposalsMsg    = 0x0a
+	NewBlockProposalMsg  = 0x0b
+	VotingInstructionMsg = 0x0c
+	VoteMsg              = 0x0d
 )
 
 type HDCStatusData struct {
@@ -55,7 +55,6 @@ type votingInstructionData struct {
 type voteData struct {
 	Vote *types.Vote
 }
-
 type readyData struct {
 	Ready *types.Ready
 }

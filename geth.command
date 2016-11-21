@@ -13,4 +13,5 @@
 --rpc \
 --rpccorsdomain "*" \
 \
---jitvm
+--jitvm \
+console

@@ -266,15 +266,6 @@ func (s *PrivateMinerAPI) Start(threads *rpc.HexNumber) (bool, error) {
 	return false, nil
 }
 
-func containsAddress(s []common.Address, e common.Address) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
-}
-
 // Stop the miner
 func (s *PrivateMinerAPI) Stop() bool {
 	s.e.StopMining()

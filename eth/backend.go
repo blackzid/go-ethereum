@@ -298,11 +298,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		return nil, err
 	}
 
-	if !config.PBFT {
-		eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
-		eth.miner.SetGasPrice(config.GasPrice)
-		eth.miner.SetExtra(config.ExtraData)
-	}
+	// if !config.PBFT {
+	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
+	eth.miner.SetGasPrice(config.GasPrice)
+	eth.miner.SetExtra(config.ExtraData)
+	// }
 
 	return eth, nil
 }
@@ -313,7 +313,7 @@ func (s *Ethereum) APIs() []rpc.API {
 	if s.PBFT {
 		return []rpc.API{
 			{
-				Namespace: "hdc",
+				Namespace: "eth",
 				Version:   "1.0",
 				Service:   NewPublicEthereumAPI(s),
 				Public:    true,
@@ -327,6 +327,31 @@ func (s *Ethereum) APIs() []rpc.API {
 				Version:   "1.0",
 				Service:   NewPrivateAccountAPI(s),
 				Public:    false,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicBlockChainAPI(s.chainConfig, s.blockchain, s.miner, s.chainDb, s.gpo, s.eventMux, s.accountManager),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   NewPublicTransactionPoolAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "txpool",
+				Version:   "1.0",
+				Service:   NewPublicTxPoolAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+				Public:    true,
+			}, {
+				Namespace: "eth",
+				Version:   "1.0",
+				Service:   filters.NewPublicFilterAPI(s.chainDb, s.eventMux),
+				Public:    true,
 			}, {
 				Namespace: "admin",
 				Version:   "1.0",
@@ -428,12 +453,6 @@ func (s *Ethereum) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   ethreg.NewPrivateRegistarAPI(s.chainConfig, s.blockchain, s.chainDb, s.txPool, s.accountManager),
 		},
-		//  {
-		// 	Namespace: "hdc",
-		// 	Version:   "1.0",
-		// 	Service:   NewPublicEthereumAPI(s),
-		// 	Public:    true,
-		// },
 	}
 }
 

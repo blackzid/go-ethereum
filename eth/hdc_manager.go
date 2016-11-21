@@ -40,7 +40,7 @@ type ConsensusContract struct {
 	validators []common.Address
 }
 
-func NewConsensusContract(eventMux *event.TypeMux, coinbase common.Address, txpool *TxPool, validators []common.Address) *ConsensusContract {
+func NewConsensusContract(eventMux *event.TypeMux, coinbase common.Address, txpool *core.TxPool, validators []common.Address) *ConsensusContract {
 	return &ConsensusContract{
 		eventMux:   eventMux,
 		txpool:     txpool,
@@ -48,7 +48,7 @@ func NewConsensusContract(eventMux *event.TypeMux, coinbase common.Address, txpo
 		validators: validators,
 	}
 }
-func (cc *ConsensusContract) proposer(height int, round int) common.Address {
+func (cc *ConsensusContract) proposer(height uint64, round uint64) common.Address {
 	// v := abs(hash(repr((height, round))))
 	v := 3
 	return cc.validators[v%len(cc.validators)]
@@ -83,8 +83,8 @@ func containsAddress(s []common.Address, e common.Address) bool {
 type ConsensusManager struct {
 	pm                        *HDCProtocolManager
 	allow_empty_blocks        bool
-	num_initial_blocks        int
-	round_timeout             int
+	num_initial_blocks        uint64
+	round_timeout             uint64
 	round_timeout_factor      float64
 	transaction_timeout       float64
 	chain                     *core.BlockChain
@@ -96,7 +96,7 @@ type ConsensusManager struct {
 	heights                   map[int]*HeightManager
 	last_committing_lockset   *types.LockSet
 	proposalLock              *types.Block
-	readyNonce                int
+	readyNonce                uint64
 	blockCandidates           map[common.Hash]*types.BlockProposal
 	hdcDb                     ethdb.Database
 	synchronizer              *HDCSynchronizer
@@ -109,10 +109,11 @@ type ConsensusManager struct {
 	gasPrice  *big.Int
 }
 
-func NewConsensusManager(chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
+func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
 
 	privkey, _ := crypto.HexToECDSA(privkeyhex)
 	cm := &ConsensusManager{
+		pm:                   manager,
 		allow_empty_blocks:   false,
 		num_initial_blocks:   10,
 		round_timeout:        3,
@@ -130,10 +131,10 @@ func NewConsensusManager(chain *core.BlockChain, db ethdb.Database, cc *Consensu
 		gasPrice:             gasPrice,
 		mux:                  cc.eventMux,
 		coinbase:             cc.coinbase,
-		synchronizer:         NewHDCSynchronizer(cm),
 	}
 	cm.readyValidators[cm.coinbase] = struct{}{}
 	cm.initializeLocksets()
+	cm.synchronizer = NewHDCSynchronizer(cm)
 	return cm
 }
 
@@ -144,7 +145,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 	// initializing locksets
 	// sign genesis
 	glog.V(logger.Info).Infoln("initialize locksets")
-	v := types.NewVote(0, 0, cm.chain.genesisBlock.Hash(), 1) // voteBlock
+	v := types.NewVote(0, 0, cm.chain.Genesis().Hash(), 1) // voteBlock
 
 	cm.Sign(v)
 	cm.AddVote(v)
@@ -160,7 +161,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 		}
 		headNumber := int(cm.Head().Header().Number.Int64())
 
-		result, _ := cm.heights[headNumber-1].HasQuorum()
+		result, _ := cm.getHeightManager(headNumber - 1).HasQuorum()
 		if result {
 			panic("initialize_locksets error")
 		}
@@ -172,7 +173,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 			cm.AddVote(v)
 		}
 		headNumber := int(cm.Head().Header().Number.Int64())
-		result, _ := cm.heights[headNumber].HasQuorum()
+		result, _ := cm.getHeightManager(headNumber).HasQuorum()
 
 		if result {
 			panic("initialize_locksets error")
@@ -243,11 +244,11 @@ func (cm *ConsensusManager) getBlockProposal(blockhash common.Hash) *types.Block
 		return cm.loadProposal(blockhash).(*types.BlockProposal)
 	}
 }
-func (cm *ConsensusManager) getBlockProposalByHeight(height int) *types.BlockProposal {
+func (cm *ConsensusManager) getBlockProposalByHeight(height uint64) *types.BlockProposal {
 	if height < cm.Height() {
 		panic("getBlockProposalRlpByHeight error")
 	} else {
-		bh := cm.chain.GetBlockByNumber(height)
+		bh := cm.chain.GetBlockByNumber(uint64(height)).Hash()
 		return cm.loadProposal(bh).(*types.BlockProposal)
 	}
 }
@@ -262,26 +263,30 @@ func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 
 // properties
 func (cm *ConsensusManager) Head() *types.Block {
-	return cm.chain.currentBlock
+	return cm.chain.CurrentBlock()
 }
 func (cm *ConsensusManager) Now() int64 {
 	return time.Now().Unix()
 }
-func (cm *ConsensusManager) Height() int {
+func (cm *ConsensusManager) Height() uint64 {
 
-	h := cm.chain.currentBlock.NumberU64()
-	glog.V(logger.Info).Infoln("cm Height()", int(h)+1)
-
-	return int(h) + 1
+	h := cm.chain.CurrentBlock().NumberU64()
+	return h + 1
 }
-func (cm *ConsensusManager) Round() int {
+func (cm *ConsensusManager) Round() uint64 {
 	glog.V(logger.Info).Infoln("cm round")
 
-	return cm.heights[cm.Height()].Round()
+	return cm.getHeightManager(cm.Height()).Round()
+}
+func (cm *ConsensusManager) getHeightManager(h int) *HeightManager {
+	if _, ok := cm.heights[h]; !ok {
+		cm.heights[h] = NewHeightManager(cm, h)
+	}
+	return cm.heights[h]
 }
 func (cm *ConsensusManager) activeRound() *RoundManager {
-	hm := cm.heights[cm.Height()]
-	return hm.rounds[hm.Round()]
+	hm := cm.getHeightManager(cm.Height())
+	return hm.getRoundManager(hm.Round())
 }
 func (cm *ConsensusManager) setupAlarm() {
 	// ar := cm.activeRound()
@@ -313,11 +318,10 @@ func (cm *ConsensusManager) Process() {
 	}
 	cm.commit()
 	glog.V(logger.Info).Infoln("in cm process:", cm.Height())
-	if _, ok := cm.heights[cm.Height()]; !ok {
-		cm.heights[cm.Height()] = NewHeightManager(cm, cm.Height())
-	}
-	cm.heights[cm.Height()].process()
+	h := cm.getHeightManager(cm.Height())
+	h.process()
 	cm.cleanup()
+	glog.V(logger.Info).Infoln("sync start")
 	cm.synchronizer.process()
 	cm.setupAlarm()
 	glog.V(logger.Info).Infoln("end cm process:", cm.Height())
@@ -329,7 +333,7 @@ func (cm *ConsensusManager) commit() bool {
 	for _, p := range cm.blockCandidates {
 		// if prehash == haed hash
 		glog.V(logger.Info).Infoln("in commit: height:%s", p.Height())
-		ls := cm.heights[p.Height()].lastQuorumLockset()
+		ls := cm.getHeightManager(p.Height()).lastQuorumLockset()
 		_, hash := ls.HasQuorum()
 
 		if p.Blockhash() == hash {
@@ -372,15 +376,17 @@ func (cm *ConsensusManager) cleanup() {
 }
 func (cm *ConsensusManager) Sign(s interface{}) {
 	glog.V(logger.Info).Infoln("CM Sign")
-	switch s.(type) {
+	switch t := s.(type) {
 	case *types.BlockProposal:
-		s.(*types.BlockProposal).Sign(cm.privkey)
+		t.Sign(cm.privkey)
 	case *types.Vote:
-		s.(*types.Vote).Sign(cm.privkey)
+		t.Sign(cm.privkey)
 	case *types.LockSet:
-		s.(*types.LockSet).Sign(cm.privkey)
+		t.Sign(cm.privkey)
 	case *types.VotingInstruction:
-		s.(*types.VotingInstruction).Sign(cm.privkey)
+		t.Sign(cm.privkey)
+	case *types.Ready:
+		t.Sign(cm.privkey)
 	default:
 		glog.V(logger.Info).Infoln("consensus mangaer sign error")
 	}
@@ -396,21 +402,34 @@ func (cm *ConsensusManager) broadcast(msg interface{}) {
 	cm.pm.Broadcast(msg)
 }
 func (cm *ConsensusManager) isReady() bool {
-	return len(cm.readyValidators) > len(cm.contract.validators)*2/3
+	fmt.Println("ready has ", len(cm.readyValidators))
+	return float32(len(cm.readyValidators)) > float32(len(cm.contract.validators))*2.0/3.0
 }
-func (cm *ConsensusManager) sendReady() {
-	r := types.NewReady(big.NewInt(int64(cm.readyNonce)), cm.activeRound().lockset)
+func (cm *ConsensusManager) SendReady() {
+
+	if cm.isReady() {
+		panic("cm already ready")
+	}
+	ls := cm.activeRound().lockset
+	r := types.NewReady(big.NewInt(int64(cm.readyNonce)), ls)
 	cm.Sign(r)
+	r.Sender()
 	cm.broadcast(r)
 	cm.readyNonce += 1
 }
-func (cm *ConsensusManager) addReady(ready *types.Ready) {
-	if !cm.contract.isValidators(ready.Sender()) {
+func (cm *ConsensusManager) AddReady(ready *types.Ready) {
+	fmt.Println("Add Ready")
+	cc := cm.contract
+	fmt.Println("Add Ready3", ready)
+	add := ready.Sender()
+	fmt.Println("Add Ready4")
+	if !cc.isValidators(add) {
 		panic("receive ready from invalid sender")
 	}
+	fmt.Println("Add Ready2")
 	cm.readyValidators[ready.Sender()] = struct{}{}
 	if !cm.isReady() {
-		cm.sendReady()
+		cm.SendReady()
 	}
 }
 func (cm *ConsensusManager) AddVote(v *types.Vote) bool {
@@ -427,11 +446,10 @@ func (cm *ConsensusManager) AddVote(v *types.Vote) bool {
 	cm.readyValidators[v.Sender()] = struct{}{}
 	// TODO FIX
 
-	if _, ok := cm.heights[v.Height()]; !ok {
-		cm.heights[v.Height()] = NewHeightManager(cm, v.Height())
-	}
-	glog.V(logger.Info).Infoln("addVote: ", cm.heights[v.Height()])
-	return cm.heights[v.Height()].addVote(v, false)
+	h := cm.getHeightManager(v.Height())
+
+	glog.V(logger.Info).Infoln("addVote: ", h)
+	return h.addVote(v, false)
 }
 func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 	if p.Height() < cm.Height() {
@@ -468,7 +486,7 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 
 		// TODO: link block
 		cm.addLockset(p.LockSet()) // implicit check
-		isValid := cm.heights[p.Height()].addProposal(p)
+		isValid := cm.getHeightManager(p.Height()).addProposal(p)
 		return isValid
 	default:
 		glog.V(logger.Info).Infoln("proposal type invalid")
@@ -504,21 +522,25 @@ func (cm *ConsensusManager) lastCommittingLockset() *types.LockSet {
 	if cm.Height()-1 == 0 { // committing first block
 		return nil
 	}
-	return cm.heights[cm.Height()-1].lastQuorumLockset()
+	return cm.getHeightManager(cm.Height() - 1).lastQuorumLockset()
 }
 func (cm *ConsensusManager) highestCommittingLockset() *types.LockSet {
+
 	for _, height := range cm.heights {
+
 		ls := height.lastQuorumLockset()
+
 		if height.lastQuorumLockset() != nil {
 			return ls
 		}
 	}
+
 	return nil
 }
 func (cm *ConsensusManager) lastValidLockset() *types.LockSet {
 	glog.V(logger.Info).Infoln("cm lastValidLockset ")
 
-	ls := cm.heights[cm.Height()].lastValidLockset()
+	ls := cm.getHeightManager(cm.Height()).lastValidLockset()
 
 	if ls == nil {
 		return cm.lastCommittingLockset()
@@ -527,10 +549,10 @@ func (cm *ConsensusManager) lastValidLockset() *types.LockSet {
 }
 
 func (cm *ConsensusManager) lastLock() *types.Vote {
-	return cm.heights[cm.Height()].LastVoteLock()
+	return cm.getHeightManager(cm.Height()).LastVoteLock()
 }
 func (cm *ConsensusManager) lastBlockProposal() *types.BlockProposal {
-	p := cm.heights[cm.Height()].LastVotedBlockProposal()
+	p := cm.getHeightManager(cm.Height()).LastVotedBlockProposal()
 	if p != nil {
 		return p
 	} else {
@@ -543,21 +565,20 @@ func (cm *ConsensusManager) mkLockSet(height int) *types.LockSet {
 
 type HeightManager struct {
 	cm     *ConsensusManager
-	height int
-	rounds map[int]*RoundManager
+	height uint64
+	rounds map[uint64]*RoundManager
 	// lastValidLockset *types.LockSet
 }
 
 func NewHeightManager(consensusmanager *ConsensusManager, height int) *HeightManager {
-	glog.V(logger.Info).Infoln("Created HeightManager H:", height)
 	return &HeightManager{
 		cm:     consensusmanager,
 		height: height,
-		rounds: make(map[int]*RoundManager),
+		rounds: make(map[uint64]*RoundManager),
 	}
 }
 
-func (hm *HeightManager) Round() int {
+func (hm *HeightManager) Round() uint64 {
 
 	l := hm.lastValidLockset()
 	if l != nil {
@@ -569,6 +590,12 @@ func (hm *HeightManager) Round() int {
 	glog.V(logger.Info).Infoln("hm Round()", 0)
 
 	return 0
+}
+func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
+	if _, ok := hm.rounds[int(r)]; !ok {
+		hm.rounds[int(r)] = NewRoundManager(hm, r)
+	}
+	return hm.rounds[r]
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
 	// highest lock
@@ -597,17 +624,15 @@ func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 func (hm *HeightManager) lastValidLockset() *types.LockSet {
 	// highest valid lockset on height
 	for i := len(hm.rounds) - 1; i >= 0; i-- {
-		glog.V(logger.Info).Infoln("lastValidLockset in ", i, hm.rounds[i].round)
 		if hm.rounds[i].lockset.IsValid() {
 			return hm.rounds[i].lockset
 		}
 	}
-	glog.V(logger.Info).Infoln("end lastValidLockset ")
 	return nil
 }
 func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 	var found *types.LockSet
-	for i := len(hm.rounds) - 1; i >= 0; i++ {
+	for i := len(hm.rounds) - 1; i >= 0; i-- {
 		ls := hm.rounds[i].lockset
 		result, _ := ls.HasQuorum()
 		if ls.IsValid() && result {
@@ -632,22 +657,17 @@ func (hm *HeightManager) addVote(v *types.Vote, forceReplace bool) bool {
 
 	r := v.Round()
 	glog.V(logger.Info).Infoln("hm addvote: hm", hm)
-	if _, ok := hm.rounds[r]; !ok {
-		hm.rounds[r] = NewRoundManager(hm, r)
-	}
-	return hm.rounds[r].addVote(v, forceReplace)
+
+	return hm.getRoundManager(r).addVote(v, forceReplace)
 }
 func (hm *HeightManager) addProposal(p types.Proposal) bool {
-	return hm.rounds[p.Round()].addProposal(p)
+	return hm.getRoundManager(p.Round()).addProposal(p)
 }
 func (hm *HeightManager) process() {
 	glog.V(logger.Info).Infoln("In HM Process", hm.height)
 	r := hm.Round()
-	if _, ok := hm.rounds[r]; !ok {
-		hm.rounds[r] = NewRoundManager(hm, r)
-	}
 
-	hm.rounds[r].process()
+	hm.getRoundManager(r).process()
 	glog.V(logger.Info).Infoln("end HM Process")
 
 }
@@ -655,15 +675,15 @@ func (hm *HeightManager) process() {
 type RoundManager struct {
 	hm           *HeightManager
 	cm           *ConsensusManager
-	round        int
-	height       int
+	round        uint64
+	height       uint64
 	lockset      *types.LockSet
 	proposal     types.Proposal
 	voteLock     *types.Vote
 	timeout_time float64
 }
 
-func NewRoundManager(heightmanager *HeightManager, round int) *RoundManager {
+func NewRoundManager(heightmanager *HeightManager, round uint64) *RoundManager {
 	glog.V(logger.Info).Infoln("new rm", round)
 	lockset := heightmanager.cm.mkLockSet(heightmanager.height)
 	return &RoundManager{
@@ -872,8 +892,8 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		Difficulty: CalcDifficulty(config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
-		GasLimit:   CalcGasLimit(parent),
+		Difficulty: core.CalcDifficulty(config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
+		GasLimit:   core.CalcGasLimit(parent),
 		GasUsed:    new(big.Int),
 		Coinbase:   cm.coinbase,
 		Extra:      cm.extraData,
@@ -932,7 +952,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 
 	// if atomic.LoadInt32(&self.mining) == 1 {
 	// commit state root after all state transitions.
-	AccumulateRewards(work.state, header, uncles)
+	core.AccumulateRewards(work.state, header, uncles)
 	header.Root = work.state.IntermediateRoot()
 	// }
 
@@ -970,7 +990,7 @@ type Work struct {
 }
 
 func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, gasPrice *big.Int, bc *core.BlockChain) {
-	gp := new(GasPool).AddGas(env.header.GasLimit)
+	gp := new(core.GasPool).AddGas(env.header.GasLimit)
 
 	var coalescedLogs vm.Logs
 	for {
@@ -998,7 +1018,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 
 		err, logs := env.commitTransaction(tx, bc, gp)
 		switch {
-		case IsGasLimitErr(err):
+		case core.IsGasLimitErr(err):
 			// Pop the current out-of-gas transaction without shifting in the next from the account
 			glog.V(logger.Detail).Infof("Gas limit reached for (%x) in this block. Continue to try smaller txs\n", from[:4])
 			txs.Pop()
@@ -1019,16 +1039,16 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	if len(coalescedLogs) > 0 || env.tcount > 0 {
 		go func(logs vm.Logs, tcount int) {
 			if len(logs) > 0 {
-				mux.Post(PendingLogsEvent{Logs: logs})
+				mux.Post(core.PendingLogsEvent{Logs: logs})
 			}
 			if tcount > 0 {
-				mux.Post(PendingStateEvent{})
+				mux.Post(core.PendingStateEvent{})
 			}
 		}(coalescedLogs, env.tcount)
 	}
 }
 
-func (env *Work) commitTransaction(tx *types.Transaction, bc *core.BlockChain, gp *GasPool) (error, vm.Logs) {
+func (env *Work) commitTransaction(tx *types.Transaction, bc *core.BlockChain, gp *core.GasPool) (error, vm.Logs) {
 	snap := env.state.Snapshot()
 
 	// this is a bit of a hack to force jit for the miners

@@ -304,6 +304,8 @@ func (srv *Server) Stop() {
 // Start starts running the server.
 // Servers can not be re-used after stopping.
 func (srv *Server) Start() (err error) {
+	fmt.Println("server start")
+
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
 	if srv.running {
@@ -445,14 +447,19 @@ func (srv *Server) run(dialstate dialer) {
 
 running:
 	for {
+		fmt.Println("server running")
 		scheduleTasks()
 
 		select {
 		case <-srv.quit:
+			fmt.Println("server quit")
+
 			// The server was stopped. Run the cleanup logic.
 			glog.V(logger.Detail).Infoln("<-quit: spinning down")
 			break running
 		case n := <-srv.addstatic:
+			fmt.Println("server addstatic")
+
 			// This channel is used by AddPeer to add to the
 			// ephemeral static peer list. Add it to the dialer,
 			// it will keep the node connected.
@@ -463,6 +470,8 @@ running:
 			op(peers)
 			srv.peerOpDone <- struct{}{}
 		case t := <-taskdone:
+			fmt.Println("server taskdone")
+
 			// A task got done. Tell dialstate about it so it
 			// can update its state and remove it from the active
 			// tasks list.
@@ -470,6 +479,8 @@ running:
 			dialstate.taskDone(t, time.Now())
 			delTask(t)
 		case c := <-srv.posthandshake:
+			fmt.Println("server posthandshake")
+
 			// A connection has passed the encryption handshake so
 			// the remote identity is known (but hasn't been verified yet).
 			if trusted[c.id] {
@@ -480,6 +491,8 @@ running:
 			// TODO: track in-progress inbound node IDs (pre-Peer) to avoid dialing them.
 			c.cont <- srv.encHandshakeChecks(peers, c)
 		case c := <-srv.addpeer:
+			fmt.Println("server addpeer")
+
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.
 			glog.V(logger.Detail).Infoln("<-addpeer:", c)
@@ -497,6 +510,8 @@ running:
 			// discarded. Unblock the task last.
 			c.cont <- err
 		case p := <-srv.delpeer:
+			fmt.Println("server delpeer")
+
 			// A peer disconnected.
 			glog.V(logger.Detail).Infoln("<-delpeer:", p)
 			delete(peers, p.ID())
@@ -672,6 +687,8 @@ func (srv *Server) checkpoint(c *conn, stage chan<- *conn) error {
 // the peer.
 func (srv *Server) runPeer(p *Peer) {
 	glog.V(logger.Debug).Infof("Added %v\n", p)
+	fmt.Println("run peer")
+
 	srvjslog.LogJson(&logger.P2PConnected{
 		RemoteId:            p.ID().String(),
 		RemoteAddress:       p.RemoteAddr().String(),

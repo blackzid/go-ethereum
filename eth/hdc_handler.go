@@ -62,8 +62,8 @@ type HDCProtocolManager struct {
 	badBlockReportingEnabled bool
 	// hdc parameters
 	validators        []common.Address
-	consensusManager  *core.ConsensusManager
-	consensusContract *core.ConsensusContract
+	consensusManager  *ConsensusManager
+	consensusContract *ConsensusContract
 	privateKeyHex     string
 }
 
@@ -103,6 +103,7 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 		}
 		// Compatible; initialise the sub-protocol
 		version := version // Closure for the run
+		fmt.Println("Add SubProtocols")
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    ProtocolName,
 			Version: version,
@@ -112,6 +113,7 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
+					fmt.Println("Run SubProtocols")
 					defer manager.wg.Done()
 					return manager.handle(peer)
 				case <-manager.quitSync:
@@ -157,8 +159,8 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 	}
 
 	manager.validators = validators
-	manager.consensusContract = core.NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
-	manager.consensusManager = core.NewConsensusManager(blockchain, hdcDb, manager.consensusContract, manager.privateKeyHex, extra, gasPrice)
+	manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
+	manager.consensusManager = NewConsensusManager(manager, blockchain, hdcDb, manager.consensusContract, manager.privateKeyHex, extra, gasPrice)
 	return manager, nil
 }
 
@@ -190,25 +192,38 @@ func (pm *HDCProtocolManager) removePeer(id string) {
 
 func (pm *HDCProtocolManager) Start() {
 	// broadcast transactions
-	pm.txSub = pm.eventMux.Subscribe(core.TxPreEvent{})
-	go pm.txBroadcastLoop()
-	// broadcast mined blocks
+	// pm.txSub = pm.eventMux.Subscribe(core.TxPreEvent{})
+	// go pm.txBroadcastLoop()
+	// // broadcast mined blocks
 	pm.msgSub = pm.eventMux.Subscribe(core.NewMsgEvent{})
-	go pm.proposalBroadcastLoop()
+	go pm.msgBroadcastLoop()
 
-	// start sync handlers
+	// // start sync handlers
 	go pm.syncer()
 	go pm.txsyncLoop()
 
 	// start consensus mangaer
 	pm.consensusManager.Process()
+	go pm.announce()
 }
+func (pm *HDCProtocolManager) announce() {
+	for !pm.consensusManager.isReady() {
+		fmt.Println("consensusManager not ready ")
+		if pm.peers.Len() != 0 {
+			fmt.Println("try to Send Ready")
+			pm.consensusManager.SendReady()
+			time.Sleep(4 * time.Second)
+		} else {
+			time.Sleep(4 * time.Second)
+		}
+	}
 
+}
 func (pm *HDCProtocolManager) Stop() {
 	glog.V(logger.Info).Infoln("Stopping ethereum protocol handler...")
 
-	pm.txSub.Unsubscribe()          // quits txBroadcastLoop
-	pm.newProposalSub.Unsubscribe() // quits newProposalBroadcastLoop
+	// pm.txSub.Unsubscribe()  // quits txBroadcastLoop
+	pm.msgSub.Unsubscribe() // quits msgBroadcastLoop
 
 	// Quit the sync loop.
 	// After this send has completed, no new peers will be accepted.
@@ -235,6 +250,7 @@ func (pm *HDCProtocolManager) newPeer(pv int, p *p2p.Peer, rw p2p.MsgReadWriter)
 
 func (pm *HDCProtocolManager) handle(p *peer) error {
 	glog.V(logger.Debug).Infof("%v: peer connected [%s]", p, p.Name())
+	fmt.Println("manager handling")
 
 	// Execute the Ethereum handshake
 	td, head, genesis := pm.blockchain.Status()
@@ -259,6 +275,7 @@ func (pm *HDCProtocolManager) handle(p *peer) error {
 	}
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
+
 	pm.syncTransactions(p)
 
 	// main loop. handle incoming messages.
@@ -271,7 +288,10 @@ func (pm *HDCProtocolManager) handle(p *peer) error {
 }
 func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
+	fmt.Printf("%s is Handleing Msg\n", p.String())
+
 	msg, err := p.rw.ReadMsg()
+
 	if err != nil {
 		return err
 	}
@@ -282,7 +302,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 
 	// Handle the message depending on its contents
 	switch {
-	case msg.Code == HDCStatusMsg:
+	case msg.Code == StatusMsg:
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
@@ -293,10 +313,13 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		var found []*types.BlockProposal
 		for i, height := range query {
+			if i == MaxGetproposalsCount {
+				break
+			}
 			if height > int(pm.blockchain.CurrentBlock().NumberU64()) {
 				break
 			}
-			bp = pm.consensusManager.getBlockProposalByHeight(height)
+			bp := pm.consensusManager.getBlockProposalByHeight(height)
 			found = append(found, bp)
 		}
 		if len(found) != 0 {
@@ -322,7 +345,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			glog.V(logger.Info).Infoln("votinginstruction filtered")
 			return nil
 		}
-		if isValid := pm.consensusManager.AddProposal(bp); isValid {
+		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.Broadcast(bp)
 		}
 		pm.consensusManager.Process()
@@ -338,17 +361,17 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			glog.V(logger.Info).Infoln("votinginstruction filtered")
 			return nil
 		}
-		if isValid := pm.consensusManager.AddProposal(vi); isValid {
+		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
 			pm.Broadcast(vi)
 		}
 		pm.consensusManager.Process()
 	case msg.Code == VoteMsg:
 		glog.V(logger.Info).Infoln("VoteMsg")
-		var v voteData
-		if err := msg.Decode(&v); err != nil {
+		var vData voteData
+		if err := msg.Decode(&vData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		vote := voteData.Vote
+		vote := vData.Vote
 		if p.broadcastFilter.Has(vote.Hash()) {
 			glog.V(logger.Info).Infoln("vote filtered")
 			return nil
@@ -358,19 +381,21 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.consensusManager.Process()
 	case msg.Code == ReadyMsg:
-		glog.V(logger.Info).Infoln("ReadyMsg received")
-		var r readyData
+		fmt.Println("ReadyMsg received")
+		var r RdData
 		if err := msg.Decode(&r); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		ready := r.Ready
-		if p.broadcastFilter.Has(ready.Hash()) {
-			glog.V(logger.Info).Infoln("ready filtered")
-			return nil
-		}
-		pm.consensusManager.AddReady(ready)
-		pm.Broadcast(ready)
-		pm.consensusManager.Process()
+		fmt.Println("-------------------------------------------------", r.Rd.Sender)
+		fmt.Println("-------------------------------------------------", r.Rd.EligibleVotesNum)
+
+		// if p.broadcastFilter.Has(ready.Hash()) {
+		// 	glog.V(logger.Info).Infoln("ready filtered")
+		// 	return nil
+		// }
+		// pm.consensusManager.AddReady(ready)
+		// pm.Broadcast(ready)
+		// pm.consensusManager.Process()
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.synced) == 0 {
@@ -389,6 +414,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			p.MarkTransaction(tx.Hash())
 		}
 	default:
+		fmt.Println("HandleMsg Error")
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 	return nil
@@ -396,43 +422,54 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 
 func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 	// TODO: expect origin
-	peers := pm.peers
-
+	var err error
 	switch m := msg.(type) {
 	case *types.Ready:
-		glog.V(logger.Info).Infoln("broadcast Ready")
+		glog.V(logger.Info).Infoln("broadcast Ready, ", pm.peers.Len())
+
+		peers := pm.peers.PeersWithoutHash(m.Hash())
 		for _, peer := range peers {
-			peer.SendReadyMsg(types.Ready{m})
+			glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
+			fmt.Println(m.Sender())
+			err = peer.SendReadyMsg(m)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Broadcast ready success", m)
+			}
 		}
+
 	case *types.BlockProposal:
 		glog.V(logger.Info).Infoln("broadcast Blockproposal")
+		peers := pm.peers.PeersWithoutHash(m.Hash())
+
 		for _, peer := range peers {
-			peer.SendNewBlockProposal(types.Ready{m})
+			peer.SendNewBlockProposal(m)
 		}
 	case *types.VotingInstruction:
 		glog.V(logger.Info).Infoln("broadcast Votinginstruction")
-		for _, peer := range peers {
-			peer.SendReadyMsg(types.Ready{m})
-		}
-	case *types.VoteNil:
-		glog.V(logger.Info).Infoln("broadcast Votenil")
-		for _, peer := range peers {
-			peer.SendReadyMsg(types.Ready{m})
-		}
-	case *types.VoteBlock:
-		glog.V(logger.Info).Infoln("broadcast VoteBlock")
-		for _, peer := range peers {
-			peer.SendReadyMsg(types.Ready{m})
-		}
-	case types.Transactions:
-		glog.V(logger.Info).Infoln("broadcast Transactions")
-		for _, peer := range peers {
-			peer.SendTransactions(types.Transactions{m})
-		}
-	default:
-		glog.V(logger.Info).Infoln("broadcast unknown type:", t)
+		peers := pm.peers.PeersWithoutHash(m.Hash())
 
+		for _, peer := range peers {
+			peer.SendVotingInstruction(m)
+		}
+	case *types.Vote:
+		glog.V(logger.Info).Infoln("broadcast Votenil")
+		peers := pm.peers.PeersWithoutHash(m.Hash())
+
+		for _, peer := range peers {
+			peer.SendVote(m)
+		}
+	// case types.Transactions:
+	// 	glog.V(logger.Info).Infoln("broadcast Transactions")
+	// 	peers := pm.peers.PeersWithoutHash(m.Hash())
+	// 	for _, peer := range peers {
+	// 		peer.SendTransactions(m)
+	// 	}
+	default:
+		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
 	}
+
 }
 
 func (pm *HDCProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) {
@@ -444,7 +481,35 @@ func (pm *HDCProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transactio
 	}
 	glog.V(logger.Detail).Infoln("broadcast tx to", len(peers), "peers")
 }
+func (pm *HDCProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
+	hash := block.Hash()
+	peers := pm.peers.PeersWithoutBlock(hash)
 
+	// If propagation is requested, send to a subset of the peer
+	if propagate {
+		// Calculate the TD of the block (it's not imported yet, so block.Td is not valid)
+		var td *big.Int
+		if parent := pm.blockchain.GetBlock(block.ParentHash()); parent != nil {
+			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash()))
+		} else {
+			glog.V(logger.Error).Infof("propagating dangling block #%d [%x]", block.NumberU64(), hash[:4])
+			return
+		}
+		// Send the block to a subset of our peers
+		transfer := peers[:int(math.Sqrt(float64(len(peers))))]
+		for _, peer := range transfer {
+			peer.SendNewBlock(block, td)
+		}
+		glog.V(logger.Detail).Infof("propagated block %x to %d peers in %v", hash[:4], len(transfer), time.Since(block.ReceivedAt))
+	}
+	// Otherwise if the block is indeed in out own chain, announce it
+	if pm.blockchain.HasBlock(hash) {
+		for _, peer := range peers {
+			peer.SendNewBlockHashes([]common.Hash{hash}, []uint64{block.NumberU64()})
+		}
+		glog.V(logger.Detail).Infof("announced block %x to %d peers in %v", hash[:4], len(peers), time.Since(block.ReceivedAt))
+	}
+}
 func (self *HDCProtocolManager) txBroadcastLoop() {
 	// automatically stops if unsubscribe
 	for obj := range self.txSub.Chan() {
