@@ -61,11 +61,11 @@ func (cc *ConsensusContract) isValidators(v common.Address) bool {
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
 	return p.Sender() == cc.proposer(p.Height(), p.Round())
 }
-func (cc *ConsensusContract) numEligibleVotes(height int) int {
+func (cc *ConsensusContract) numEligibleVotes(height uint64) uint64 {
 	if height == 0 {
 		return 0
 	} else {
-		return len(cc.validators)
+		return uint64(len(cc.validators))
 	}
 }
 func containsAddress(s []common.Address, e common.Address) bool {
@@ -159,7 +159,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 		for _, v := range ls.Votes() {
 			cm.AddVote(v)
 		}
-		headNumber := int(cm.Head().Header().Number.Int64())
+		headNumber := cm.Head().Header().Number.Uint64()
 
 		result, _ := cm.getHeightManager(headNumber - 1).HasQuorum()
 		if result {
@@ -172,7 +172,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 		for _, v := range lastCommittingLockset.Votes() {
 			cm.AddVote(v)
 		}
-		headNumber := int(cm.Head().Header().Number.Int64())
+		headNumber := cm.Head().Header().Number.Uint64()
 		result, _ := cm.getHeightManager(headNumber).HasQuorum()
 
 		if result {
@@ -278,11 +278,11 @@ func (cm *ConsensusManager) Round() uint64 {
 
 	return cm.getHeightManager(cm.Height()).Round()
 }
-func (cm *ConsensusManager) getHeightManager(h int) *HeightManager {
-	if _, ok := cm.heights[h]; !ok {
-		cm.heights[h] = NewHeightManager(cm, h)
+func (cm *ConsensusManager) getHeightManager(h uint64) *HeightManager {
+	if _, ok := cm.heights[int(h)]; !ok {
+		cm.heights[int(h)] = NewHeightManager(cm, h)
 	}
-	return cm.heights[h]
+	return cm.heights[int(h)]
 }
 func (cm *ConsensusManager) activeRound() *RoundManager {
 	hm := cm.getHeightManager(cm.Height())
@@ -362,12 +362,12 @@ func (cm *ConsensusManager) cleanup() {
 	glog.V(logger.Info).Infoln("in cleanup")
 
 	for hash, p := range cm.blockCandidates {
-		if int(cm.Head().Header().Number.Int64()) <= p.Height() {
+		if cm.Head().Header().Number.Uint64() <= p.Height() {
 			delete(cm.blockCandidates, hash)
 		}
 	}
 	for i, _ := range cm.heights {
-		if cm.heights[i].height < int(cm.Head().Header().Number.Int64()) {
+		if cm.heights[i].height < cm.Head().Header().Number.Uint64() {
 			delete(cm.heights, i)
 		}
 	}
@@ -559,7 +559,7 @@ func (cm *ConsensusManager) lastBlockProposal() *types.BlockProposal {
 		return cm.getBlockProposal(cm.Head().Hash())
 	}
 }
-func (cm *ConsensusManager) mkLockSet(height int) *types.LockSet {
+func (cm *ConsensusManager) mkLockSet(height uint64) *types.LockSet {
 	return types.NewLockSet(cm.contract.numEligibleVotes(height), []*types.Vote{})
 }
 
@@ -570,7 +570,7 @@ type HeightManager struct {
 	// lastValidLockset *types.LockSet
 }
 
-func NewHeightManager(consensusmanager *ConsensusManager, height int) *HeightManager {
+func NewHeightManager(consensusmanager *ConsensusManager, height uint64) *HeightManager {
 	return &HeightManager{
 		cm:     consensusmanager,
 		height: height,
@@ -592,14 +592,14 @@ func (hm *HeightManager) Round() uint64 {
 	return 0
 }
 func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
-	if _, ok := hm.rounds[int(r)]; !ok {
-		hm.rounds[int(r)] = NewRoundManager(hm, r)
+	if _, ok := hm.rounds[r]; !ok {
+		hm.rounds[r] = NewRoundManager(hm, r)
 	}
 	return hm.rounds[r]
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
 	// highest lock
-	for i := len(hm.rounds) - 1; i >= 0; i-- {
+	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
 		if hm.rounds[i].voteLock != nil {
 			return hm.rounds[i].voteLock
 		}
@@ -608,7 +608,7 @@ func (hm *HeightManager) LastVoteLock() *types.Vote {
 }
 func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 	// the last block proposal node voted on
-	for i := len(hm.rounds) - 1; i >= 0; i-- {
+	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
 		switch p := hm.rounds[i].proposal.(type) {
 		case *types.BlockProposal:
 			v := hm.rounds[i].voteLock
@@ -623,7 +623,7 @@ func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 }
 func (hm *HeightManager) lastValidLockset() *types.LockSet {
 	// highest valid lockset on height
-	for i := len(hm.rounds) - 1; i >= 0; i-- {
+	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
 		if hm.rounds[i].lockset.IsValid() {
 			return hm.rounds[i].lockset
 		}
@@ -632,7 +632,7 @@ func (hm *HeightManager) lastValidLockset() *types.LockSet {
 }
 func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 	var found *types.LockSet
-	for i := len(hm.rounds) - 1; i >= 0; i-- {
+	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
 		ls := hm.rounds[i].lockset
 		result, _ := ls.HasQuorum()
 		if ls.IsValid() && result {

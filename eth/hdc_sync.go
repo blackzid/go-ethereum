@@ -36,19 +36,19 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 		maxQueued:            MaxGetproposalsCount * 3,
 	}
 }
-func (self *HDCSynchronizer) Missing() []int {
+func (self *HDCSynchronizer) Missing() []uint64 {
 
 	ls := self.cm.highestCommittingLockset()
 	if ls == nil {
-		return []int{}
+		return []uint64{}
 	}
 	maxHeight := ls.Height()
 	current := self.cm.Head().Number()
-	if maxHeight < int(current.Int64()) {
-		return []int{}
+	if maxHeight < current.Uint64() {
+		return []uint64{}
 	}
-	var missing []int
-	for i := int(current.Int64()); i < maxHeight; i++ {
+	var missing []uint64
+	for i := current.Uint64(); i < maxHeight; i++ {
 		missing = append(missing, i)
 	}
 	return missing
@@ -71,7 +71,7 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	fmt.Println("request3")
 
-	var blockNumbers []int
+	var blockNumbers []uint64
 	for _, v := range missing {
 		if !self.received.Has(v) && !self.requested.Has(v) {
 			blockNumbers = append(blockNumbers, v)
@@ -124,12 +124,12 @@ func (self *HDCSynchronizer) cleanup() {
 	// set.List() may have error
 	height := self.cm.Height()
 	for _, v := range self.received.List() {
-		if v.(int) < height {
+		if v.(uint64) < height {
 			self.received.Remove(v)
 		}
 	}
 	for _, v := range self.requested.List() {
-		if v.(int) < height {
+		if v.(uint64) < height {
 			self.requested.Remove(v)
 		}
 	}

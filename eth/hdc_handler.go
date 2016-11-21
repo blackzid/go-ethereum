@@ -307,7 +307,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
 		glog.V(logger.Info).Infoln("GetBlockProposalsMsg")
-		var query []int
+		var query []uint64
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
@@ -316,7 +316,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			if i == MaxGetproposalsCount {
 				break
 			}
-			if height > int(pm.blockchain.CurrentBlock().NumberU64()) {
+			if height > pm.blockchain.CurrentBlock().NumberU64() {
 				break
 			}
 			bp := pm.consensusManager.getBlockProposalByHeight(height)
