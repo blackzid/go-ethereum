@@ -54,12 +54,10 @@ func (cc *ConsensusContract) proposer(height uint64, round uint64) common.Addres
 	return cc.validators[v%len(cc.validators)]
 }
 func (cc *ConsensusContract) isValidators(v common.Address) bool {
-	glog.V(logger.Info).Infoln("isvalidator ,", len(cc.validators))
-
 	return containsAddress(cc.validators, v)
 }
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
-	return p.Sender() == cc.proposer(p.GetHeight(), p.GetRound())
+	return p.From() == cc.proposer(p.GetHeight(), p.GetRound())
 }
 func (cc *ConsensusContract) numEligibleVotes(height uint64) uint64 {
 	if height == 0 {
@@ -321,8 +319,8 @@ func (cm *ConsensusManager) Process() {
 	h := cm.getHeightManager(cm.Height())
 	h.process()
 	cm.cleanup()
-	glog.V(logger.Info).Infoln("sync start")
-	cm.synchronizer.process()
+	// glog.V(logger.Info).Infoln("sync start")
+	// cm.synchronizer.process() // this would index out of range??
 	cm.setupAlarm()
 	glog.V(logger.Info).Infoln("end cm process:", cm.Height())
 
@@ -402,7 +400,7 @@ func (cm *ConsensusManager) broadcast(msg interface{}) {
 	cm.pm.Broadcast(msg)
 }
 func (cm *ConsensusManager) isReady() bool {
-	fmt.Println("ready has ", len(cm.readyValidators))
+	fmt.Printf("ready has %d, need %f \n", len(cm.readyValidators), float32(len(cm.contract.validators))*2.0/3.0)
 	return float32(len(cm.readyValidators)) > float32(len(cm.contract.validators))*2.0/3.0
 }
 func (cm *ConsensusManager) SendReady() {
@@ -413,38 +411,31 @@ func (cm *ConsensusManager) SendReady() {
 	ls := cm.activeRound().lockset
 	r := types.NewReady(big.NewInt(int64(cm.readyNonce)), ls)
 	cm.Sign(r)
-	r.Sender()
+	r.From()
 	fmt.Println("cm SendReady: ", r)
 	cm.broadcast(r)
 	cm.readyNonce += 1
 }
 func (cm *ConsensusManager) AddReady(ready *types.Ready) {
-	fmt.Println("Add Ready")
 	cc := cm.contract
-	fmt.Println("Add Ready3", ready)
-	add := ready.Sender()
-	fmt.Println("Add Ready4")
+	add := ready.From()
 	if !cc.isValidators(add) {
 		panic("receive ready from invalid sender")
 	}
-	fmt.Println("Add Ready2")
-	cm.readyValidators[ready.Sender()] = struct{}{}
-	if !cm.isReady() {
-		cm.SendReady()
-	}
+	cm.readyValidators[ready.From()] = struct{}{}
 }
 func (cm *ConsensusManager) AddVote(v *types.Vote) bool {
-	glog.V(logger.Info).Infoln("addVote", v.Sender())
+	glog.V(logger.Info).Infoln("addVote", v.From())
 
 	if v == nil {
 		panic("cm addvote error")
 	}
-	if !cm.contract.isValidators(v.Sender()) {
+	if !cm.contract.isValidators(v.From()) {
 		panic("invalid sender")
 	}
 	glog.V(logger.Info).Infoln("addVote")
 
-	cm.readyValidators[v.Sender()] = struct{}{}
+	cm.readyValidators[v.From()] = struct{}{}
 	// TODO FIX
 
 	h := cm.getHeightManager(v.Height)
@@ -456,7 +447,7 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 	if p.GetHeight() < cm.Height() {
 		glog.V(logger.Info).Infoln("proposal from past")
 	}
-	if !cm.contract.isValidators(p.Sender()) || !cm.contract.isProposer(p) {
+	if !cm.contract.isValidators(p.From()) || !cm.contract.isProposer(p) {
 		glog.V(logger.Info).Infoln("proposal sender invalid")
 		return false
 	}

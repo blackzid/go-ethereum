@@ -5,7 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"io"
+	// "io"
 	"math/big"
 	"sort"
 	// "sync/atomic"
@@ -14,47 +14,93 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/logger"
 	"github.com/ethereum/go-ethereum/logger/glog"
-	"github.com/ethereum/go-ethereum/rlp"
+	// "github.com/ethereum/go-ethereum/rlp"
 )
 
-type signed struct {
-	Sender *common.Address
-	V      byte     // signature
-	R, S   *big.Int // signature
+type Vote struct {
+	// signed signed
+	sender    *common.Address
+	V         byte     // signature
+	R, S      *big.Int // signature
+	Height    uint64
+	Round     uint64
+	Blockhash common.Hash
+	VoteType  uint64 // 0: vote , 1: voteblock , 2: votenil
 }
+type Votes []*Vote
 
-func (signed *signed) EncodeRLP(w io.Writer) error {
-	return rlp.Encode(w, signed)
+func NewVote(height uint64, round uint64, blockhash common.Hash, voteType uint64) *Vote {
+	return &Vote{
+		R:         new(big.Int),
+		S:         new(big.Int),
+		Height:    height,
+		Round:     round,
+		Blockhash: blockhash,
+		VoteType:  voteType,
+	}
 }
-
-func (signed *signed) DecodeRLP(s *rlp.Stream) error {
-	err := s.Decode(signed)
-	return err
+func (v *Vote) From() common.Address {
+	if v.sender != nil {
+		return *v.sender
+	} else {
+		addr, err := v.recoverSender(v.SigHash())
+		if err != nil {
+			glog.V(logger.Error).Infof("sender() error ", err)
+			panic("recoversender error")
+		} else {
+			v.sender = &addr
+			return addr
+		}
+	}
 }
+func (v *Vote) Hash() common.Hash {
+	return rlpHash([]interface{}{
+		v.sender,
+		v.Height,
+		v.Round,
+		v.VoteType,
+		v.Blockhash,
+	})
+}
+func (v *Vote) SigHash() common.Hash {
+	return rlpHash([]interface{}{
+		v.Height,
+		v.Round,
+		v.VoteType,
+		v.Blockhash,
+	})
+}
+func (v *Vote) Sign(prv *ecdsa.PrivateKey) {
+	_, err := v.SignECDSA(prv, v.SigHash())
+	if err != nil {
+		panic(err)
+	}
+}
+func (vote *Vote) hr() (uint64, uint64) {
+	return vote.Height, vote.Round
+}
+func (vote *Vote) recoverSender(hash common.Hash) (common.Address, error) {
 
-// recover_sender
-func (signed *signed) recoverSender(hash common.Hash) (common.Address, error) {
-
-	pubkey, err := signed.publicKey(hash)
+	pubkey, err := vote.publicKey(hash)
 	if err != nil {
 		return common.Address{}, err
 	}
 	var addr common.Address
 	copy(addr[:], crypto.Keccak256(pubkey[1:])[12:])
-	signed.Sender = &addr
+	vote.sender = &addr
 	return addr, nil
 }
-func (signed *signed) publicKey(hash common.Hash) ([]byte, error) {
-	if !crypto.ValidateSignatureValues(signed.V, signed.R, signed.S, true) {
+func (vote *Vote) publicKey(hash common.Hash) ([]byte, error) {
+	if !crypto.ValidateSignatureValues(vote.V, vote.R, vote.S, true) {
 		return nil, ErrInvalidSig
 	}
 
 	// encode the signature in uncompressed format
-	r, s := signed.R.Bytes(), signed.S.Bytes()
+	r, s := vote.R.Bytes(), vote.S.Bytes()
 	sig := make([]byte, 65)
 	copy(sig[32-len(r):32], r)
 	copy(sig[64-len(s):64], s)
-	sig[64] = signed.V - 27
+	sig[64] = vote.V - 27
 
 	// recover the public key from the signature
 	// hash := signed.SigHash()
@@ -70,98 +116,40 @@ func (signed *signed) publicKey(hash common.Hash) ([]byte, error) {
 }
 
 //sign
-func (signed *signed) WithSignature(sig []byte) (*signed, error) {
+func (vote *Vote) WithSignature(sig []byte) (*Vote, error) {
 	if len(sig) != 65 {
 		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
 	}
-	signed.R = new(big.Int).SetBytes(sig[:32])
-	signed.S = new(big.Int).SetBytes(sig[32:64])
-	signed.V = sig[64] + 27
-	return signed, nil
+	vote.R = new(big.Int).SetBytes(sig[:32])
+	vote.S = new(big.Int).SetBytes(sig[32:64])
+	vote.V = sig[64] + 27
+	return vote, nil
 }
 
 // Sign this with a privacy key
-func (signed *signed) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*signed, error) {
+func (vote *Vote) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*Vote, error) {
 	sig, err := crypto.Sign(hash[:], prv)
 	if err != nil {
 		return nil, err
 	}
-	return signed.WithSignature(sig)
-}
-
-type Vote struct {
-	signed signed
-
-	Height    uint64
-	Round     uint64
-	Blockhash common.Hash
-	VoteType  uint64 // 0: vote , 1: voteblock , 2: votenil
-}
-type Votes []*Vote
-
-func NewVote(height uint64, round uint64, blockhash common.Hash, voteType uint64) *Vote {
-	s := signed{
-		R: new(big.Int),
-		S: new(big.Int),
-	}
-	return &Vote{
-		signed:    s,
-		Height:    height,
-		Round:     round,
-		Blockhash: blockhash,
-		VoteType:  voteType,
-	}
-}
-func (v *Vote) Sender() common.Address {
-	if v.signed.Sender != nil {
-		return *v.signed.Sender
-	} else {
-		addr, err := v.signed.recoverSender(v.SigHash())
-		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
-			panic("recoversender error")
-		} else {
-			v.signed.Sender = &addr
-			return addr
-		}
-	}
-}
-func (v *Vote) Hash() common.Hash {
-	h := rlpHash(v)
-	return h
-}
-func (v *Vote) SigHash() common.Hash {
-	return rlpHash([]interface{}{
-		v.Height,
-		v.Round,
-		v.VoteType,
-		v.Blockhash,
-	})
-}
-func (v *Vote) Sign(prv *ecdsa.PrivateKey) {
-	_, err := v.signed.SignECDSA(prv, v.SigHash())
-	if err != nil {
-		panic(err)
-	}
-}
-func (vote *Vote) hr() (uint64, uint64) {
-	return vote.Height, vote.Round
+	return vote.WithSignature(sig)
 }
 
 type LockSet struct {
-	signed           signed
+	// signed           signed
+	sender           *common.Address
+	V                byte     // signature
+	R, S             *big.Int // signature
 	EligibleVotesNum uint64
 	Votes            Votes
 	processed        bool
 }
 
 func NewLockSet(eligibleVotesNum uint64, vs Votes) *LockSet {
-	s := signed{
-		R: new(big.Int),
-		S: new(big.Int),
-	}
+
 	ls := &LockSet{
-		signed:           s,
+		R:                new(big.Int),
+		S:                new(big.Int),
 		EligibleVotesNum: eligibleVotesNum,
 		Votes:            []*Vote{},
 		processed:        false,
@@ -215,23 +203,26 @@ func (lockset *LockSet) hr() (uint64, uint64) {
 	}
 	return lockset.Votes[0].Round, lockset.Votes[0].Round
 }
-func (lockset *LockSet) Sender() common.Address {
-	if lockset.signed.Sender != nil {
-		return *lockset.signed.Sender
+func (lockset *LockSet) From() common.Address {
+	if lockset.sender != nil {
+		return *lockset.sender
 	} else {
-		addr, err := lockset.signed.recoverSender(lockset.SigHash())
+		addr, err := lockset.recoverSender(lockset.SigHash())
 		if err != nil {
 			glog.V(logger.Error).Infof("sender() error ", err)
 			panic("recoversender error")
 		} else {
-			lockset.signed.Sender = &addr
+			lockset.sender = &addr
 			return addr
 		}
 	}
 }
 func (lockset *LockSet) Hash() common.Hash {
-	h := rlpHash(lockset)
-	return h
+	return rlpHash([]interface{}{
+		lockset.sender,
+		lockset.EligibleVotesNum,
+		lockset.Votes,
+	})
 }
 
 func (lockset *LockSet) Height() uint64 {
@@ -249,7 +240,7 @@ func (lockset *LockSet) SigHash() common.Hash {
 	})
 }
 func (lockset *LockSet) Sign(prv *ecdsa.PrivateKey) {
-	_, err := lockset.signed.SignECDSA(prv, lockset.SigHash())
+	_, err := lockset.SignECDSA(prv, lockset.SigHash())
 	if err != nil {
 		panic(err)
 	}
@@ -258,8 +249,8 @@ func (lockset *LockSet) Sign(prv *ecdsa.PrivateKey) {
 var ErrInvalidVote = errors.New("no signature")
 
 func (lockset *LockSet) Add(vote *Vote, force bool) bool {
-	// glog.V(logger.Info).Infoln(*vote.signed.Sender)
-	if vote.signed.Sender == nil {
+	// glog.V(logger.Info).Infoln(*vote.signed.sender)
+	if vote.sender == nil {
 		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
 		return false
 	}
@@ -329,11 +320,66 @@ func checkVotes(lockset *LockSet, validators []common.Address) bool {
 		panic("lockset num_eligible_votes mismatch")
 	}
 	for _, v := range lockset.Votes {
-		if containsAddress(validators, *v.signed.Sender) {
+		if containsAddress(validators, *v.sender) {
 			panic("invalid signer")
 		}
 	}
 	return true
+}
+func (lockset *LockSet) recoverSender(hash common.Hash) (common.Address, error) {
+
+	pubkey, err := lockset.publicKey(hash)
+	if err != nil {
+		return common.Address{}, err
+	}
+	var addr common.Address
+	copy(addr[:], crypto.Keccak256(pubkey[1:])[12:])
+	lockset.sender = &addr
+	return addr, nil
+}
+func (lockset *LockSet) publicKey(hash common.Hash) ([]byte, error) {
+	if !crypto.ValidateSignatureValues(lockset.V, lockset.R, lockset.S, true) {
+		return nil, ErrInvalidSig
+	}
+
+	// encode the signature in uncompressed format
+	r, s := lockset.R.Bytes(), lockset.S.Bytes()
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	sig[64] = lockset.V - 27
+
+	// recover the public key from the signature
+	// hash := signed.SigHash()
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		return nil, err
+	}
+	if len(pub) == 0 || pub[0] != 4 {
+		return nil, errors.New("invalid public key")
+	}
+	return pub, nil
+}
+
+//sign
+func (lockset *LockSet) WithSignature(sig []byte) (*LockSet, error) {
+	if len(sig) != 65 {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+	}
+	lockset.R = new(big.Int).SetBytes(sig[:32])
+	lockset.S = new(big.Int).SetBytes(sig[32:64])
+	lockset.V = sig[64] + 27
+	return lockset, nil
+}
+
+// Sign this with a privacy key
+func (lockset *LockSet) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*LockSet, error) {
+	sig, err := crypto.Sign(hash[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return lockset.WithSignature(sig)
 }
 
 // func (lockset *Lockset) check() {
@@ -344,7 +390,7 @@ func checkVotes(lockset *LockSet, validators []common.Address) bool {
 
 func genesisSigningLockset(genesis *common.Address, prv *ecdsa.PrivateKey) *LockSet {
 	v := NewVote(0, 0, genesis.Hash(), 0)
-	v.signed.SignECDSA(prv, v.SigHash())
+	v.SignECDSA(prv, v.SigHash())
 	ls := NewLockSet(1, Votes{})
 	ls.Add(v, false)
 	if result, _ := ls.QuorumPossible(); result == false {
@@ -354,24 +400,28 @@ func genesisSigningLockset(genesis *common.Address, prv *ecdsa.PrivateKey) *Lock
 }
 
 type Ready struct {
-	signed         signed
+	// signed         signed
+	sender         *common.Address
+	V              byte     // signature
+	R, S           *big.Int // signature
 	Nonce          *big.Int
 	CurrentLockSet *LockSet
 }
 
 func NewReady(nonce *big.Int, currentLockSet *LockSet) *Ready {
 	return &Ready{
-		signed: signed{
-			R: new(big.Int),
-			S: new(big.Int),
-		},
+		R:              new(big.Int),
+		S:              new(big.Int),
 		Nonce:          nonce,
 		CurrentLockSet: currentLockSet,
 	}
 }
 func (r *Ready) Hash() common.Hash {
-	h := rlpHash(r)
-	return h
+	return rlpHash([]interface{}{
+		r.sender,
+		r.Nonce,
+		r.CurrentLockSet,
+	})
 }
 func (r *Ready) SigHash() common.Hash {
 	return rlpHash([]interface{}{
@@ -379,38 +429,95 @@ func (r *Ready) SigHash() common.Hash {
 		r.CurrentLockSet,
 	})
 }
-func (r *Ready) Sender() common.Address {
-	if r.signed.Sender != nil {
-		return *r.signed.Sender
+func (r *Ready) From() common.Address {
+	if r.sender != nil {
+		return *r.sender
 	} else {
-		addr, err := r.signed.recoverSender(r.SigHash())
+		addr, err := r.recoverSender(r.SigHash())
 		if err != nil {
 			glog.V(logger.Error).Infof("sender() error ", err)
 			panic("recoversender error")
 		} else {
-			r.signed.Sender = &addr
+			r.sender = &addr
 			return addr
 		}
 	}
 }
 func (r *Ready) Sign(prv *ecdsa.PrivateKey) {
-	_, err := r.signed.SignECDSA(prv, r.SigHash())
+	_, err := r.SignECDSA(prv, r.SigHash())
 	if err != nil {
 		panic(err)
 	}
 }
+func (r *Ready) recoverSender(hash common.Hash) (common.Address, error) {
+
+	pubkey, err := r.publicKey(hash)
+	if err != nil {
+		return common.Address{}, err
+	}
+	var addr common.Address
+	copy(addr[:], crypto.Keccak256(pubkey[1:])[12:])
+	r.sender = &addr
+	return addr, nil
+}
+func (ready *Ready) publicKey(hash common.Hash) ([]byte, error) {
+	if !crypto.ValidateSignatureValues(ready.V, ready.R, ready.S, true) {
+		return nil, ErrInvalidSig
+	}
+
+	// encode the signature in uncompressed format
+	r, s := ready.R.Bytes(), ready.S.Bytes()
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	sig[64] = ready.V - 27
+
+	// recover the public key from the signature
+	// hash := signed.SigHash()
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		return nil, err
+	}
+	if len(pub) == 0 || pub[0] != 4 {
+		return nil, errors.New("invalid public key")
+	}
+	return pub, nil
+}
+
+//sign
+func (r *Ready) WithSignature(sig []byte) (*Ready, error) {
+	if len(sig) != 65 {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+	}
+	r.R = new(big.Int).SetBytes(sig[:32])
+	r.S = new(big.Int).SetBytes(sig[32:64])
+	r.V = sig[64] + 27
+	return r, nil
+}
+
+// Sign this with a privacy key
+func (r *Ready) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*Ready, error) {
+	sig, err := crypto.Sign(hash[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return r.WithSignature(sig)
+}
 
 type Proposal interface {
 	Sign(prv *ecdsa.PrivateKey)
-	Sender() common.Address
+	From() common.Address
 	GetHeight() uint64
 	GetRound() uint64
 	Blockhash() common.Hash
 	LockSet() *LockSet
 }
 type BlockProposal struct {
-	signed signed
-
+	// signed signed
+	sender         *common.Address
+	V              byte     // signature
+	R, S           *big.Int // signature
 	Height         uint64
 	Round          uint64
 	Block          *Block
@@ -419,12 +526,9 @@ type BlockProposal struct {
 }
 
 func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset *LockSet, round_lockset *LockSet) *BlockProposal {
-	s := signed{
-		R: new(big.Int),
-		S: new(big.Int),
-	}
 	return &BlockProposal{
-		signed:         s,
+		R:              new(big.Int),
+		S:              new(big.Int),
 		Height:         height,
 		Round:          round,
 		Block:          block,
@@ -435,27 +539,31 @@ func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset 
 func (bp *BlockProposal) GetHeight() uint64 { return bp.Height }
 func (bp *BlockProposal) GetRound() uint64  { return bp.Round }
 
-func (bp *BlockProposal) Sender() common.Address {
-	if bp.signed.Sender != nil {
-		return *bp.signed.Sender
+func (bp *BlockProposal) From() common.Address {
+	if bp.sender != nil {
+		return *bp.sender
 	} else {
-		addr, err := bp.signed.recoverSender(bp.SigHash())
+		addr, err := bp.recoverSender(bp.SigHash())
 		if err != nil {
 			glog.V(logger.Error).Infof("sender() error ", err)
 			panic("recoversender error")
 		} else {
-			bp.signed.Sender = &addr
+			bp.sender = &addr
 			return addr
 		}
 	}
 }
 func (bp *BlockProposal) Hash() common.Hash {
-	h := rlpHash(bp)
-	return h
+	return rlpHash([]interface{}{
+		bp.sender,
+		bp.Height,
+		bp.Round,
+		bp.SigningLockset,
+		bp.RoundLockset,
+	})
 }
 func (bp *BlockProposal) SigHash() common.Hash {
 	return rlpHash([]interface{}{
-		bp.signed.Sender,
 		bp.Height,
 		bp.Round,
 		bp.SigningLockset,
@@ -474,7 +582,7 @@ func (bp *BlockProposal) LockSet() *LockSet {
 }
 
 func (bp *BlockProposal) Sign(prv *ecdsa.PrivateKey) {
-	_, err := bp.signed.SignECDSA(prv, bp.SigHash())
+	_, err := bp.SignECDSA(prv, bp.SigHash())
 	if err != nil {
 		panic(err)
 	}
@@ -496,22 +604,76 @@ func containsAddress(s []common.Address, e common.Address) bool {
 	}
 	return false
 }
+func (bp *BlockProposal) recoverSender(hash common.Hash) (common.Address, error) {
+
+	pubkey, err := bp.publicKey(hash)
+	if err != nil {
+		return common.Address{}, err
+	}
+	var addr common.Address
+	copy(addr[:], crypto.Keccak256(pubkey[1:])[12:])
+	bp.sender = &addr
+	return addr, nil
+}
+func (bp *BlockProposal) publicKey(hash common.Hash) ([]byte, error) {
+	if !crypto.ValidateSignatureValues(bp.V, bp.R, bp.S, true) {
+		return nil, ErrInvalidSig
+	}
+
+	// encode the signature in uncompressed format
+	r, s := bp.R.Bytes(), bp.S.Bytes()
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	sig[64] = bp.V - 27
+
+	// recover the public key from the signature
+	// hash := signed.SigHash()
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		return nil, err
+	}
+	if len(pub) == 0 || pub[0] != 4 {
+		return nil, errors.New("invalid public key")
+	}
+	return pub, nil
+}
+
+//sign
+func (bp *BlockProposal) WithSignature(sig []byte) (*BlockProposal, error) {
+	if len(sig) != 65 {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+	}
+	bp.R = new(big.Int).SetBytes(sig[:32])
+	bp.S = new(big.Int).SetBytes(sig[32:64])
+	bp.V = sig[64] + 27
+	return bp, nil
+}
+
+// Sign this with a privacy key
+func (bp *BlockProposal) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*BlockProposal, error) {
+	sig, err := crypto.Sign(hash[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return bp.WithSignature(sig)
+}
 
 type VotingInstruction struct {
-	signed signed
-
+	// signed signed
+	sender       *common.Address
+	V            byte     // signature
+	R, S         *big.Int // signature
 	Height       uint64
 	Round        uint64
 	RoundLockset *LockSet
 }
 
 func NewVotingInstruction(height uint64, round uint64, roundLockset *LockSet) *VotingInstruction {
-	s := signed{
-		R: new(big.Int),
-		S: new(big.Int),
-	}
 	return &VotingInstruction{
-		signed:       s,
+		R:            new(big.Int),
+		S:            new(big.Int),
 		Height:       height,
 		Round:        round,
 		RoundLockset: roundLockset,
@@ -520,23 +682,27 @@ func NewVotingInstruction(height uint64, round uint64, roundLockset *LockSet) *V
 func (vi *VotingInstruction) GetHeight() uint64 { return vi.Height }
 func (vi *VotingInstruction) GetRound() uint64  { return vi.Round }
 
-func (vi *VotingInstruction) Sender() common.Address {
-	if vi.signed.Sender != nil {
-		return *vi.signed.Sender
+func (vi *VotingInstruction) From() common.Address {
+	if vi.sender != nil {
+		return *vi.sender
 	} else {
-		addr, err := vi.signed.recoverSender(vi.SigHash())
+		addr, err := vi.recoverSender(vi.SigHash())
 		if err != nil {
 			glog.V(logger.Error).Infof("sender() error ", err)
 			panic("recoversender error")
 		} else {
-			vi.signed.Sender = &addr
+			vi.sender = &addr
 			return addr
 		}
 	}
 }
 func (vi *VotingInstruction) Hash() common.Hash {
-	h := rlpHash(vi)
-	return h
+	return rlpHash([]interface{}{
+		vi.sender,
+		vi.Height,
+		vi.Round,
+		vi.RoundLockset,
+	})
 }
 func (vi *VotingInstruction) SigHash() common.Hash {
 	return rlpHash([]interface{}{
@@ -555,14 +721,69 @@ func (vi *VotingInstruction) validateVotes(validators []common.Address) {
 		panic("lockset num_eligible_votes mismatch")
 	}
 	for _, v := range vi.RoundLockset.Votes {
-		if containsAddress(validators, *v.signed.Sender) {
+		if containsAddress(validators, *v.sender) {
 			panic("invalid signer")
 		}
 	}
 }
 func (vi *VotingInstruction) Sign(prv *ecdsa.PrivateKey) {
-	_, err := vi.signed.SignECDSA(prv, vi.SigHash())
+	_, err := vi.SignECDSA(prv, vi.SigHash())
 	if err != nil {
 		panic(err)
 	}
+}
+func (vi *VotingInstruction) recoverSender(hash common.Hash) (common.Address, error) {
+
+	pubkey, err := vi.publicKey(hash)
+	if err != nil {
+		return common.Address{}, err
+	}
+	var addr common.Address
+	copy(addr[:], crypto.Keccak256(pubkey[1:])[12:])
+	vi.sender = &addr
+	return addr, nil
+}
+func (vi *VotingInstruction) publicKey(hash common.Hash) ([]byte, error) {
+	if !crypto.ValidateSignatureValues(vi.V, vi.R, vi.S, true) {
+		return nil, ErrInvalidSig
+	}
+
+	// encode the signature in uncompressed format
+	r, s := vi.R.Bytes(), vi.S.Bytes()
+	sig := make([]byte, 65)
+	copy(sig[32-len(r):32], r)
+	copy(sig[64-len(s):64], s)
+	sig[64] = vi.V - 27
+
+	// recover the public key from the signature
+	// hash := signed.SigHash()
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		return nil, err
+	}
+	if len(pub) == 0 || pub[0] != 4 {
+		return nil, errors.New("invalid public key")
+	}
+	return pub, nil
+}
+
+//sign
+func (vi *VotingInstruction) WithSignature(sig []byte) (*VotingInstruction, error) {
+	if len(sig) != 65 {
+		panic(fmt.Sprintf("wrong size for signature: got %d, want 65", len(sig)))
+	}
+	vi.R = new(big.Int).SetBytes(sig[:32])
+	vi.S = new(big.Int).SetBytes(sig[32:64])
+	vi.V = sig[64] + 27
+	return vi, nil
+}
+
+// Sign this with a privacy key
+func (vi *VotingInstruction) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) (*VotingInstruction, error) {
+	sig, err := crypto.Sign(hash[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return vi.WithSignature(sig)
 }

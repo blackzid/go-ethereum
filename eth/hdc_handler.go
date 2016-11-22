@@ -217,7 +217,8 @@ func (pm *HDCProtocolManager) announce() {
 			time.Sleep(4 * time.Second)
 		}
 	}
-
+	fmt.Println("-----------------consensusManager Ready-------------------------")
+	pm.consensusManager.Process()
 }
 func (pm *HDCProtocolManager) Stop() {
 	glog.V(logger.Info).Infoln("Stopping ethereum protocol handler...")
@@ -387,16 +388,17 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			fmt.Println(err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		fmt.Println("-------------------------------------------------", r.Ready)
+		ready := r.Ready
+		// fmt.Println("-------------------------------------------------", r.Ready)
 		// fmt.Println("-------------------------------------------------", r.Rd.EligibleVotesNum)
 
-		// if p.broadcastFilter.Has(ready.Hash()) {
-		// 	glog.V(logger.Info).Infoln("ready filtered")
-		// 	return nil
-		// }
-		// pm.consensusManager.AddReady(ready)
-		// pm.Broadcast(ready)
-		// pm.consensusManager.Process()
+		if p.broadcastFilter.Has(ready.Hash()) {
+			glog.V(logger.Info).Infoln("ready filtered")
+			return nil
+		}
+		pm.consensusManager.AddReady(ready)
+		pm.Broadcast(ready)
+		pm.consensusManager.Process()
 	case msg.Code == TxMsg:
 		// Transactions arrived, make sure we have a valid and fresh chain to handle them
 		if atomic.LoadUint32(&pm.synced) == 0 {
@@ -429,8 +431,9 @@ func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 		glog.V(logger.Info).Infoln("broadcast Ready, ", pm.peers.Len())
 
 		peers := pm.peers.PeersWithoutHash(m.Hash())
+		glog.V(logger.Info).Infoln("There are ", len(peers), " peers to broadcast.")
 		for _, peer := range peers {
-			glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
+			// glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
 			err = peer.SendReadyMsg(m)
 			if err != nil {
 				fmt.Println(err)

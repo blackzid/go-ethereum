@@ -39,18 +39,28 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 func (self *HDCSynchronizer) Missing() []uint64 {
 
 	ls := self.cm.highestCommittingLockset()
+	fmt.Println("missing1")
+
 	if ls == nil {
 		return []uint64{}
 	}
 	maxHeight := ls.Height()
+	fmt.Println("missing2")
+
 	current := self.cm.Head().Number()
+	fmt.Println("missing3")
+
 	if maxHeight < current.Uint64() {
 		return []uint64{}
 	}
 	var missing []uint64
+	fmt.Println("missing4")
+
 	for i := current.Uint64(); i < maxHeight; i++ {
 		missing = append(missing, i)
 	}
+	fmt.Println("return missing")
+
 	return missing
 
 }
