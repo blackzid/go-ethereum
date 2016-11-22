@@ -382,12 +382,13 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		pm.consensusManager.Process()
 	case msg.Code == ReadyMsg:
 		fmt.Println("ReadyMsg received")
-		var r RdData
+		var r readyData
 		if err := msg.Decode(&r); err != nil {
+			fmt.Println(err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		fmt.Println("-------------------------------------------------", r.Rd.Sender)
-		fmt.Println("-------------------------------------------------", r.Rd.EligibleVotesNum)
+		fmt.Println("-------------------------------------------------", r.Ready)
+		// fmt.Println("-------------------------------------------------", r.Rd.EligibleVotesNum)
 
 		// if p.broadcastFilter.Has(ready.Hash()) {
 		// 	glog.V(logger.Info).Infoln("ready filtered")
@@ -430,7 +431,6 @@ func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 		for _, peer := range peers {
 			glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
-			fmt.Println(m.Sender())
 			err = peer.SendReadyMsg(m)
 			if err != nil {
 				fmt.Println(err)

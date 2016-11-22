@@ -423,30 +423,12 @@ func (ps *peerSet) Close() {
 
 // HDC Methods
 
-type Rd struct {
-	Sender           *common.Address
-	R, S             *big.Int
-	EligibleVotesNum uint64
-}
-type RdData struct {
-	Rd *Rd
-}
-
 func (p *peer) SendReadyMsg(r *types.Ready) error {
-	glog.V(logger.Info).Infoln("send Ready msg", r)
 	p.broadcastFilter.Add(r.Hash())
-
-	n := big.NewInt(12312)
-	n2 := big.NewInt(222)
-
-	sender := r.Sender()
-	rd := &Rd{
-		Sender:           &sender,
-		R:                n,
-		S:                n2,
-		EligibleVotesNum: 5646,
-	}
-	return p2p.Send(p.rw, ReadyMsg, []interface{}{rd})
+	err := p2p.Send(p.rw, ReadyMsg, []interface{}{r})
+	fmt.Println("SendReady msg :", r)
+	fmt.Println("SendReady msg error:", err)
+	return err
 }
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
 	p.broadcastFilter.Add(bp.Hash())

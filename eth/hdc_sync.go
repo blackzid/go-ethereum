@@ -93,9 +93,9 @@ func (self *HDCSynchronizer) request() bool {
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	for _, bp := range bps {
-		self.received.Add(bp.Height())
-		self.requested.Remove(bp.Height())
-		for _, v := range bp.SigningLockset().Votes() {
+		self.received.Add(bp.Height)
+		self.requested.Remove(bp.Height)
+		for _, v := range bp.SigningLockset.Votes {
 			self.cm.AddVote(v)
 		}
 	}
@@ -110,7 +110,7 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 }
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
 	glog.V(logger.Info).Infoln("synchronizer on proposal")
-	if proposal.Height() > self.cm.Height() {
+	if proposal.GetHeight() > self.cm.Height() {
 		if !proposal.LockSet().IsValid() {
 			panic("onProposal error")
 		}

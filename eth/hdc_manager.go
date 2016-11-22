@@ -59,7 +59,7 @@ func (cc *ConsensusContract) isValidators(v common.Address) bool {
 	return containsAddress(cc.validators, v)
 }
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
-	return p.Sender() == cc.proposer(p.Height(), p.Round())
+	return p.Sender() == cc.proposer(p.GetHeight(), p.GetRound())
 }
 func (cc *ConsensusContract) numEligibleVotes(height uint64) uint64 {
 	if height == 0 {
@@ -154,9 +154,9 @@ func (cm *ConsensusManager) initializeLocksets() {
 	headProposal := cm.loadProposal(cm.Head().Hash())
 	if headProposal != nil {
 		headBlockProposal := headProposal.(*types.BlockProposal)
-		ls := headBlockProposal.SigningLockset()
+		ls := headBlockProposal.SigningLockset
 
-		for _, v := range ls.Votes() {
+		for _, v := range ls.Votes {
 			cm.AddVote(v)
 		}
 		headNumber := cm.Head().Header().Number.Uint64()
@@ -169,7 +169,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 
 	lastCommittingLockset := cm.loadLastCommittingLockset()
 	if lastCommittingLockset != nil {
-		for _, v := range lastCommittingLockset.Votes() {
+		for _, v := range lastCommittingLockset.Votes {
 			cm.AddVote(v)
 		}
 		headNumber := cm.Head().Header().Number.Uint64()
@@ -332,8 +332,8 @@ func (cm *ConsensusManager) commit() bool {
 
 	for _, p := range cm.blockCandidates {
 		// if prehash == haed hash
-		glog.V(logger.Info).Infoln("in commit: height:%s", p.Height())
-		ls := cm.getHeightManager(p.Height()).lastQuorumLockset()
+		glog.V(logger.Info).Infoln("in commit: height:%s", p.GetHeight())
+		ls := cm.getHeightManager(p.GetHeight()).lastQuorumLockset()
 		_, hash := ls.HasQuorum()
 
 		if p.Blockhash() == hash {
@@ -351,7 +351,7 @@ func (cm *ConsensusManager) commit() bool {
 		} else {
 			glog.V(logger.Info).Infoln("no quorum for ", p)
 			if ls != nil {
-				glog.V(logger.Info).Infoln("votes ", ls.Votes())
+				glog.V(logger.Info).Infoln("votes ", ls.Votes)
 			}
 		}
 	}
@@ -362,7 +362,7 @@ func (cm *ConsensusManager) cleanup() {
 	glog.V(logger.Info).Infoln("in cleanup")
 
 	for hash, p := range cm.blockCandidates {
-		if cm.Head().Header().Number.Uint64() <= p.Height() {
+		if cm.Head().Header().Number.Uint64() <= p.GetHeight() {
 			delete(cm.blockCandidates, hash)
 		}
 	}
@@ -414,6 +414,7 @@ func (cm *ConsensusManager) SendReady() {
 	r := types.NewReady(big.NewInt(int64(cm.readyNonce)), ls)
 	cm.Sign(r)
 	r.Sender()
+	fmt.Println("cm SendReady: ", r)
 	cm.broadcast(r)
 	cm.readyNonce += 1
 }
@@ -446,13 +447,13 @@ func (cm *ConsensusManager) AddVote(v *types.Vote) bool {
 	cm.readyValidators[v.Sender()] = struct{}{}
 	// TODO FIX
 
-	h := cm.getHeightManager(v.Height())
+	h := cm.getHeightManager(v.Height)
 
 	glog.V(logger.Info).Infoln("addVote: ", h)
 	return h.addVote(v, false)
 }
 func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
-	if p.Height() < cm.Height() {
+	if p.GetHeight() < cm.Height() {
 		glog.V(logger.Info).Infoln("proposal from past")
 	}
 	if !cm.contract.isValidators(p.Sender()) || !cm.contract.isProposer(p) {
@@ -464,7 +465,7 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 	if peer != nil {
 		cm.synchronizer.onProposal(p, peer)
 	}
-	switch p := p.(type) {
+	switch proposal := p.(type) {
 	case *types.BlockProposal:
 		// cm.addLockset(p.LockSet()) // check validity
 
@@ -473,20 +474,21 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 			glog.V(logger.Info).Infoln("proposal invalid")
 			return false
 		}
-		if !(ls.Height() == p.Height() || p.Round() == 0) {
+
+		if !(ls.Height() == proposal.Height || proposal.Round == 0) {
 			glog.V(logger.Info).Infoln("proposal invalid")
 			return false
 		}
 
-		if !(p.Round()-ls.Round() == 1 || p.Round() == 0) {
+		if !(proposal.Round-ls.Round() == 1 || proposal.Round == 0) {
 			glog.V(logger.Info).Infoln("proposal invalid")
 			return false
 		}
 		// cm.synchronizer.on_proposal(p, proto)
 
 		// TODO: link block
-		cm.addLockset(p.LockSet()) // implicit check
-		isValid := cm.getHeightManager(p.Height()).addProposal(p)
+		cm.addLockset(proposal.LockSet()) // implicit check
+		isValid := cm.getHeightManager(proposal.Height).addProposal(proposal)
 		return isValid
 	default:
 		glog.V(logger.Info).Infoln("proposal type invalid")
@@ -499,7 +501,7 @@ func (cm *ConsensusManager) addLockset(ls *types.LockSet) bool {
 	if !ls.IsValid() {
 		return false
 	}
-	for _, v := range ls.Votes() {
+	for _, v := range ls.Votes {
 		cm.AddVote(v)
 		// implicitly checks their validity
 	}
@@ -509,11 +511,11 @@ func (cm *ConsensusManager) addBlockProposal(p *types.BlockProposal) bool {
 	if cm.hasProposal(p.Blockhash()) {
 		return false
 	}
-	result, _ := p.SigningLockset().HasQuorum()
+	result, _ := p.SigningLockset.HasQuorum()
 	if !result {
 		panic("proposal error")
 	}
-	cm.addLockset(p.SigningLockset())
+	cm.addLockset(p.SigningLockset)
 	cm.blockCandidates[p.Blockhash()] = p
 	return true
 }
@@ -599,20 +601,22 @@ func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
 	// highest lock
-	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
-		if hm.rounds[i].voteLock != nil {
-			return hm.rounds[i].voteLock
+	for i := len(hm.rounds) - 1; i >= 0; i-- {
+		index := uint64(i)
+		if hm.rounds[index].voteLock != nil {
+			return hm.rounds[index].voteLock
 		}
 	}
 	return nil
 }
 func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 	// the last block proposal node voted on
-	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
-		switch p := hm.rounds[i].proposal.(type) {
+	for i := len(hm.rounds) - 1; i >= 0; i-- {
+		index := uint64(i)
+		switch p := hm.rounds[index].proposal.(type) {
 		case *types.BlockProposal:
-			v := hm.rounds[i].voteLock
-			if p.Blockhash() == v.Blockhash() {
+			v := hm.rounds[index].voteLock
+			if p.Blockhash() == v.Blockhash {
 				return p
 			}
 		default:
@@ -623,17 +627,20 @@ func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 }
 func (hm *HeightManager) lastValidLockset() *types.LockSet {
 	// highest valid lockset on height
-	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
-		if hm.rounds[i].lockset.IsValid() {
-			return hm.rounds[i].lockset
+	for i := len(hm.rounds) - 1; i >= 0; i-- {
+		index := uint64(i)
+		glog.V(logger.Info).Infoln("lastvalidlockset i", i)
+		if hm.rounds[index].lockset.IsValid() {
+			return hm.rounds[index].lockset
 		}
 	}
 	return nil
 }
 func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 	var found *types.LockSet
-	for i := uint64(len(hm.rounds) - 1); i >= 0; i-- {
-		ls := hm.rounds[i].lockset
+	for i := len(hm.rounds) - 1; i >= 0; i-- {
+		index := uint64(i)
+		ls := hm.rounds[index].lockset
 		result, _ := ls.HasQuorum()
 		if ls.IsValid() && result {
 			if found != nil {
@@ -655,13 +662,13 @@ func (hm *HeightManager) HasQuorum() (bool, common.Hash) {
 func (hm *HeightManager) addVote(v *types.Vote, forceReplace bool) bool {
 	glog.V(logger.Info).Infoln("hm addvote:", hm)
 
-	r := v.Round()
+	r := v.Round
 	glog.V(logger.Info).Infoln("hm addvote: hm", hm)
 
 	return hm.getRoundManager(r).addVote(v, forceReplace)
 }
 func (hm *HeightManager) addProposal(p types.Proposal) bool {
-	return hm.getRoundManager(p.Round()).addProposal(p)
+	return hm.getRoundManager(p.GetRound()).addProposal(p)
 }
 func (hm *HeightManager) process() {
 	glog.V(logger.Info).Infoln("In HM Process", hm.height)
@@ -833,7 +840,7 @@ func (rm *RoundManager) vote() *types.Vote {
 				vote = types.NewVote(rm.height, rm.round, rm.proposal.Blockhash(), 1)
 			case 1: //repeat vote
 				glog.V(logger.Info).Infoln("voting on last vote")
-				vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash(), 1)
+				vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash, 1)
 			}
 		case *types.VotingInstruction: // vote for votinginstruction
 			quorumPossible, _ := t.LockSet().QuorumPossible()
@@ -848,7 +855,7 @@ func (rm *RoundManager) vote() *types.Vote {
 		switch vt {
 		case 1: // repeat vote
 			glog.V(logger.Info).Infoln("voting on last vote")
-			vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash(), 1)
+			vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash, 1)
 		default: // vote nil
 			glog.V(logger.Info).Infoln("voting proposed block")
 			vote = types.NewVote(rm.height, rm.round, rm.proposal.Blockhash(), 2)
