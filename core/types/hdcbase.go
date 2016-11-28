@@ -39,20 +39,7 @@ func NewVote(height uint64, round uint64, blockhash common.Hash, voteType uint64
 		VoteType:  voteType,
 	}
 }
-func (v *Vote) From() common.Address {
-	if v.sender != nil {
-		return *v.sender
-	} else {
-		addr, err := v.recoverSender(v.SigHash())
-		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
-			panic("recoversender error")
-		} else {
-			v.sender = &addr
-			return addr
-		}
-	}
-}
+
 func (v *Vote) Hash() common.Hash {
 	return rlpHash([]interface{}{
 		v.sender,
@@ -78,6 +65,20 @@ func (v *Vote) Sign(prv *ecdsa.PrivateKey) {
 }
 func (vote *Vote) hr() (uint64, uint64) {
 	return vote.Height, vote.Round
+}
+func (v *Vote) From() common.Address {
+	if v.sender != nil {
+		return *v.sender
+	} else {
+		addr, err := v.recoverSender(v.SigHash())
+		if err != nil {
+			glog.V(logger.Error).Infof("sender() error ", err)
+			panic("recoversender error")
+		} else {
+			v.sender = &addr
+			return addr
+		}
+	}
 }
 func (vote *Vote) recoverSender(hash common.Hash) (common.Address, error) {
 
@@ -201,7 +202,7 @@ func (lockset *LockSet) hr() (uint64, uint64) {
 	if len(hset) != 1 && len(rset) != 1 {
 		glog.V(logger.Error).Infof("different hr in lockset")
 	}
-	return lockset.Votes[0].Round, lockset.Votes[0].Round
+	return lockset.Votes[0].Height, lockset.Votes[0].Round
 }
 func (lockset *LockSet) From() common.Address {
 	if lockset.sender != nil {
@@ -250,6 +251,7 @@ var ErrInvalidVote = errors.New("no signature")
 
 func (lockset *LockSet) Add(vote *Vote, force bool) bool {
 	// glog.V(logger.Info).Infoln(*vote.signed.sender)
+	vote.From()
 	if vote.sender == nil {
 		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
 		return false
@@ -258,7 +260,15 @@ func (lockset *LockSet) Add(vote *Vote, force bool) bool {
 	// FIX ME
 	//
 	if !lockset.Contain(vote) {
+		if len(lockset.Votes) != 0 && (vote.Height != lockset.Height() || vote.Round != lockset.Round()) {
+			fmt.Printf("votes len:%d, lockset.Height: %d, lockset.Round: %d \n", len(lockset.Votes), lockset.Height(), lockset.Round())
+			fmt.Printf("vote.Height: %d, vote.Round: %d \n", vote.Height, vote.Round)
+
+			panic("Inconsistent height and round")
+		}
 		lockset.Votes = append(lockset.Votes, vote)
+	} else if !force {
+		panic("Double voting error")
 	}
 	return true
 }
@@ -284,9 +294,11 @@ func (lockset *LockSet) IsValid() bool {
 }
 
 func (lockset *LockSet) HasQuorum() (bool, common.Hash) {
-	lockset.IsValid()
+	if !lockset.IsValid() {
+		panic("Lockset invalid")
+	}
 	hs := lockset.sortByBlockhash()
-	if float64(hs[0].count) > 2/3.*float64(lockset.EligibleVotesNum) {
+	if float64(hs[0].count) > 2/3.0*float64(lockset.EligibleVotesNum) {
 		return true, hs[0].blockhash
 	} else {
 		return false, common.Hash{}
@@ -294,7 +306,9 @@ func (lockset *LockSet) HasQuorum() (bool, common.Hash) {
 }
 
 func (lockset *LockSet) NoQuorum() bool {
-	lockset.IsValid()
+	if !lockset.IsValid() {
+		panic("Lockset invalid")
+	}
 	hs := lockset.sortByBlockhash()
 	if float64(hs[0].count) < 1/3.*float64(lockset.EligibleVotesNum) {
 		return true
@@ -304,10 +318,13 @@ func (lockset *LockSet) NoQuorum() bool {
 }
 
 func (lockset *LockSet) QuorumPossible() (bool, common.Hash) {
+
 	if result, hs := lockset.HasQuorum(); result != false {
 		return false, hs
 	}
-	lockset.IsValid()
+	if !lockset.IsValid() {
+		panic("Lockset invalid")
+	}
 	hs := lockset.sortByBlockhash()
 	if float64(hs[0].count) > 1/3.*float64(lockset.EligibleVotesNum) {
 		return true, hs[0].blockhash
@@ -525,7 +542,12 @@ type BlockProposal struct {
 	RoundLockset   *LockSet
 }
 
-func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset *LockSet, round_lockset *LockSet) *BlockProposal {
+func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset *LockSet, roundLockset *LockSet) *BlockProposal {
+
+	if roundLockset == nil {
+		roundLockset = NewLockSet(0, Votes{})
+	}
+
 	return &BlockProposal{
 		R:              new(big.Int),
 		S:              new(big.Int),
@@ -533,7 +555,7 @@ func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset 
 		Round:          round,
 		Block:          block,
 		SigningLockset: signingLockset,
-		RoundLockset:   round_lockset,
+		RoundLockset:   roundLockset,
 	}
 }
 func (bp *BlockProposal) GetHeight() uint64 { return bp.Height }
@@ -574,7 +596,7 @@ func (bp *BlockProposal) SigHash() common.Hash {
 // func (bp *BlockProposal) SigningLockset() *LockSet { return bp.SigningLockset }
 func (bp *BlockProposal) Blockhash() common.Hash { return bp.Block.Hash() }
 func (bp *BlockProposal) LockSet() *LockSet {
-	if bp.RoundLockset != nil {
+	if bp.RoundLockset != nil && bp.RoundLockset.EligibleVotesNum != 0 {
 		return bp.RoundLockset
 	} else {
 		return bp.SigningLockset

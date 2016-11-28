@@ -426,13 +426,13 @@ func (ps *peerSet) Close() {
 func (p *peer) SendReadyMsg(r *types.Ready) error {
 	p.broadcastFilter.Add(r.Hash())
 	err := p2p.Send(p.rw, ReadyMsg, []interface{}{r})
-	fmt.Println("SendReady msg :", r)
-	fmt.Println("SendReady msg error:", err)
+	// fmt.Println("SendReady msg :", r)
+	// fmt.Println("SendReady msg error:", err)
 	return err
 }
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
 	p.broadcastFilter.Add(bp.Hash())
-	return p2p.Send(p.rw, NewBlockProposalMsg, &newBlockProposals{BlockProposal: bp})
+	return p2p.Send(p.rw, NewBlockProposalMsg, []interface{}{bp})
 }
 func (p *peer) SendVotingInstruction(vi *types.VotingInstruction) error {
 	p.broadcastFilter.Add(vi.Hash())

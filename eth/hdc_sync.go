@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"time"
 	// "github.com/ethereum/go-ethereum/core/state"
@@ -24,6 +25,7 @@ type HDCSynchronizer struct {
 	requested            *set.Set
 	received             *set.Set
 	lastActiveProtocol   *peer
+	addProposalLock      sync.Mutex
 }
 
 func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
@@ -62,7 +64,6 @@ func (self *HDCSynchronizer) Missing() []uint64 {
 	fmt.Println("return missing")
 
 	return missing
-
 }
 
 func (self *HDCSynchronizer) request() bool {
@@ -116,7 +117,6 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 		self.cm.Process()
 	}
 	self.cleanup()
-
 }
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
 	glog.V(logger.Info).Infoln("synchronizer on proposal")
@@ -143,7 +143,6 @@ func (self *HDCSynchronizer) cleanup() {
 			self.requested.Remove(v)
 		}
 	}
-
 }
 func (pm *HDCProtocolManager) syncTransactions(p *peer) {
 	var txs types.Transactions
