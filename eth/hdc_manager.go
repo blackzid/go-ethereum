@@ -139,8 +139,17 @@ func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
 	}
-	cm.readyValidators[cm.coinbase] = struct{}{}
+
+	if !cm.contract.isValidators(cm.coinbase) {
+		panic("Not Validators")
+	}
+
 	cm.initializeLocksets()
+
+	// old votes don't count
+	cm.readyValidators = make(map[common.Address]struct{})
+	cm.readyValidators[cm.coinbase] = struct{}{}
+
 	cm.synchronizer = NewHDCSynchronizer(cm)
 	return cm
 }
