@@ -168,7 +168,7 @@ func (cm *ConsensusManager) initializeLocksets() {
 	glog.V(logger.Info).Infoln("add inintial lockset")
 	headProposal := cm.loadProposal(cm.Head().Hash())
 	if headProposal != nil {
-		headBlockProposal := headProposal.(*types.BlockProposal)
+		headBlockProposal := headProposal
 		ls := headBlockProposal.SigningLockset
 
 		for _, v := range ls.Votes {
@@ -242,7 +242,7 @@ func (cm *ConsensusManager) storeProposal(bp *types.BlockProposal) error {
 	return nil
 }
 
-func (cm *ConsensusManager) loadProposal(blockhash common.Hash) types.Proposal {
+func (cm *ConsensusManager) loadProposal(blockhash common.Hash) *types.BlockProposal {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
 	data, _ := cm.hdcDb.Get([]byte(key))
 	if len(data) == 0 {
@@ -259,15 +259,15 @@ func (cm *ConsensusManager) getBlockProposal(blockhash common.Hash) *types.Block
 	if cm.blockCandidates[blockhash] != nil {
 		return cm.blockCandidates[blockhash]
 	} else {
-		return cm.loadProposal(blockhash).(*types.BlockProposal)
+		return cm.loadProposal(blockhash)
 	}
 }
 func (cm *ConsensusManager) getBlockProposalByHeight(height uint64) *types.BlockProposal {
-	if height < cm.Height() {
+	if height >= cm.Height() {
 		panic("getBlockProposalRlpByHeight error")
 	} else {
 		bh := cm.chain.GetBlockByNumber(uint64(height)).Hash()
-		return cm.loadProposal(bh).(*types.BlockProposal)
+		return cm.loadProposal(bh)
 	}
 }
 func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
@@ -601,17 +601,16 @@ func (cm *ConsensusManager) addBlockProposal(bp *types.BlockProposal) bool {
 func (cm *ConsensusManager) lastCommittingLockset() *types.LockSet {
 	return cm.getHeightManager(cm.Height() - 1).lastQuorumLockset()
 }
-func (cm *ConsensusManager) highestCommittingLockset() *types.LockSet {
+func (cm *ConsensusManager) HighestCommittingLockset() *types.LockSet {
 
-	for _, height := range cm.heights {
+	for i := len(cm.heights) - 1; i >= 0; i-- {
+		index := uint64(i)
 
-		ls := height.lastQuorumLockset()
-
-		if height.lastQuorumLockset() != nil {
+		ls := cm.getHeightManager(index).lastQuorumLockset()
+		if ls != nil {
 			return ls
 		}
 	}
-
 	return nil
 }
 func (cm *ConsensusManager) lastValidLockset() *types.LockSet {
@@ -716,7 +715,7 @@ func (hm *HeightManager) lastValidLockset() *types.LockSet {
 }
 func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 	var found *types.LockSet
-	for i := len(hm.rounds) - 1; i >= 0; i-- {
+	for i := 0; i < len(hm.rounds); i++ {
 		index := uint64(i)
 		ls := hm.getRoundManager(index).lockset
 		if ls.IsValid() {
@@ -802,14 +801,14 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 	return false
 }
 func (rm *RoundManager) addProposal(p types.Proposal) bool {
-	if rm.proposal == p {
-		return true
-	} else if rm.proposal == nil {
+	if rm.proposal == nil {
 		rm.proposal = p
 		return true
+	} else if rm.proposal.Blockhash() == p.Blockhash() {
+		return true
 	} else {
-		glog.V(logger.Info).Infoln("add_proposal error")
-		return false
+		fmt.Println(rm.proposal, p)
+		panic("add_proposal error")
 	}
 }
 func (rm *RoundManager) process() {

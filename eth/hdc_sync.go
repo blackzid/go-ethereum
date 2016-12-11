@@ -40,7 +40,7 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 }
 func (self *HDCSynchronizer) Missing() []uint64 {
 
-	ls := self.cm.highestCommittingLockset()
+	ls := self.cm.HighestCommittingLockset()
 	if ls == nil {
 		return []uint64{}
 	}
@@ -92,6 +92,8 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
 	// setup alarm
+	fmt.Println("request end")
+
 	self.cm.setupAlarm()
 	return false
 }
