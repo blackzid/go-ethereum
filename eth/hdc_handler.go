@@ -204,8 +204,8 @@ func (pm *HDCProtocolManager) Start() {
 	go pm.txsyncLoop()
 
 	// start consensus mangaer
-	pm.consensusManager.Process()
 	go pm.announce()
+	pm.consensusManager.Process()
 }
 func (pm *HDCProtocolManager) announce() {
 	for !pm.consensusManager.isReady() {
@@ -534,6 +534,9 @@ func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
 	oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
+
+	glog.V(logger.Info).Infoln("start insert block ", block)
+
 	n, err := self.blockchain.InsertChain(types.Blocks{block})
 
 	if err != nil {
@@ -555,7 +558,7 @@ func (self *HDCProtocolManager) linkBlock(block *types.Block) *types.Block {
 	// _link_block
 	if self.blockchain.HasBlock(block.Hash()) {
 		glog.V(logger.Info).Infoln("KNOWN BLOCK")
-		return nil
+		return block
 	}
 	if !self.blockchain.HasBlock(block.ParentHash()) {
 		glog.V(logger.Info).Infoln("missing parent")

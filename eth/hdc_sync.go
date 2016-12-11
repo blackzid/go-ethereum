@@ -41,47 +41,42 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 func (self *HDCSynchronizer) Missing() []uint64 {
 
 	ls := self.cm.highestCommittingLockset()
-	fmt.Println("missing1")
-
 	if ls == nil {
 		return []uint64{}
 	}
 	maxHeight := ls.Height()
-	fmt.Println("missing2")
 
 	current := self.cm.Head().Number()
-	fmt.Println("missing3")
 
 	if maxHeight < current.Uint64() {
 		return []uint64{}
 	}
 	var missing []uint64
-	fmt.Println("missing4")
 
 	for i := current.Uint64(); i < maxHeight; i++ {
 		missing = append(missing, i)
 	}
-	fmt.Println("return missing")
-
 	return missing
 }
 
 func (self *HDCSynchronizer) request() bool {
-	fmt.Println("request1")
-	missing := self.Missing()
-	if self.requested.Size() == 0 {
+	if self.requested.Size() != 0 {
+		fmt.Println("waiting for requested")
 		return false
 	}
-	fmt.Println("request2")
 
 	if self.received.Size()+self.maxGetProposalsCount >= self.maxQueued {
+		fmt.Println("queue is full")
 		return false
 	}
-	if len(missing) == 0 {
-		return false
-	}
-	fmt.Println("request3")
 
+	missing := self.Missing()
+
+	if len(missing) == 0 {
+		fmt.Println("insync")
+		return false
+	}
+	fmt.Println("start syncing")
 	var blockNumbers []uint64
 	for _, v := range missing {
 		if !self.received.Has(v) && !self.requested.Has(v) {
@@ -95,8 +90,6 @@ func (self *HDCSynchronizer) request() bool {
 	if len(blockNumbers) == 0 {
 		return false
 	}
-	fmt.Println("request4")
-
 	self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
 	// setup alarm
 	self.cm.setupAlarm()

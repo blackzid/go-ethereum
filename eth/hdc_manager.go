@@ -111,6 +111,8 @@ type ConsensusManager struct {
 	mu        sync.Mutex
 	currentMu sync.Mutex
 	uncleMu   sync.Mutex
+
+	commitMu  sync.Mutex
 	mux       *event.TypeMux
 	extraData []byte
 	gasPrice  *big.Int
@@ -355,17 +357,24 @@ func (cm *ConsensusManager) Process() {
 		// 	return
 		// }
 		cm.cleanup()
-		// glog.V(logger.Info).Infoln("sync start")
-		// cm.synchronizer.process()
+		glog.V(logger.Info).Infoln("sync start")
+		cm.synchronizer.process()
 		cm.setupAlarm()
 		glog.V(logger.Info).Infoln("end cm process:", cm.Height())
 	}
 }
 func (cm *ConsensusManager) commit() bool {
-	glog.V(logger.Info).Infoln("Start Commit")
+	cm.commitMu.Lock()
+	defer cm.commitMu.Unlock()
+	glog.V(logger.Info).Infoln("blockCandidates number:", len(cm.blockCandidates))
 
 	for _, p := range cm.blockCandidates {
+		glog.V(logger.Info).Infoln("Start Commit")
 		// if prehash == haed hash
+		if p.Height <= cm.Head().Header().Number.Uint64() {
+			glog.V(logger.Info).Infoln("past proposal")
+			continue
+		}
 		ls := cm.getHeightManager(p.GetHeight()).lastQuorumLockset()
 		if ls != nil {
 			_, hash := ls.HasQuorum()
@@ -530,13 +539,15 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		}
 		blk := cm.pm.linkBlock(proposal.Block)
 		if blk == nil {
+			glog.V(logger.Info).Infoln("link block: already linked or wrong block")
 			lqls := cm.getHeightManager(proposal.Height).lastQuorumLockset()
 			if lqls != nil {
 				_, hash := lqls.HasQuorum()
 				if hash == proposal.Blockhash() {
-
+					panic("Fork Detected")
 				}
 			}
+			return false
 		}
 		proposal.Block = blk
 		glog.V(logger.Info).Infoln("link block success, add block proposal")
@@ -744,14 +755,15 @@ func (hm *HeightManager) process() {
 }
 
 type RoundManager struct {
-	hm          *HeightManager
-	cm          *ConsensusManager
-	round       uint64
-	height      uint64
-	lockset     *types.LockSet
-	proposal    types.Proposal
-	voteLock    *types.Vote
-	timeoutTime float64
+	hm             *HeightManager
+	cm             *ConsensusManager
+	round          uint64
+	height         uint64
+	lockset        *types.LockSet
+	proposal       types.Proposal
+	voteLock       *types.Vote
+	timeoutTime    float64
+	roundProcessMu sync.Mutex
 }
 
 func NewRoundManager(heightmanager *HeightManager, round uint64) *RoundManager {
@@ -801,6 +813,8 @@ func (rm *RoundManager) addProposal(p types.Proposal) bool {
 	}
 }
 func (rm *RoundManager) process() {
+	rm.roundProcessMu.Lock()
+	defer rm.roundProcessMu.Unlock()
 	glog.V(logger.Info).Infoln("In RM Process", rm.height, rm.round)
 
 	if rm.cm.Round() != rm.round {
@@ -839,8 +853,11 @@ func (rm *RoundManager) propose() types.Proposal {
 	}
 	glog.V(logger.Info).Infoln("I am a proposer in ", rm.height, rm.round)
 	if rm.proposal != nil {
-		if rm.proposal.From() != rm.cm.coinbase || rm.voteLock == nil {
-			panic("Propose Error")
+		if rm.proposal.From() != rm.cm.coinbase {
+			panic("Propose Error: coinbase not the same")
+		}
+		if rm.voteLock == nil {
+			panic("Propose Error: voteLock nil")
 		}
 		glog.V(logger.Info).Infoln("already propose in this HR", rm.height, rm.round)
 		return rm.proposal
