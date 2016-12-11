@@ -263,7 +263,7 @@ func (cm *ConsensusManager) getBlockProposal(blockhash common.Hash) *types.Block
 	}
 }
 func (cm *ConsensusManager) getBlockProposalByHeight(height uint64) *types.BlockProposal {
-	if height < cm.Height() {
+	if height >= cm.Height() {
 		panic("getBlockProposalRlpByHeight error")
 	} else {
 		bh := cm.chain.GetBlockByNumber(uint64(height)).Hash()
