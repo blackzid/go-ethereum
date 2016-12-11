@@ -349,7 +349,6 @@ func (cm *ConsensusManager) Process() {
 
 			h := cm.getHeightManager(cm.Height())
 			h.process()
-			cm.Commit() // immediate commit
 			// if cm.Commit() {
 			// 	cm.Process()
 			// 	return
@@ -463,6 +462,7 @@ func (cm *ConsensusManager) AddReady(ready *types.Ready) {
 	cc := cm.contract
 	addr := ready.From()
 	if !cc.isValidators(addr) {
+		fmt.Println(addr)
 		panic("receive ready from invalid sender")
 	}
 	// fmt.Println("add addr:", add, "to readyValidators")
@@ -480,8 +480,8 @@ func (cm *ConsensusManager) AddVote(v *types.Vote) bool {
 	// TODO FIX
 	isOwnVote := (v.From() == cm.contract.coinbase)
 	h := cm.getHeightManager(v.Height)
-	glog.V(logger.Info).Infoln("addVote", v.From())
-	glog.V(logger.Info).Infoln("addVote to ", v.Height, v.Round)
+	// glog.V(logger.Info).Infoln("addVote", v.From())
+	// glog.V(logger.Info).Infoln("addVote to ", v.Height, v.Round)
 
 	return h.addVote(v, isOwnVote)
 }
@@ -801,7 +801,7 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 func (rm *RoundManager) addProposal(p types.Proposal) bool {
 	if rm.proposal == p {
 		return true
-	} else if rm.proposal == nil {
+	} else if rm.proposal != nil {
 		rm.proposal = p
 		return true
 	} else {
@@ -953,7 +953,7 @@ func (rm *RoundManager) vote() *types.Vote {
 			glog.V(logger.Info).Infoln("voting on last vote")
 			vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash, 1)
 		default: // vote nil
-			glog.V(logger.Info).Infoln("voting proposed block")
+			glog.V(logger.Info).Infoln("vote nil")
 			vote = types.NewVote(rm.height, rm.round, rm.proposal.Blockhash(), 2)
 		}
 	} else {
