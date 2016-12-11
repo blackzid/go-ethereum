@@ -306,32 +306,28 @@ func (cm *ConsensusManager) activeRound() *RoundManager {
 }
 func (cm *ConsensusManager) setupAlarm() {
 	// glog.V(logger.Error).Infof("in set up alarm")
-
 	ar := cm.activeRound()
 	delay := ar.getTimeout()
-	fmt.Println("delay time :", delay)
 	if cm.isWaitingForProposal() && delay > 0 {
-		go cm.onAlarm(ar, delay)
+		cm.onAlarm(ar, delay)
 	} else {
-		glog.V(logger.Info).Infoln("CM is waiting for transaction")
-		go cm.onAlarm(ar, delay)
+		// glog.V(logger.Info).Infoln("CM is waiting for transaction")
+		cm.onAlarm(ar, cm.transactionTimeout)
 	}
 }
 
 func (cm *ConsensusManager) onAlarm(rm *RoundManager, delay float64) {
 	// glog.V(logger.Info).Infoln("on Alarm, start sleeping")
 	time.Sleep(time.Duration(delay * 1000 * 1000 * 1000))
+
 	if cm.activeRound() == rm {
 		if !cm.isReady() {
-			// glog.V(logger.Info).Infoln("on Alarm")
-			// cm.setupAlarm()
+			// to next for loop
 			return
 		} else if !cm.isWaitingForProposal() {
-			glog.V(logger.Info).Infoln("on Alarm, not waiting for proposal")
+			// glog.V(logger.Info).Infoln("on Alarm, not waiting for proposal")
 			cm.setupAlarm()
 			return
-		} else {
-			cm.Process()
 		}
 	}
 }
@@ -344,26 +340,27 @@ func (cm *ConsensusManager) hasPendingTransactions() bool {
 }
 func (cm *ConsensusManager) Process() {
 	glog.V(logger.Info).Infoln("in process")
-	if !cm.isReady() {
-		cm.setupAlarm()
-		return
-	} else {
-		glog.V(logger.Info).Infoln("in cm process:", cm.Height())
-		cm.commit()
-		h := cm.getHeightManager(cm.Height())
-		h.process()
-		// if cm.commit() {
-		// 	cm.Process()
-		// 	return
-		// }
-		cm.cleanup()
-		glog.V(logger.Info).Infoln("sync start")
-		cm.synchronizer.process()
-		cm.setupAlarm()
-		glog.V(logger.Info).Infoln("end cm process:", cm.Height())
+	for {
+		if !cm.isReady() {
+			cm.setupAlarm()
+		} else {
+			glog.V(logger.Info).Infoln("in cm process:", cm.Height())
+			cm.Commit()
+
+			h := cm.getHeightManager(cm.Height())
+			h.process()
+			cm.Commit() // immediate commit
+			// if cm.Commit() {
+			// 	cm.Process()
+			// 	return
+			// }
+			go cm.cleanup()
+			go cm.synchronizer.process()
+			cm.setupAlarm()
+		}
 	}
 }
-func (cm *ConsensusManager) commit() bool {
+func (cm *ConsensusManager) Commit() bool {
 	cm.commitMu.Lock()
 	defer cm.commitMu.Unlock()
 	glog.V(logger.Info).Infoln("blockCandidates number:", len(cm.blockCandidates))
@@ -384,7 +381,7 @@ func (cm *ConsensusManager) commit() bool {
 				success := cm.pm.commitBlock(p.Block)
 				if success {
 					glog.V(logger.Info).Infoln("commited")
-					// cm.commit() // cause infinite loop
+					// cm.Commit() // cause infinite loop
 					return true
 				} else {
 					glog.V(logger.Info).Infoln("could not commit")
@@ -818,10 +815,10 @@ func (rm *RoundManager) process() {
 	glog.V(logger.Info).Infoln("In RM Process", rm.height, rm.round)
 
 	if rm.cm.Round() != rm.round {
-		glog.V(logger.Info).Infof("round process error")
+		panic("round process error")
 	}
 	if rm.cm.Height() != rm.height {
-		glog.V(logger.Info).Infof("round process error")
+		panic("round process error")
 	}
 
 	p := rm.propose()

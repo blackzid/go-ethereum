@@ -92,7 +92,7 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
 	// setup alarm
-	self.cm.setupAlarm()
+	// self.cm.setupAlarm()
 	return false
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
@@ -103,11 +103,9 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 			self.cm.AddVote(v)
 		}
 	}
-	self.cm.Process()
 	self.request()
 	for _, bp := range bps {
 		self.cm.AddProposal(bp, nil)
-		self.cm.Process()
 	}
 	self.cleanup()
 }

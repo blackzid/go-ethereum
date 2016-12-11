@@ -205,7 +205,7 @@ func (pm *HDCProtocolManager) Start() {
 
 	// start consensus mangaer
 	go pm.announce()
-	pm.consensusManager.Process()
+	go pm.consensusManager.Process()
 }
 func (pm *HDCProtocolManager) announce() {
 	for !pm.consensusManager.isReady() {
@@ -350,7 +350,6 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			glog.V(logger.Info).Infoln("NewBlockProposalMsg failed")
 			return nil
 		}
-		pm.consensusManager.Process()
 
 	case msg.Code == VotingInstructionMsg:
 		glog.V(logger.Info).Infoln("VotingInstructionMsg")
@@ -366,7 +365,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
 			pm.Broadcast(vi)
 		}
-		pm.consensusManager.Process()
+		// pm.consensusManager.Process()
 	case msg.Code == VoteMsg:
 		glog.V(logger.Info).Infoln("VoteMsg")
 		var vData voteData
@@ -382,8 +381,8 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		if isValid := pm.consensusManager.AddVote(vote); isValid {
 			pm.Broadcast(vote)
+			pm.consensusManager.Commit()
 		}
-		pm.consensusManager.Process()
 	case msg.Code == ReadyMsg:
 		fmt.Println("ReadyMsg received")
 		var r readyData
@@ -394,7 +393,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		ready := r.Ready
 		pm.consensusManager.AddReady(ready)
 		pm.Broadcast(ready)
-		pm.consensusManager.Process()
+		// pm.consensusManager.Process()
 	case msg.Code == TxMsg:
 		glog.V(logger.Info).Infoln("TxMsg received")
 		// // Transactions arrived, make sure we have a valid and fresh chain to handle them
