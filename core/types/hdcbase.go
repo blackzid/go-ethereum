@@ -821,3 +821,7 @@ func (vi *VotingInstruction) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) 
 	}
 	return vi.WithSignature(sig)
 }
+
+type RequestProposalNumber struct {
+	Number uint64
+}

@@ -448,7 +448,7 @@ func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
 	}
 	return p2p.Send(p.rw, BlockProposalsMsg, bps)
 }
-func (p *peer) RequestBlockProposals(blocknumbers []uint64) error {
+func (p *peer) RequestBlockProposals(blocknumbers []types.RequestProposalNumber) error {
 	glog.V(logger.Info).Infof(" fetching block proposals", blocknumbers)
 	return p2p.Send(p.rw, GetBlockProposalsMsg, blocknumbers)
 }

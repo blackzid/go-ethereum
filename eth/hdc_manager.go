@@ -357,7 +357,7 @@ func (cm *ConsensusManager) Process() {
 			return
 		}
 		cm.cleanup()
-		// cm.synchronizer.process()
+		cm.synchronizer.process()
 		cm.setupAlarm()
 	}
 }
@@ -599,16 +599,17 @@ func (cm *ConsensusManager) lastCommittingLockset() *types.LockSet {
 	return cm.getHeightManager(cm.Height() - 1).lastQuorumLockset()
 }
 func (cm *ConsensusManager) HighestCommittingLockset() *types.LockSet {
-
-	for i := len(cm.heights) - 1; i >= 0; i-- {
-		index := uint64(i)
-
-		ls := cm.getHeightManager(index).lastQuorumLockset()
+	var hcls *types.LockSet
+	hcls = nil
+	for i, height := range cm.heights {
+		ls := height.lastQuorumLockset()
 		if ls != nil {
-			return ls
+			if hcls != nil && i > hcls.Height() {
+				hcls = ls
+			}
 		}
 	}
-	return nil
+	return hcls
 }
 func (cm *ConsensusManager) lastValidLockset() *types.LockSet {
 	// glog.V(logger.Info).Infoln("cm lastValidLockset ")
@@ -721,8 +722,13 @@ func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 			result, _ := ls.HasQuorum()
 			if result {
 				if found != nil {
-					fmt.Println(len(hm.rounds), index)
-					panic("multiple valid lockset")
+					// fmt.Println(len(hm.rounds), index)
+					// glog.V(logger.Info).Infoln("multiple valid lockset")
+					// if _, h := found.HasQuorum(); h != hash {
+					// 	glog.V(logger.Info).Infoln("multiple valid lockset")
+					// 	panic("multiple valid locksets on different proposals")
+					// }
+
 				}
 				found = ls
 			}
