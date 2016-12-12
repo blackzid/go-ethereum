@@ -178,7 +178,9 @@ func (lockset *LockSet) sortByBlockhash() HashCounts {
 	// bhs := make(HashCount, 0, len(lockset.votes))
 	bhs := make(map[common.Hash]int)
 	for _, v := range lockset.Votes {
-		bhs[v.Blockhash] += 1
+		if v.VoteType == 1 {
+			bhs[v.Blockhash] += 1
+		}
 	}
 	hs := make(HashCounts, 0)
 	for bh := range bhs {

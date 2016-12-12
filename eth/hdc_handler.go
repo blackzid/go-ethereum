@@ -442,7 +442,7 @@ func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 	case *types.BlockProposal:
 		glog.V(logger.Info).Infoln("broadcast Blockproposal")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
-		glog.V(logger.Info).Infoln("Send Bp: ", m)
+		// glog.V(logger.Info).Infoln("Send Bp: ", m)
 		for _, peer := range peers {
 			peer.SendNewBlockProposal(m)
 		}

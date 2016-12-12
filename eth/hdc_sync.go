@@ -90,9 +90,9 @@ func (self *HDCSynchronizer) request() bool {
 	if len(blockNumbers) == 0 {
 		return false
 	}
-	self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
+	err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
 	// setup alarm
-	fmt.Println("request end")
+	fmt.Println("request end, err:", err)
 
 	self.cm.setupAlarm()
 	return false

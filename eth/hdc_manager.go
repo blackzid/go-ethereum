@@ -313,7 +313,7 @@ func (cm *ConsensusManager) setupAlarm() {
 	if cm.isWaitingForProposal() && delay > 0 {
 		go cm.onAlarm(ar, delay)
 	} else {
-		glog.V(logger.Info).Infoln("CM is waiting for transaction")
+		// glog.V(logger.Info).Infoln("CM is waiting for transaction")
 		go cm.onAlarm(ar, delay)
 	}
 }
@@ -327,7 +327,7 @@ func (cm *ConsensusManager) onAlarm(rm *RoundManager, delay float64) {
 			// cm.setupAlarm()
 			return
 		} else if !cm.isWaitingForProposal() {
-			glog.V(logger.Info).Infoln("on Alarm, not waiting for proposal")
+			// glog.V(logger.Info).Infoln("on Alarm, not waiting for proposal")
 			cm.setupAlarm()
 			return
 		} else {
@@ -661,7 +661,7 @@ func (hm *HeightManager) Round() uint64 {
 	l := hm.lastValidLockset()
 	if l != nil {
 		if l.IsValid() {
-			glog.V(logger.Info).Infoln("hm Round()", l.Round()+1)
+			// glog.V(logger.Info).Infoln("hm Round()", l.Round()+1)
 			return l.Round() + 1
 		}
 	}
@@ -676,6 +676,8 @@ func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
 	return hm.rounds[r]
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
+	glog.V(logger.Info).Infoln("lastVoteLock ", hm.height)
+
 	// highest lock
 	for i := len(hm.rounds) - 1; i >= 0; i-- {
 		index := uint64(i)
@@ -776,6 +778,9 @@ func NewRoundManager(heightmanager *HeightManager, round uint64) *RoundManager {
 	}
 }
 func (rm *RoundManager) getTimeout() float64 {
+	if rm.timeoutTime != 0 || rm.proposal != nil {
+		return 0
+	}
 	now := rm.cm.Now()
 	roundTimeout := rm.cm.roundTimeout
 	roundTimeoutFactor := rm.cm.roundTimeoutFactor
@@ -922,10 +927,12 @@ func (rm *RoundManager) vote() *types.Vote {
 	if rm.proposal != nil {
 		switch bp := rm.proposal.(type) {
 		case *types.VotingInstruction: // vote for votinginstruction
+
 			quorumPossible, _ := bp.LockSet().QuorumPossible()
 			if !quorumPossible {
 				panic("vote error")
 			}
+
 			glog.V(logger.Info).Infoln("voting on instruction")
 			vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
 		default:
@@ -949,21 +956,29 @@ func (rm *RoundManager) vote() *types.Vote {
 			}
 		}
 	} else if rm.timeoutTime != 0 && float64(rm.cm.Now()) > rm.timeoutTime {
-		vt := lastVoteLock.VoteType
-		switch vt {
-		case 1: // repeat vote
-			glog.V(logger.Info).Infoln("voting on last vote")
-			vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash, 1)
-		default: // vote nil
-			glog.V(logger.Info).Infoln("voting proposed block")
-			vote = types.NewVote(rm.height, rm.round, rm.proposal.Blockhash(), 2)
+
+		if lastVoteLock == nil {
+			glog.V(logger.Info).Infoln("rm proposal", rm.proposal)
+			vote = types.NewVote(rm.height, rm.round, common.StringToHash(""), 2)
+		} else {
+			vt := lastVoteLock.VoteType
+
+			switch vt {
+			case 1: // repeat vote
+				glog.V(logger.Info).Infoln("voting on last vote")
+				vote = types.NewVote(rm.height, rm.round, lastVoteLock.Blockhash, 1)
+			default: // vote nil
+				glog.V(logger.Info).Infoln("voting proposed block")
+				vote = types.NewVote(rm.height, rm.round, common.StringToHash(""), 2)
+			}
 		}
 	} else {
 		return nil
 	}
+	glog.V(logger.Info).Infoln("voting5")
 	rm.cm.Sign(vote)
 	rm.voteLock = vote
-	glog.V(logger.Info).Infoln("rm vote() in H:", rm.height, vote)
+	glog.V(logger.Info).Infoln("vote success in H:", rm.height, vote)
 
 	rm.lockset.Add(vote, false)
 	return vote
