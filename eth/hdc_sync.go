@@ -76,7 +76,6 @@ func (self *HDCSynchronizer) request() bool {
 		fmt.Println("insync")
 		return false
 	}
-	fmt.Println("start syncing")
 	var blockNumbers []uint64
 	for _, v := range missing {
 		if !self.received.Has(v) && !self.requested.Has(v) {
@@ -90,6 +89,8 @@ func (self *HDCSynchronizer) request() bool {
 	if len(blockNumbers) == 0 {
 		return false
 	}
+	fmt.Println("missing numbers :", blockNumbers)
+
 	err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
 	// setup alarm
 	fmt.Println("request end, err:", err)

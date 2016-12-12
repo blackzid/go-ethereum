@@ -66,6 +66,7 @@ type HDCProtocolManager struct {
 	consensusContract  *ConsensusContract
 	privateKeyHex      string
 	addTransactionLock sync.Mutex
+	eventMu            sync.Mutex
 }
 
 func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, validators []common.Address, privatekeyhex string, eth *Ethereum, extra []byte, gasPrice *big.Int, hdcDb ethdb.Database) (*HDCProtocolManager, error) {
@@ -208,10 +209,12 @@ func (pm *HDCProtocolManager) Start() {
 	pm.consensusManager.Process()
 }
 func (pm *HDCProtocolManager) announce() {
+	pm.eventMu.Lock()
+	defer pm.eventMu.Unlock()
 	for !pm.consensusManager.isReady() {
 		fmt.Println("-------------------consensusManager not ready ")
 		pm.consensusManager.SendReady(false)
-		time.Sleep(3 * time.Second)
+		time.Sleep(0.5 * 1000 * 1000 * 1000)
 	}
 	pm.consensusManager.SendReady(true)
 	fmt.Println("-----------------consensusManager Ready-------------------------")

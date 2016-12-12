@@ -300,6 +300,9 @@ func (lockset *LockSet) HasQuorum() (bool, common.Hash) {
 		panic("Lockset invalid")
 	}
 	hs := lockset.sortByBlockhash()
+	if len(hs) == 0 {
+		return false, common.Hash{}
+	}
 	if float64(hs[0].count) > 2/3.0*float64(lockset.EligibleVotesNum) {
 		return true, hs[0].blockhash
 	} else {
@@ -311,7 +314,11 @@ func (lockset *LockSet) NoQuorum() bool {
 	if !lockset.IsValid() {
 		panic("Lockset invalid")
 	}
+
 	hs := lockset.sortByBlockhash()
+	if len(hs) == 0 {
+		return true
+	}
 	if float64(hs[0].count) < 1/3.*float64(lockset.EligibleVotesNum) {
 		return true
 	} else {
@@ -328,6 +335,9 @@ func (lockset *LockSet) QuorumPossible() (bool, common.Hash) {
 		panic("Lockset invalid")
 	}
 	hs := lockset.sortByBlockhash()
+	if len(hs) == 0 {
+		return false, common.Hash{}
+	}
 	if float64(hs[0].count) > 1/3.*float64(lockset.EligibleVotesNum) {
 		return true, hs[0].blockhash
 	} else {
