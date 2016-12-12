@@ -418,14 +418,13 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			}
 			p.MarkTransaction(tx.Hash())
 		}
-		pm.txpool.AddBatch(txs)
+		pm.addTransactions(txs)
 	default:
 		fmt.Println("HandleMsg Error")
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 	return nil
 }
-
 func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 	// TODO: expect origin
 	var err error
@@ -549,7 +548,7 @@ func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 	}
 	// wait until block insert to chain
 	for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
-		glog.V(logger.Info).Infof("committing new block")
+		//DEBUG glog.V(logger.Info).Infof("committing new block")
 		time.Sleep(1 * time.Second)
 	}
 	glog.V(logger.Info).Infof("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
@@ -569,4 +568,9 @@ func (self *HDCProtocolManager) linkBlock(block *types.Block) *types.Block {
 	}
 
 	return block
+}
+func (self *HDCProtocolManager) addTransactions(txs []*types.Transaction) {
+	self.addTransactionLock.Lock()
+	defer self.addTransactionLock.Unlock()
+	self.txpool.AddBatch(txs)
 }
