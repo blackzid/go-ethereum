@@ -183,8 +183,8 @@ func (lockset *LockSet) sortByBlockhash() HashCounts {
 		}
 	}
 	hs := make(HashCounts, 0)
-	for bh := range bhs {
-		hs = append(hs, HashCount{blockhash: bh, count: bhs[bh]})
+	for bh, count := range bhs {
+		hs = append(hs, HashCount{blockhash: bh, count: count})
 	}
 	sort.Sort(hs)
 	return hs
@@ -256,35 +256,48 @@ func (lockset *LockSet) Add(vote *Vote, force bool) bool {
 	vote.From()
 	if vote.sender == nil {
 		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
-		return false
+		panic("Lockset Adding error")
 	}
-	//
-	// FIX ME
-	//
+
 	if !lockset.Contain(vote) {
+
 		if len(lockset.Votes) != 0 && (vote.Height != lockset.Height() || vote.Round != lockset.Round()) {
 			fmt.Printf("votes len:%d, lockset.Height: %d, lockset.Round: %d \n", len(lockset.Votes), lockset.Height(), lockset.Round())
 			fmt.Printf("vote.Height: %d, vote.Round: %d \n", vote.Height, vote.Round)
-
 			panic("Inconsistent height and round")
 		}
-		lockset.Votes = append(lockset.Votes, vote)
-	} else if !force {
-		panic("Double voting error")
+		if containsAddress(lockset.signee(), *vote.sender) {
+			if !force {
+				panic("Different Votes on same V,R")
+			}
+			//
+			// FIX ME
+			//
+		} else {
+			lockset.Votes = append(lockset.Votes, vote)
+		}
 	}
 	return true
 }
 
+func (lockset *LockSet) signee() []common.Address {
+	signee := []common.Address{}
+	for _, v := range lockset.Votes {
+		signee = append(signee, *v.sender)
+	}
+	return signee
+}
 func (lockset *LockSet) Contain(vote *Vote) bool {
 	return containsVote(lockset.Votes, vote)
 }
 
 func containsVote(s []*Vote, e *Vote) bool {
 	for _, a := range s {
-		if *a == *e {
+		if a.Height == e.Height && a.Round == e.Round && a.Blockhash == e.Blockhash && a.VoteType == e.VoteType && *a.sender == *e.sender {
 			return true
 		}
 	}
+
 	return false
 }
 func (lockset *LockSet) IsValid() bool {
@@ -319,7 +332,7 @@ func (lockset *LockSet) NoQuorum() bool {
 	if len(hs) == 0 {
 		return true
 	}
-	if float64(hs[0].count) < 1/3.*float64(lockset.EligibleVotesNum) {
+	if float64(hs[0].count) <= 1/3.*float64(lockset.EligibleVotesNum) {
 		return true
 	} else {
 		return false
@@ -746,7 +759,7 @@ func (vi *VotingInstruction) SigHash() common.Hash {
 	})
 }
 func (vi *VotingInstruction) Blockhash() common.Hash {
-	_, hash := vi.RoundLockset.HasQuorum()
+	_, hash := vi.RoundLockset.QuorumPossible()
 	return hash
 }
 func (vi *VotingInstruction) LockSet() *LockSet { return vi.RoundLockset }

@@ -309,11 +309,16 @@ func (cm *ConsensusManager) setupAlarm() {
 
 	ar := cm.activeRound()
 	delay := ar.getTimeout()
-	if cm.isWaitingForProposal() && delay > 0 {
-		fmt.Println("delay time :", delay)
-		go cm.waitProposalAlarm(ar, delay)
+	if cm.isWaitingForProposal() {
+		// if timeout is setup already, skip
+		fmt.Println("setup alarm on", ar.height, ar.round)
+		if delay > 0 {
+			fmt.Println("delay time :", delay)
+			go cm.waitProposalAlarm(ar, delay)
+		}
+		glog.V(logger.Info).Infoln("this ar already setup")
 	} else {
-		// glog.V(logger.Info).Infoln("wait txs alarm")
+		glog.V(logger.Info).Infoln("wait txs alarm")
 		go cm.waitProposalAlarm(ar, 1)
 	}
 }
@@ -328,6 +333,7 @@ func (cm *ConsensusManager) waitProposalAlarm(rm *RoundManager, delay float64) {
 			cm.setupAlarm()
 			return
 		} else if !cm.isWaitingForProposal() {
+			// there is no txs
 			glog.V(logger.Info).Infoln("waiting for txs")
 			cm.setupAlarm()
 			return
@@ -344,20 +350,20 @@ func (cm *ConsensusManager) hasPendingTransactions() bool {
 	return len(cm.pm.txpool.Pending()) > 0
 }
 func (cm *ConsensusManager) Process() {
-	glog.V(logger.Info).Infoln("in process")
+	glog.V(logger.Info).Infoln("---------------process------------------")
 	if !cm.isReady() {
 		cm.setupAlarm()
 		return
 	} else {
-		success := cm.commit()
+		cm.commit()
 		h := cm.getHeightManager(cm.Height())
 		h.process()
-		if success {
+		if success := cm.commit(); success {
 			cm.Process()
 			return
 		}
 		cm.cleanup()
-		cm.synchronizer.process()
+		// cm.synchronizer.process()
 		cm.setupAlarm()
 	}
 }
@@ -367,9 +373,14 @@ func (cm *ConsensusManager) commit() bool {
 	glog.V(logger.Info).Infoln("blockCandidates number:", len(cm.blockCandidates))
 
 	for _, p := range cm.blockCandidates {
-		// if prehash == haed hash
+		if p.Block.ParentHash() != cm.Head().Hash() {
+			//DEBUG
+			glog.V(logger.Info).Infoln("wrong parent hash")
+			continue
+		}
 		if p.Height <= cm.Head().Header().Number.Uint64() {
-			//DEBUG glog.V(logger.Info).Infoln("past proposal")
+			//DEBUG
+			glog.V(logger.Info).Infoln("past proposal")
 			continue
 		}
 		ls := cm.getHeightManager(p.GetHeight()).lastQuorumLockset()
@@ -381,20 +392,28 @@ func (cm *ConsensusManager) commit() bool {
 				success := cm.pm.commitBlock(p.Block)
 				if success {
 					glog.V(logger.Info).Infoln("commited")
-					// cm.commit() // cause infinite loop
+					// cm.commit()
 					return true
 				} else {
 					glog.V(logger.Info).Infoln("could not commit")
 				}
 			}
+			glog.V(logger.Info).Infoln("ls is ", ls)
+			for _, v := range ls.Votes {
+				glog.V(logger.Info).Infoln(v)
+			}
+			glog.V(logger.Info).Infoln("block hashes not the same,", p.Blockhash(), hash)
 		} else {
-			//DEBUG glog.V(logger.Info).Infoln("no quorum for ", p.GetHeight(), p.GetRound())
+			//DEBUG
+			glog.V(logger.Info).Infoln("no quorum for ", p.GetHeight(), p.GetRound())
 			if ls != nil {
-				//DEBUG glog.V(logger.Info).Infoln("votes ", ls.Votes)
+				//DEBUG
+				glog.V(logger.Info).Infoln("votes ", ls.Votes)
 			}
 		}
 	}
-	//DEBUG glog.V(logger.Info).Infoln("no blockcandidate to commit")
+	//DEBUG
+	glog.V(logger.Info).Infoln("no blockcandidate to commit")
 	return false
 }
 func (cm *ConsensusManager) cleanup() {
@@ -407,7 +426,8 @@ func (cm *ConsensusManager) cleanup() {
 	}
 	for i, _ := range cm.heights {
 		if cm.getHeightManager(i).height < cm.Head().Header().Number.Uint64() {
-			//DEBUG fmt.Println("Delete BlockCandidte", i)
+			////DEBUG
+			fmt.Println("Delete BlockCandidte", i)
 			delete(cm.heights, i)
 		}
 	}
@@ -492,6 +512,7 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		return false
 	}
 	if !cm.contract.isValidators(p.From()) || !cm.contract.isProposer(p) {
+
 		glog.V(logger.Info).Infoln("proposal sender invalid")
 		return false
 	}
@@ -586,6 +607,7 @@ func (cm *ConsensusManager) addBlockProposal(bp *types.BlockProposal) bool {
 	if !result || slH != bp.Height-1 {
 		panic("proposal error")
 	}
+	glog.V(logger.Info).Infof("bp signinglockset %d votes has %d\n", bp.SigningLockset.Height(), len(bp.SigningLockset.Votes))
 	for _, v := range bp.SigningLockset.Votes {
 		cm.AddVote(v)
 	}
@@ -719,16 +741,15 @@ func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 		index := uint64(i)
 		ls := hm.getRoundManager(index).lockset
 		if ls.IsValid() {
-			result, _ := ls.HasQuorum()
+			result, hash := ls.HasQuorum()
 			if result {
 				if found != nil {
-					// fmt.Println(len(hm.rounds), index)
-					// glog.V(logger.Info).Infoln("multiple valid lockset")
-					// if _, h := found.HasQuorum(); h != hash {
-					// 	glog.V(logger.Info).Infoln("multiple valid lockset")
-					// 	panic("multiple valid locksets on different proposals")
-					// }
-
+					fmt.Println(len(hm.rounds), index)
+					glog.V(logger.Info).Infoln("multiple valid lockset")
+					if _, h := found.HasQuorum(); h != hash {
+						glog.V(logger.Info).Infoln("multiple valid lockset")
+						panic("multiple valid locksets on different proposals")
+					}
 				}
 				found = ls
 			}
@@ -752,11 +773,13 @@ func (hm *HeightManager) addProposal(p types.Proposal) bool {
 	return hm.getRoundManager(p.GetRound()).addProposal(p)
 }
 func (hm *HeightManager) process() {
-	//DEBUG glog.V(logger.Info).Infoln("In HM Process", hm.height)
+	////DEBUG
+	glog.V(logger.Info).Infoln("In HM Process", hm.height)
 	r := hm.Round()
 
 	hm.getRoundManager(r).process()
-	//DEBUG glog.V(logger.Info).Infoln("end HM Process")
+	////DEBUG
+	glog.V(logger.Info).Infoln("end HM Process")
 }
 
 type RoundManager struct {
@@ -790,10 +813,12 @@ func (rm *RoundManager) getTimeout() float64 {
 	roundTimeoutFactor := rm.cm.roundTimeoutFactor
 	delay := float64(roundTimeout) * math.Pow(roundTimeoutFactor, float64(rm.round))
 	rm.timeoutTime = float64(now) + delay
+	glog.V(logger.Info).Infoln("RM gettimout", rm.height, rm.round)
 	return delay
 }
 func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
-	//DEBUG glog.V(logger.Info).Infoln("In RM addvote", vote)
+	////DEBUG
+	glog.V(logger.Info).Infof("In RM %d addvote", rm.round, vote)
 	if !rm.lockset.Contain(vote) {
 		success := rm.lockset.Add(vote, force_replace)
 		// report faliure
@@ -806,7 +831,8 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 		glog.V(logger.Info).Infoln("added", success)
 		return success
 	}
-	//DEBUG glog.V(logger.Info).Infof("vote already in lockset")
+	////DEBUG
+	glog.V(logger.Info).Infof("vote already in lockset")
 	return false
 }
 func (rm *RoundManager) addProposal(p types.Proposal) bool {
@@ -823,7 +849,8 @@ func (rm *RoundManager) addProposal(p types.Proposal) bool {
 func (rm *RoundManager) process() {
 	rm.roundProcessMu.Lock()
 	defer rm.roundProcessMu.Unlock()
-	//DEBUG glog.V(logger.Info).Infoln("In RM Process", rm.height, rm.round)
+	////DEBUG
+	glog.V(logger.Info).Infoln("In RM Process", rm.height, rm.round)
 
 	if rm.cm.Round() != rm.round {
 		glog.V(logger.Info).Infof("round process error")
@@ -845,6 +872,9 @@ func (rm *RoundManager) process() {
 	v := rm.vote()
 	if v != nil {
 		rm.cm.broadcast(v)
+	}
+	if !(rm.proposal == nil || rm.voteLock != nil) {
+		panic("RM Process Error")
 	}
 }
 
@@ -876,6 +906,7 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Info).Infof("no valid round lockset for height")
 		return nil
 	}
+	glog.V(logger.Info).Infoln("in creating proposal")
 	var proposal types.Proposal
 	quorum, _ := round_lockset.HasQuorum()
 	quroumpossible, _ := round_lockset.QuorumPossible()
@@ -888,6 +919,10 @@ func (rm *RoundManager) propose() types.Proposal {
 		proposal = types.NewVotingInstruction(rm.height, rm.round, round_lockset)
 		rm.cm.Sign(proposal)
 	} else {
+		glog.V(logger.Info).Infoln("invalid ls: ", len(round_lockset.Votes))
+		for _, v := range round_lockset.Votes {
+			fmt.Println(v)
+		}
 		panic("invalid round_lockset")
 	}
 	rm.proposal = proposal
@@ -967,7 +1002,6 @@ func (rm *RoundManager) vote() *types.Vote {
 			vote = types.NewVote(rm.height, rm.round, common.StringToHash(""), 2)
 		} else {
 			vt := lastVoteLock.VoteType
-
 			switch vt {
 			case 1: // repeat vote
 				glog.V(logger.Info).Infoln("voting on last vote")
@@ -983,7 +1017,6 @@ func (rm *RoundManager) vote() *types.Vote {
 	rm.cm.Sign(vote)
 	rm.voteLock = vote
 	glog.V(logger.Info).Infoln("vote success in H:", rm.height, vote)
-
 	rm.lockset.Add(vote, false)
 	return vote
 }
@@ -1066,7 +1099,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	// 		}
 	// 		badUncles = append(badUncles, hash)
 	// 	} else {
-	// 		glog.V(logger.Debug).Infof("commiting %x as uncle\n", hash[:4])
+	// 		glog.V(logger.DEBUG).Infof("commiting %x as uncle\n", hash[:4])
 	// 		uncles = append(uncles, uncle.Header())
 	// 	}
 	// }
