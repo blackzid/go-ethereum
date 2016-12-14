@@ -21,8 +21,6 @@ const (
 // eth protocol message codes
 const (
 	// Protocol messages belonging to hdc
-	// HDCStatusMsg         = 0x10
-	// HDCTxMsg             = 0x11
 	ReadyMsg             = 0x08
 	GetBlockProposalsMsg = 0x09
 	BlockProposalsMsg    = 0x0a

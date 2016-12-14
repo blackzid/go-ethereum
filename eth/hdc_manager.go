@@ -363,7 +363,7 @@ func (cm *ConsensusManager) Process() {
 			return
 		}
 		cm.cleanup()
-		// cm.synchronizer.process()
+		cm.synchronizer.process()
 		cm.setupAlarm()
 	}
 }
@@ -626,7 +626,9 @@ func (cm *ConsensusManager) HighestCommittingLockset() *types.LockSet {
 	for i, height := range cm.heights {
 		ls := height.lastQuorumLockset()
 		if ls != nil {
-			if hcls != nil && i > hcls.Height() {
+			if hcls == nil {
+				hcls = ls
+			} else if i > hcls.Height() {
 				hcls = ls
 			}
 		}

@@ -271,10 +271,13 @@ func (pm *HDCProtocolManager) handle(p *peer) error {
 	defer pm.removePeer(p.id)
 
 	// Register the peer in the downloader. If the downloader considers it banned, we disconnect
-	if err := pm.downloader.RegisterPeer(p.id, p.version, p.Head, p.RequestHeadersByHash, p.RequestHeadersByNumber, p.RequestBodies, p.RequestReceipts, p.RequestNodeData); err != nil {
-		glog.V(logger.Info).Infof("%v: downloader handling failed: %v", p, err)
-		return err
-	}
+
+	// hdc disable downloader
+	// if err := pm.downloader.RegisterPeer(p.id, p.version, p.Head, p.RequestHeadersByHash, p.RequestHeadersByNumber, p.RequestBodies, p.RequestReceipts, p.RequestNodeData); err != nil {
+	// 	glog.V(logger.Info).Infof("%v: downloader handling failed: %v", p, err)
+	// 	return err
+	// }
+
 	// Propagate existing transactions. new transactions appearing
 	// after this will be sent via broadcasts.
 
@@ -313,9 +316,11 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
+		glog.V(logger.Info).Infoln("Query Number: ", query)
 		var found []*types.BlockProposal
 		for i, height := range query {
 			if i == MaxGetproposalsCount {
+				glog.V(logger.Info).Infoln("max get proposal count")
 				break
 			}
 			if height.Number > pm.blockchain.CurrentBlock().NumberU64() {
@@ -379,12 +384,12 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		vote := vData.Vote
-		glog.V(logger.Info).Infoln("receive vote with HR ", vote.Height, vote.Round)
 
 		if p.broadcastFilter.Has(vote.Hash()) {
 			glog.V(logger.Info).Infoln("vote filtered")
 			return nil
 		}
+		glog.V(logger.Info).Infoln("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote); isValid {
 			pm.Broadcast(vote)
 		}
@@ -422,7 +427,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.addTransactions(txs)
 	default:
-		fmt.Println("HandleMsg Error")
+		fmt.Println("HandleMsg Error", err)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 	return nil

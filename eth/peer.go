@@ -443,9 +443,11 @@ func (p *peer) SendVote(v *types.Vote) error {
 	return p2p.Send(p.rw, VoteMsg, &voteData{Vote: v})
 }
 func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
+	glog.V(logger.Info).Infof(" Sending  proposals", len(bps))
 	for _, bp := range bps {
 		p.broadcastFilter.Add(bp.Hash())
 	}
+	glog.V(logger.Info).Infof(" -----send")
 	return p2p.Send(p.rw, BlockProposalsMsg, bps)
 }
 func (p *peer) RequestBlockProposals(blocknumbers []types.RequestProposalNumber) error {

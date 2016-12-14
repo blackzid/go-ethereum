@@ -41,19 +41,21 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 
 	ls := self.cm.HighestCommittingLockset()
+
 	if ls == nil {
+		fmt.Println("no highest comitting lockest")
 		return []types.RequestProposalNumber{}
 	}
 	maxHeight := ls.Height()
-
 	current := self.cm.Head().Number()
+	fmt.Printf("max height: %d current: %d\n", maxHeight, current)
 
 	if maxHeight < current.Uint64() {
 		return []types.RequestProposalNumber{}
 	}
 	var missing []types.RequestProposalNumber
 
-	for i := current.Uint64(); i < maxHeight; i++ {
+	for i := current.Uint64() + 1; i < maxHeight+1; i++ {
 		missing = append(missing, types.RequestProposalNumber{i})
 	}
 	return missing
@@ -80,7 +82,7 @@ func (self *HDCSynchronizer) request() bool {
 	for _, v := range missing {
 		if !self.received.Has(v.Number) && !self.requested.Has(v.Number) {
 			blockNumbers = append(blockNumbers, v)
-			self.requested.Add(v)
+			self.requested.Add(v.Number)
 			if len(blockNumbers) == self.maxGetProposalsCount {
 				break
 			}
