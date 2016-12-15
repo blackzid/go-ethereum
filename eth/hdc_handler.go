@@ -182,7 +182,10 @@ func (pm *HDCProtocolManager) removePeer(id string) {
 	glog.V(logger.Debug).Infoln("Removing peer", id)
 
 	// Unregister the peer from the downloader and Ethereum peer set
-	pm.downloader.UnregisterPeer(id)
+
+	// hdc disable downloader
+	// pm.downloader.UnregisterPeer(id)
+
 	if err := pm.peers.Unregister(id); err != nil {
 		glog.V(logger.Error).Infoln("Removal failed:", err)
 	}

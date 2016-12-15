@@ -481,6 +481,7 @@ func (cm *ConsensusManager) AddReady(ready *types.Ready) {
 	cc := cm.contract
 	addr := ready.From()
 	if !cc.isValidators(addr) {
+		fmt.Println(addr.Hex())
 		panic("receive ready from invalid sender")
 	}
 	// fmt.Println("add addr:", add, "to readyValidators")
@@ -692,14 +693,11 @@ func (hm *HeightManager) Round() uint64 {
 }
 func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
 	if _, ok := hm.rounds[r]; !ok {
-		fmt.Println("Create new rM in", hm.height, r)
 		hm.rounds[r] = NewRoundManager(hm, r)
 	}
 	return hm.rounds[r]
 }
 func (hm *HeightManager) LastVoteLock() *types.Vote {
-	glog.V(logger.Info).Infoln("lastVoteLock ", hm.height)
-
 	// highest lock
 	for i := len(hm.rounds) - 1; i >= 0; i-- {
 		index := uint64(i)
@@ -776,12 +774,10 @@ func (hm *HeightManager) addProposal(p types.Proposal) bool {
 }
 func (hm *HeightManager) process() {
 	////DEBUG
-	glog.V(logger.Info).Infoln("In HM Process", hm.height)
 	r := hm.Round()
 
 	hm.getRoundManager(r).process()
 	////DEBUG
-	glog.V(logger.Info).Infoln("end HM Process")
 }
 
 type RoundManager struct {
