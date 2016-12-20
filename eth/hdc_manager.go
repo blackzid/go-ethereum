@@ -816,7 +816,7 @@ func (rm *RoundManager) getTimeout() float64 {
 }
 func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 	////DEBUG
-	glog.V(logger.Info).Infof("In RM %d addvote", rm.round, vote)
+	glog.V(logger.Info).Infof("In RM %d addvote", rm.round)
 	if !rm.lockset.Contain(vote) {
 		success := rm.lockset.Add(vote, force_replace)
 		// report faliure
