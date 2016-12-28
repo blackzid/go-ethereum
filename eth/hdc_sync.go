@@ -91,11 +91,14 @@ func (self *HDCSynchronizer) request() bool {
 	if len(blockNumbers) == 0 {
 		return false
 	}
-	fmt.Println("missing numbers :", blockNumbers)
+	if self.lastActiveProtocol != nil {
+		err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
+		fmt.Println("request end, err:", err)
+	} else {
+		glog.V(logger.Info).Infof("no active protocol")
 
-	err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
+	}
 	// setup alarm
-	fmt.Println("request end, err:", err)
 
 	self.cm.setupAlarm()
 	return false
@@ -118,7 +121,7 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 }
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
 	glog.V(logger.Info).Infoln("synchronizer on proposal")
-	if proposal.GetHeight() > self.cm.Height() {
+	if proposal.GetHeight() >= self.cm.Height() {
 		if !proposal.LockSet().IsValid() {
 			panic("onProposal error")
 		}

@@ -1047,8 +1047,8 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		Difficulty: core.CalcDifficulty(config, uint64(tstamp), parent.Time().Uint64(), parent.Number(), parent.Difficulty()),
-		GasLimit:   core.CalcGasLimit(parent),
+		Difficulty: new(big.Int).SetInt64(0),
+		GasLimit:   new(big.Int).SetInt64(100000000),
 		GasUsed:    new(big.Int),
 		Coinbase:   cm.coinbase,
 		Extra:      cm.extraData,
@@ -1080,36 +1080,10 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 
 	contract.txpool.RemoveBatch(work.lowGasTxs)
 	contract.txpool.RemoveBatch(work.failedTxs)
-
-	// compute uncles for the new block.
-	// var (
 	var uncles []*types.Header
-	// 	badUncles []common.Hash
-	// )
-	// for hash, uncle := range self.possibleUncles {
-	// 	if len(uncles) == 2 {
-	// 		break
-	// 	}
-	// 	if err := self.commitUncle(work, uncle.Header()); err != nil {
-	// 		if glog.V(logger.Ridiculousness) {
-	// 			glog.V(logger.Detail).Infof("Bad uncle found and will be removed (%x)\n", hash[:4])
-	// 			glog.V(logger.Detail).Infoln(uncle)
-	// 		}
-	// 		badUncles = append(badUncles, hash)
-	// 	} else {
-	// 		glog.V(logger.DEBUG).Infof("commiting %x as uncle\n", hash[:4])
-	// 		uncles = append(uncles, uncle.Header())
-	// 	}
-	// }
-	// for _, hash := range badUncles {
-	// 	delete(self.possibleUncles, hash)
-	// }
 
-	// if atomic.LoadInt32(&self.mining) == 1 {
-	// commit state root after all state transitions.
 	core.AccumulateRewards(work.state, header, uncles)
 	header.Root = work.state.IntermediateRoot()
-	// }
 
 	// create the new block whose nonce will be mined.
 	work.Block = types.NewBlock(header, work.txs, uncles, work.receipts)

@@ -770,7 +770,6 @@ func (self *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain
 func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err error) {
 	self.wg.Add(1)
 	defer self.wg.Done()
-
 	// Calculate the total difficulty of the block
 	ptd := self.GetTd(block.ParentHash())
 	if ptd == nil {
@@ -790,12 +789,7 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 	if err := WriteBlock(self.chainDb, block); err != nil {
 		glog.Fatalf("failed to write block contents: %v", err)
 	}
-
-	// If the total difficulty is higher than our known, add it to the canonical chain
-	// Second clause in the if statement reduces the vulnerability to selfish mining.
-	// Please refer to http://www.cs.cornell.edu/~ie53/publications/btcProcFC.pdf
-	if externTd.Cmp(localTd) > 0 || (externTd.Cmp(localTd) == 0 && mrand.Float64() < 0.5) {
-		// Reorganise the chain if the parent is not the head block
+	if self.config.PBFT {
 		if block.ParentHash() != self.currentBlock.Hash() {
 			if err := self.reorg(self.currentBlock, block); err != nil {
 				return NonStatTy, err
@@ -804,10 +798,23 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 		self.insert(block) // Insert the block as the new head of the chain
 		status = CanonStatTy
 	} else {
-		status = SideStatTy
+		// If the total difficulty is higher than our known, add it to the canonical chain
+		// Second clause in the if statement reduces the vulnerability to selfish mining.
+		// Please refer to http://www.cs.cornell.edu/~ie53/publications/btcProcFC.pdf
+		if externTd.Cmp(localTd) > 0 || (externTd.Cmp(localTd) == 0 && mrand.Float64() < 0.5) {
+			// Reorganise the chain if the parent is not the head block
+			if block.ParentHash() != self.currentBlock.Hash() {
+				if err := self.reorg(self.currentBlock, block); err != nil {
+					return NonStatTy, err
+				}
+			}
+			self.insert(block) // Insert the block as the new head of the chain
+			status = CanonStatTy
+		} else {
+			status = SideStatTy
+		}
 	}
 	self.futureBlocks.Remove(block.Hash())
-
 	return
 }
 

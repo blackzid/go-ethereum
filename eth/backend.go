@@ -251,6 +251,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		eth.pow = ethash.NewShared()
 
 	default:
+		// change pow checker for bft
 		if config.PBFT {
 			eth.pow = fakepow.New()
 		} else {

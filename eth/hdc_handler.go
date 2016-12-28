@@ -545,7 +545,7 @@ func (self *HDCProtocolManager) NodeInfo() *EthNodeInfo {
 func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
-	// oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
+	oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
 
 	glog.V(logger.Info).Infoln("start insert block")
 
@@ -557,10 +557,11 @@ func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 		return false
 	}
 	// wait until block insert to chain
-	// for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
-	// 	//DEBUG glog.V(logger.Info).Infof("committing new block")
-	// 	time.Sleep(0.2 * 1000 * 1000 * 1000)
-	// }
+	for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
+		// DEBUG
+		glog.V(logger.Info).Infof("committing new block")
+		time.Sleep(0.2 * 1000 * 1000 * 1000)
+	}
 	glog.V(logger.Info).Infof("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
 	return true
 }
