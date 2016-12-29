@@ -311,14 +311,13 @@ func (cm *ConsensusManager) setupAlarm() {
 	delay := ar.getTimeout()
 	if cm.isWaitingForProposal() {
 		// if timeout is setup already, skip
-		fmt.Println("setup alarm on", ar.height, ar.round)
 		if delay > 0 {
 			fmt.Println("delay time :", delay)
 			go cm.waitProposalAlarm(ar, delay)
 		}
-		glog.V(logger.Info).Infoln("this ar already setup")
 	} else {
 		glog.V(logger.Info).Infoln("wait txs alarm")
+
 		go cm.waitProposalAlarm(ar, 1)
 	}
 }
@@ -904,7 +903,6 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Info).Infof("no valid round lockset for height")
 		return nil
 	}
-	glog.V(logger.Info).Infoln("in creating proposal")
 	var proposal types.Proposal
 	quorum, _ := round_lockset.HasQuorum()
 	quroumpossible, _ := round_lockset.QuorumPossible()
@@ -946,6 +944,11 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	if !(roundLockset != nil || rm.round == 0) {
 		panic("mkProposal error")
 	}
+
+	// Try to wait more Tx per block
+	glog.V(logger.Info).Infof("Try to wait more Tx per block")
+	time.Sleep(time.Second * 1)
+
 	block := rm.cm.newBlock()
 	blockProposal := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
 	rm.cm.Sign(blockProposal)
@@ -955,10 +958,10 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 func (rm *RoundManager) vote() *types.Vote {
 
 	if rm.voteLock != nil {
-		glog.V(logger.Info).Infof("voted")
+		//DEBUG glog.V(logger.Info).Infof("voted")
 		return nil
 	}
-	glog.V(logger.Info).Infoln("in vote in RM", rm.height, rm.round)
+	//DEBUG glog.V(logger.Info).Infoln("in vote in RM", rm.height, rm.round)
 	lastVoteLock := rm.hm.LastVoteLock()
 
 	var vote *types.Vote
@@ -1037,11 +1040,11 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 		tstamp = parent.Time().Int64() + 1
 	}
 	// this will ensure we're not going off too far in the future
-	if now := time.Now().Unix(); tstamp > now+4 {
-		wait := time.Duration(tstamp-now) * time.Second
-		glog.V(logger.Info).Infoln("We are too far in the future. Waiting for", wait)
-		time.Sleep(wait)
-	}
+	// if now := time.Now().Unix(); tstamp > now+4 {
+	// 	wait := time.Duration(tstamp-now) * time.Second
+	// 	glog.V(logger.Info).Infoln("We are too far in the future. Waiting for", wait)
+	// 	time.Sleep(wait)
+	// }
 
 	num := parent.Number()
 	header := &types.Header{
@@ -1054,13 +1057,6 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 		Extra:      cm.extraData,
 		Time:       big.NewInt(tstamp),
 	}
-	// previous := self.current
-	// Could potentially happen if starting to mine in an odd state.
-	// err := self.makeCurrent(parent, header)
-	// if err != nil {
-	// 	glog.V(logger.Info).Infoln("Could not create new env for mining, retrying on next block.")
-	// 	return
-	// }
 	state, err := cm.chain.StateAt(parent.Root())
 	if err != nil {
 		panic(err)
