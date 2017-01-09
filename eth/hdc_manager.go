@@ -116,6 +116,7 @@ type ConsensusManager struct {
 	mux       *event.TypeMux
 	extraData []byte
 	gasPrice  *big.Int
+	Enable    bool
 }
 
 func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
@@ -140,6 +141,7 @@ func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db
 		gasPrice:           gasPrice,
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
+		Enable:             false,
 	}
 
 	if !cm.contract.isValidators(cm.coinbase) {
@@ -155,7 +157,19 @@ func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db
 	cm.synchronizer = NewHDCSynchronizer(cm)
 	return cm
 }
+func (cm *ConsensusManager) Start() bool {
+	cm.Enable = true
+	cm.Process()
+	glog.V(logger.Info).Infoln("Start Consensus")
+	return true
+}
+func (cm *ConsensusManager) Stop() bool {
+	cm.Enable = false
+	cm.Process()
+	glog.V(logger.Info).Infoln("Stop Consensus")
 
+	return true
+}
 func (cm *ConsensusManager) initializeLocksets() {
 	// initializing locksets
 	// sign genesis
@@ -349,6 +363,9 @@ func (cm *ConsensusManager) hasPendingTransactions() bool {
 	return len(cm.pm.txpool.Pending()) > 0
 }
 func (cm *ConsensusManager) Process() {
+	if !cm.Enable {
+		return
+	}
 	glog.V(logger.Info).Infoln("---------------process------------------")
 	if !cm.isReady() {
 		cm.setupAlarm()
@@ -946,8 +963,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	}
 
 	// Try to wait more Tx per block
-	glog.V(logger.Info).Infof("Try to wait more Tx per block")
-	time.Sleep(time.Second * 1)
+	time.Sleep(1000 * 1000 * 500)
 
 	block := rm.cm.newBlock()
 	blockProposal := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
@@ -1051,7 +1067,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
 		Difficulty: new(big.Int).SetInt64(0),
-		GasLimit:   new(big.Int).SetInt64(100000000),
+		GasLimit:   new(big.Int).SetInt64(50000000),
 		GasUsed:    new(big.Int),
 		Coinbase:   cm.coinbase,
 		Extra:      cm.extraData,
@@ -1081,14 +1097,8 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	core.AccumulateRewards(work.state, header, uncles)
 	header.Root = work.state.IntermediateRoot()
 
-	// create the new block whose nonce will be mined.
 	work.Block = types.NewBlock(header, work.txs, uncles, work.receipts)
-
-	// We only care about logging if we're actually mining.
-	// if atomic.LoadInt32(&self.mining) == 1 {
 	glog.V(logger.Info).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
-	// self.logLocalMinedBlocks(work, previous)
-	// }
 
 	return work.Block
 }
@@ -1119,6 +1129,9 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 
 	var coalescedLogs vm.Logs
 	for {
+		if env.tcount >= 1000 {
+			break
+		}
 		// Retrieve the next transaction and abort if all done
 		tx := txs.Peek()
 		if tx == nil {
@@ -1128,16 +1141,16 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 		// during transaction acceptance is the transaction pool.
 		from, _ := tx.From()
 
-		// Ignore any transactions (and accounts subsequently) with low gas limits
-		if tx.GasPrice().Cmp(gasPrice) < 0 && !env.ownedAccounts.Has(from) {
-			// Pop the current low-priced transaction without shifting in the next from the account
-			glog.V(logger.Info).Infof("Transaction (%x) below gas price (tx=%v ask=%v). All sequential txs from this address(%x) will be ignored\n", tx.Hash().Bytes()[:4], common.CurrencyToString(tx.GasPrice()), common.CurrencyToString(gasPrice), from[:4])
+		// // Ignore any transactions (and accounts subsequently) with low gas limits
+		// if tx.GasPrice().Cmp(gasPrice) < 0 && !env.ownedAccounts.Has(from) {
+		// 	// Pop the current low-priced transaction without shifting in the next from the account
+		// 	glog.V(logger.Info).Infof("Transaction (%x) below gas price (tx=%v ask=%v). All sequential txs from this address(%x) will be ignored\n", tx.Hash().Bytes()[:4], common.CurrencyToString(tx.GasPrice()), common.CurrencyToString(gasPrice), from[:4])
 
-			env.lowGasTxs = append(env.lowGasTxs, tx)
-			txs.Pop()
+		// 	env.lowGasTxs = append(env.lowGasTxs, tx)
+		// 	txs.Pop()
 
-			continue
-		}
+		// 	continue
+		// }
 		// Start executing the transaction
 		env.state.StartRecord(tx.Hash(), common.Hash{}, 0)
 

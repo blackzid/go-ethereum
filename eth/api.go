@@ -178,8 +178,15 @@ func (s *PublicEthereumAPI) Syncing() (interface{}, error) {
 	}, nil
 }
 
+// BFT APIs
 func (s *PublicEthereumAPI) Validators() []common.Address {
 	return s.e.hdcValidators
+}
+func (s *PublicEthereumAPI) StartConsensus() bool {
+	return s.e.protocolManager.consensusManager.Start()
+}
+func (s *PublicEthereumAPI) StopConsensus() bool {
+	return s.e.protocolManager.consensusManager.Stop()
 }
 
 // PublicMinerAPI provides an API to control the miner.

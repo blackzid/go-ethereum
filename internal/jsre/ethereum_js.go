@@ -5356,7 +5356,6 @@ var methods = function () {
         call: 'eth_getWork',
         params: 0
     });
-
     return [
         getBalance,
         getStorageAt,
@@ -5417,6 +5416,10 @@ var properties = function () {
             name: 'blockNumber',
             getter: 'eth_blockNumber',
             outputFormatter: utils.toDecimal
+        }),
+        new Property({
+            name: 'validators',
+            getter: 'eth_validators'
         })
     ];
 };

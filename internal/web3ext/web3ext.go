@@ -129,6 +129,16 @@ web3._extend({
 			name: 'httpGet',
 			call: 'admin_httpGet',
 			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'startConsensus',
+			call: 'eth_startConsensus',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'stopConsensus',
+			call: 'eth_stopConsensus',
+			params: 0
 		})
 	],
 	properties:

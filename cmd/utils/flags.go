@@ -313,7 +313,7 @@ var (
 
 	// Network Settings
 
-	// hdc parameters
+	// BFT parameters
 	NumValidatorsFlag = cli.IntFlag{
 		Name:  "num_validators",
 		Usage: "number of validators",
@@ -489,21 +489,6 @@ func MakeNodeName(client, version string, ctx *cli.Context) string {
 		name += "/JIT"
 	}
 	return name
-}
-
-// creates hdc bootstrap node
-func MakeHDCBootstrapNodes(ctx *cli.Context) []*discover.Node {
-	// basePort := uint16(30303)
-	// bootstrapNodes := []*discover.Node{}
-	// nodeNum := ctx.GlobalString(NodeNumFlag.Name)
-	// key := crypto.MakePrivatekey(nodeNum)
-	// node := discover.NewNode(discover.PubkeyID(&key.PublicKey), net.ParseIP("localhost"), basePort, basePort)
-	// bootstrapNodes = append(bootstrapNodes, node)
-	// glog.V(logger.Error).Infoln("Bootstrap String ", node.String())
-	// return bootstrapNodes
-	return []*discover.Node{
-		discover.MustParseNode("enode://d67104e65b61fca1fc73a74175667c11f16c037fa8e414499189df9d68706aca6e1a1b4ea02b702f101eb609c4cd2964d4790047a06458ba8a1a19040ab1fe0d@[::]:30303"),
-	}
 }
 
 // MakeBootstrapNodes creates a list of bootstrap nodes from the command line
@@ -709,7 +694,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 		PrivateKey:      MakeNodeKey(ctx),
 		Name:            MakeNodeName(name, version, ctx),
 		NoDiscovery:     ctx.GlobalBool(NoDiscoverFlag.Name),
-		BootstrapNodes:  MakeHDCBootstrapNodes(ctx),
+		BootstrapNodes:  MakeBootstrapNodes(ctx),
 		ListenAddr:      MakeListenAddress(ctx),
 		NAT:             MakeNAT(ctx),
 		MaxPeers:        ctx.GlobalInt(MaxPeersFlag.Name),
