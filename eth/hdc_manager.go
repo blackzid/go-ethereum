@@ -9,11 +9,6 @@ import (
 	"math/big"
 	"sync"
 	"time"
-	// "errors"
-	// "sync/atomic"
-	// mrand "math/rand"
-	// "runtime"
-	// "io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -27,10 +22,6 @@ import (
 	"github.com/ethereum/go-ethereum/logger/glog"
 	"github.com/ethereum/go-ethereum/rlp"
 	"gopkg.in/fatih/set.v0"
-	// "github.com/ethereum/go-ethereum/metrics"
-	// "github.com/ethereum/go-ethereum/pow"
-	// "github.com/ethereum/go-ethereum/trie"
-	// "github.com/hashicorp/golang-lru"
 )
 
 type ConsensusContract struct {
@@ -141,7 +132,7 @@ func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db
 		gasPrice:           gasPrice,
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
-		Enable:             false,
+		Enable:             true,
 	}
 
 	if !cm.contract.isValidators(cm.coinbase) {
@@ -381,6 +372,7 @@ func (cm *ConsensusManager) Process() {
 		cm.cleanup()
 		cm.synchronizer.process()
 		cm.setupAlarm()
+		// check failed nodes
 	}
 }
 func (cm *ConsensusManager) commit() bool {
@@ -408,6 +400,7 @@ func (cm *ConsensusManager) commit() bool {
 				success := cm.pm.commitBlock(p.Block)
 				if success {
 					glog.V(logger.Info).Infoln("commited")
+					glog.V(logger.Info).Infoln("lockest is", ls.Height(), ls.Round())
 					// cm.commit()
 					return true
 				} else {
@@ -526,6 +519,30 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 	}
 	if p.GetHeight() < cm.Height() {
 		glog.V(logger.Info).Infoln("proposal from past")
+		// VotingInstruction from H-1
+		if !cm.contract.isValidators(p.From()) || !cm.contract.isProposer(p) {
+
+			glog.V(logger.Info).Infoln("proposal sender invalid")
+			return false
+		}
+		switch proposal := p.(type) {
+		case *types.BlockProposal:
+			return false
+		case *types.VotingInstruction:
+			if !(proposal.LockSet().Round() == proposal.Round-1 && proposal.Height == proposal.LockSet().Height()) {
+				panic("Invalid votingInstruction")
+			} else if proposal.Round == 0 {
+				panic("Invalid votingInstruction")
+			} else if result, _ := proposal.LockSet().QuorumPossible(); !result {
+				panic("Invalid votingInstruction")
+			} else if result, _ := proposal.LockSet().HasQuorum(); result {
+				panic("Invalid votingInstruction")
+			}
+		}
+		isValid := cm.getHeightManager(p.GetHeight()).addProposal(p)
+		if isValid {
+			cm.getHeightManager(p.GetHeight()).getRoundManager(p.GetRound()).process()
+		}
 		return false
 	}
 	if !cm.contract.isValidators(p.From()) || !cm.contract.isProposer(p) {
@@ -984,14 +1001,18 @@ func (rm *RoundManager) vote() *types.Vote {
 	if rm.proposal != nil {
 		switch bp := rm.proposal.(type) {
 		case *types.VotingInstruction: // vote for votinginstruction
-
 			quorumPossible, _ := bp.LockSet().QuorumPossible()
 			if !quorumPossible {
 				panic("vote error")
 			}
-
 			glog.V(logger.Info).Infoln("voting on instruction")
-			vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
+
+			// if there is quorum on previous round
+			if isQuorum, quorumBlk := rm.hm.HasQuorum(); isQuorum == true {
+				vote = types.NewVote(rm.height, rm.round, quorumBlk, 1)
+			} else {
+				vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
+			}
 		default:
 			// assert isinstance(self.proposal, BlockProposal)
 			// assert isinstance(self.proposal.block, Block)  # already linked to chain
