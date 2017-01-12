@@ -1,13 +1,12 @@
 package eth
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
-	// "github.com/ethereum/go-ethereum/core/state"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/logger"
@@ -43,12 +42,12 @@ func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 	ls := self.cm.HighestCommittingLockset()
 
 	if ls == nil {
-		fmt.Println("no highest comitting lockest")
+		glog.V(logger.Debug).Infoln("no highest comitting lockest")
 		return []types.RequestProposalNumber{}
 	}
 	maxHeight := ls.Height()
 	current := self.cm.Head().Number()
-	fmt.Printf("max height: %d current: %d\n", maxHeight, current)
+	glog.V(logger.Debug).Infoln("max height: %d current: %d\n", maxHeight, current)
 
 	if maxHeight < current.Uint64() {
 		return []types.RequestProposalNumber{}
@@ -63,19 +62,18 @@ func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 
 func (self *HDCSynchronizer) request() bool {
 	if self.requested.Size() != 0 {
-		fmt.Println("waiting for requested")
+		glog.V(logger.Debug).Infoln("waiting for requested")
 		return false
 	}
 
 	if self.received.Size()+self.maxGetProposalsCount >= self.maxQueued {
-		fmt.Println("queue is full")
+		glog.V(logger.Debug).Infoln("queue is full")
 		return false
 	}
 
 	missing := self.Missing()
 
 	if len(missing) == 0 {
-		fmt.Println("insync")
 		return false
 	}
 	var blockNumbers []types.RequestProposalNumber
@@ -93,22 +91,37 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	if self.lastActiveProtocol != nil {
 		err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
-		fmt.Println("request end, err:", err)
+		glog.V(logger.Debug).Infoln("request end, err:", err)
 	} else {
-		glog.V(logger.Info).Infof("no active protocol")
+		glog.V(logger.Debug).Infof("no active protocol")
 
 	}
 	// setup alarm
 
 	self.cm.setupAlarm()
-	return false
+	return true
+}
+func (self *HDCSynchronizer) requestHeight(height uint64, peer *peer) bool {
+	var blockNumbers []types.RequestProposalNumber
+	if !self.received.Has(height) && !self.requested.Has(height) {
+		blockNumbers = append(blockNumbers, types.RequestProposalNumber{height})
+		self.requested.Add(height)
+	}
+	if peer != nil {
+		err := peer.RequestBlockProposals(blockNumbers)
+		glog.V(logger.Debug).Infoln("request end, err:", err)
+	} else {
+		glog.V(logger.Debug).Infof("unknown peer")
+		return false
+	}
+	return true
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	for _, bp := range bps {
 		self.received.Add(bp.Height)
 		self.requested.Remove(bp.Height)
 		for _, v := range bp.SigningLockset.Votes {
-			self.cm.AddVote(v)
+			self.cm.AddVote(v, nil)
 		}
 	}
 	self.cm.Process()

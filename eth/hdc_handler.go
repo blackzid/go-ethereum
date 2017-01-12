@@ -1,8 +1,6 @@
 package eth
 
 import (
-	// "encoding/json"
-	// "errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -22,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/pow"
-	// "github.com/ethereum/go-ethereum/rlp"
 )
 
 type HDCProtocolManager struct {
@@ -105,7 +102,6 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 		}
 		// Compatible; initialise the sub-protocol
 		version := version // Closure for the run
-		fmt.Println("Add SubProtocols")
 		manager.SubProtocols = append(manager.SubProtocols, p2p.Protocol{
 			Name:    ProtocolName,
 			Version: version,
@@ -115,7 +111,6 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 				select {
 				case manager.newPeerCh <- peer:
 					manager.wg.Add(1)
-					fmt.Println("Run SubProtocols")
 					defer manager.wg.Done()
 					return manager.handle(peer)
 				case <-manager.quitSync:
@@ -215,12 +210,12 @@ func (pm *HDCProtocolManager) announce() {
 	pm.eventMu.Lock()
 	defer pm.eventMu.Unlock()
 	for !pm.consensusManager.isReady() {
-		fmt.Println("-------------------consensusManager not ready ")
+		glog.V(logger.Debug).Infoln("consensusManager not ready ")
 		pm.consensusManager.SendReady(false)
 		time.Sleep(0.5 * 1000 * 1000 * 1000)
 	}
 	pm.consensusManager.SendReady(true)
-	fmt.Println("-----------------consensusManager Ready-------------------------")
+	glog.V(logger.Debug).Infoln("-----------------consensusManager Ready-------------------------")
 }
 func (pm *HDCProtocolManager) Stop() {
 	glog.V(logger.Info).Infoln("Stopping ethereum protocol handler...")
@@ -298,8 +293,6 @@ func (pm *HDCProtocolManager) handle(p *peer) error {
 func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
 	msg, err := p.rw.ReadMsg()
-	fmt.Printf("%s received Msg\n", p.String())
-
 	if err != nil {
 		return err
 	}
@@ -314,12 +307,11 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
-		glog.V(logger.Info).Infoln("GetBlockProposalsMsg")
+		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg")
 		var query []types.RequestProposalNumber
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		glog.V(logger.Info).Infoln("Query Number: ", query)
 		var found []*types.BlockProposal
 		for i, height := range query {
 			if i == MaxGetproposalsCount {
@@ -338,7 +330,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 
 	case msg.Code == BlockProposalsMsg:
-		glog.V(logger.Info).Infoln("BlockProposalsMsg")
+		glog.V(logger.Debug).Infoln("BlockProposalsMsg")
 		var proposals []*types.BlockProposal
 		if err := msg.Decode(&proposals); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -346,34 +338,34 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		pm.consensusManager.synchronizer.receiveBlockproposals(proposals)
 
 	case msg.Code == NewBlockProposalMsg:
-		glog.V(logger.Info).Infoln("NewBlockProposalMsg")
+		glog.V(logger.Debug).Infoln("NewBlockProposalMsg")
 		var bpData newBlockProposals
 		if err := msg.Decode(&bpData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		bp := bpData.BlockProposal
 		if p.broadcastFilter.Has(bp.Hash()) {
-			glog.V(logger.Info).Infoln("NewBlockProposalMsg filtered")
+			glog.V(logger.Debug).Infoln("NewBlockProposalMsg filtered")
 			return nil
 		}
-		glog.V(logger.Info).Infof("new NewBlockProposal on %d, going to add it\n", bp.From().Hex())
+		glog.V(logger.Debug).Infof("new NewBlockProposal on %d, going to add it\n", bp.From().Hex())
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.Broadcast(bp)
 		} else {
-			glog.V(logger.Info).Infoln("NewBlockProposalMsg failed")
+			glog.V(logger.Debug).Infoln("NewBlockProposalMsg failed")
 			return nil
 		}
 		pm.consensusManager.Process()
 
 	case msg.Code == VotingInstructionMsg:
-		glog.V(logger.Info).Infoln("VotingInstructionMsg")
+		glog.V(logger.Debug).Infoln("VotingInstructionMsg")
 		var viData votingInstructionData
 		if err := msg.Decode(&viData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		vi := viData.VotingInstruction
 		if p.broadcastFilter.Has(vi.Hash()) {
-			glog.V(logger.Info).Infoln("votinginstruction filtered")
+			glog.V(logger.Debug).Infoln("votinginstruction filtered")
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
@@ -381,7 +373,7 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.consensusManager.Process()
 	case msg.Code == VoteMsg:
-		glog.V(logger.Info).Infoln("VoteMsg")
+		glog.V(logger.Debug).Infoln("VoteMsg")
 		var vData voteData
 		if err := msg.Decode(&vData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -389,19 +381,18 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		vote := vData.Vote
 
 		if p.broadcastFilter.Has(vote.Hash()) {
-			glog.V(logger.Info).Infoln("vote filtered")
+			glog.V(logger.Debug).Infoln("vote filtered")
 			return nil
 		}
-		glog.V(logger.Info).Infoln("receive vote with HR ", vote.Height, vote.Round)
-		if isValid := pm.consensusManager.AddVote(vote); isValid {
+		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
+		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
 			pm.Broadcast(vote)
 		}
 		pm.consensusManager.Process()
 	case msg.Code == ReadyMsg:
-		fmt.Println("ReadyMsg received")
 		var r readyData
 		if err := msg.Decode(&r); err != nil {
-			fmt.Println(err)
+			glog.V(logger.Debug).Infoln(err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		ready := r.Ready
@@ -409,18 +400,11 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		pm.Broadcast(ready)
 		pm.consensusManager.Process()
 	case msg.Code == TxMsg:
-		glog.V(logger.Info).Infoln("TxMsg received")
-		// // Transactions arrived, make sure we have a valid and fresh chain to handle them
-		// if atomic.LoadUint32(&pm.synced) == 0 {
-		// 	glog.V(logger.Info).Infoln("TxMsg not valid")
-		// 	break
-		// }
-		// Transactions can be processed, parse all of them and deliver to the pool
 		var txs []*types.Transaction
 		if err := msg.Decode(&txs); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		glog.V(logger.Info).Infoln("add txs")
+		glog.V(logger.Debug).Infoln("add txs")
 		for i, tx := range txs {
 			// Validate and mark the remote transaction
 			if tx == nil {
@@ -430,7 +414,6 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 		}
 		pm.addTransactions(txs)
 	default:
-		fmt.Println("HandleMsg Error", err)
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 	return nil
@@ -442,31 +425,31 @@ func (pm *HDCProtocolManager) Broadcast(msg interface{}) {
 	switch m := msg.(type) {
 	case *types.Ready:
 		peers := pm.peers.PeersWithoutHash(m.Hash())
-		glog.V(logger.Info).Infoln("There are ", len(peers), " peers to broadcast.")
+		glog.V(logger.Debug).Infoln("There are ", len(peers), " peers to broadcast.")
 		for _, peer := range peers {
 			// glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
 			err = peer.SendReadyMsg(m)
 			if err != nil {
-				fmt.Println(err)
+				glog.V(logger.Debug).Infoln(err)
 			}
 		}
 
 	case *types.BlockProposal:
-		glog.V(logger.Info).Infoln("broadcast Blockproposal")
+		glog.V(logger.Debug).Infoln("broadcast Blockproposal")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 		// glog.V(logger.Info).Infoln("Send Bp: ", m)
 		for _, peer := range peers {
 			peer.SendNewBlockProposal(m)
 		}
 	case *types.VotingInstruction:
-		glog.V(logger.Info).Infoln("broadcast Votinginstruction")
+		glog.V(logger.Debug).Infoln("broadcast Votinginstruction")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 
 		for _, peer := range peers {
 			peer.SendVotingInstruction(m)
 		}
 	case *types.Vote:
-		glog.V(logger.Info).Infoln("broadcast Vote")
+		glog.V(logger.Debug).Infoln("broadcast Vote")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 
 		for _, peer := range peers {

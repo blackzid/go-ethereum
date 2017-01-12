@@ -749,7 +749,7 @@ func MakeSystemNode(name, version string, relconf release.Config, extra []byte, 
 
 	// hdc set Etherbase to validator address
 	ethConf.Etherbase = MakeEtherbase(ethConf.Validators, ctx)
-	stackConf.HTTPPort = stackConf.HTTPPort + ctx.GlobalInt(NodeNumFlag.Name)
+
 	// Configure the Whisper service
 	shhEnable := ctx.GlobalBool(WhisperEnabledFlag.Name)
 
