@@ -508,7 +508,7 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 	success := h.addVote(v, isOwnVote)
 	if !success {
 		ls := cm.getHeightManager(v.Height).getRoundManager(v.Round).lockset
-		glog.V(logger.Info).Infoln("add vote failed in LockSet:", ls, v.Height, v.Round)
+		glog.V(logger.Debug).Infoln("add vote failed in LockSet:", ls, v.Height, v.Round)
 	}
 	if success && h.height == cm.Height()+1 {
 		glog.V(logger.Info).Infoln("may havev double vote attack on height : ", h.height)
@@ -735,7 +735,6 @@ func (hm *HeightManager) LastVotedBlockProposal() *types.BlockProposal {
 }
 func (hm *HeightManager) lastValidLockset() *types.LockSet {
 	// highest valid lockset on height
-	glog.V(logger.Debug).Infoln("HM has %d in %d", len(hm.rounds), hm.Round())
 	for i := len(hm.rounds) - 1; i >= 0; i-- {
 		index := uint64(i)
 		// glog.V(logger.Debug).Infoln("lastvalidlockset i", i)

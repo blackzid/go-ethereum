@@ -529,11 +529,7 @@ func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
 	oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
-
-	glog.V(logger.Info).Infoln("start insert block")
-
 	n, err := self.blockchain.InsertChain(types.Blocks{block})
-
 	if err != nil {
 		glog.V(logger.Info).Infoln("Block error on :", n)
 		glog.V(logger.Info).Infoln(err)
@@ -542,7 +538,7 @@ func (self *HDCProtocolManager) commitBlock(block *types.Block) bool {
 	// wait until block insert to chain
 	for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
 		// DEBUG
-		glog.V(logger.Info).Infof("committing new block")
+		glog.V(logger.Debug).Infof("committing new block")
 		time.Sleep(0.2 * 1000 * 1000 * 1000)
 	}
 	glog.V(logger.Info).Infof("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
@@ -553,11 +549,11 @@ func (self *HDCProtocolManager) linkBlock(block *types.Block) *types.Block {
 	defer self.addTransactionLock.Unlock()
 	// _link_block
 	if self.blockchain.HasBlock(block.Hash()) {
-		glog.V(logger.Info).Infoln("KNOWN BLOCK")
+		glog.V(logger.Debug).Infoln("KNOWN BLOCK")
 		return block
 	}
 	if !self.blockchain.HasBlock(block.ParentHash()) {
-		glog.V(logger.Info).Infoln("missing parent")
+		glog.V(logger.Debug).Infoln("missing parent")
 		return nil
 	}
 
