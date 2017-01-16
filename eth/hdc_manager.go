@@ -106,11 +106,10 @@ type ConsensusManager struct {
 	processMu sync.Mutex
 	mux       *event.TypeMux
 	extraData []byte
-	gasPrice  *big.Int
 	Enable    bool
 }
 
-func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte, gasPrice *big.Int) *ConsensusManager {
+func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte) *ConsensusManager {
 
 	privkey, _ := crypto.HexToECDSA(privkeyhex)
 	cm := &ConsensusManager{
@@ -129,7 +128,6 @@ func NewConsensusManager(manager *HDCProtocolManager, chain *core.BlockChain, db
 		blockCandidates:    make(map[common.Hash]*types.BlockProposal),
 		contract:           cc,
 		extraData:          extraData,
-		gasPrice:           gasPrice,
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
 		Enable:             true,
@@ -308,6 +306,7 @@ func (cm *ConsensusManager) activeRound() *RoundManager {
 	hm := cm.getHeightManager(cm.Height())
 	return hm.getRoundManager(hm.Round())
 }
+
 func (cm *ConsensusManager) setupAlarm() {
 	// glog.V(logger.Error).Infof("in set up alarm")
 
@@ -1072,7 +1071,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	}
 
 	txs := types.NewTransactionsByPriceAndNonce(contract.txpool.Pending())
-	work.commitTransactions(cm.mux, txs, cm.gasPrice, cm.chain)
+	work.commitTransactions(cm.mux, txs, cm.chain)
 
 	var uncles []*types.Header
 
@@ -1106,7 +1105,7 @@ type Work struct {
 	createdAt time.Time
 }
 
-func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, gasPrice *big.Int, bc *core.BlockChain) {
+func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, bc *core.BlockChain) {
 	gp := new(core.GasPool).AddGas(env.header.GasLimit)
 
 	var coalescedLogs vm.Logs

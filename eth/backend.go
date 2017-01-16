@@ -48,7 +48,6 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/pow"
-	"github.com/ethereum/go-ethereum/pow/fakepow"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -253,7 +252,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	default:
 		// change pow checker for bft
 		if config.PBFT {
-			eth.pow = fakepow.New()
+			eth.pow = pow.PoW(core.FakePow{})
 		} else {
 			eth.pow = ethash.New()
 		}

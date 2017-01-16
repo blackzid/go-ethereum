@@ -157,7 +157,7 @@ func NewHDCProtocolManager(config *core.ChainConfig, fastSync bool, networkId in
 
 	manager.validators = validators
 	manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
-	manager.consensusManager = NewConsensusManager(manager, blockchain, hdcDb, manager.consensusContract, manager.privateKeyHex, extra, gasPrice)
+	manager.consensusManager = NewConsensusManager(manager, blockchain, hdcDb, manager.consensusContract, manager.privateKeyHex, extra)
 	return manager, nil
 }
 
