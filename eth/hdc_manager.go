@@ -1031,7 +1031,6 @@ func (rm *RoundManager) vote() *types.Vote {
 
 func (cm *ConsensusManager) newBlock() *types.Block {
 	config := cm.chain.Config()
-	// eth := cm.contract.eth
 	contract := cm.contract
 
 	cm.mu.Lock()
@@ -1046,12 +1045,6 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
 		tstamp = parent.Time().Int64() + 1
 	}
-	// this will ensure we're not going off too far in the future
-	// if now := time.Now().Unix(); tstamp > now+4 {
-	// 	wait := time.Duration(tstamp-now) * time.Second
-	// 	glog.V(logger.Debug).Infoln("We are too far in the future. Waiting for", wait)
-	// 	time.Sleep(wait)
-	// }
 
 	num := parent.Number()
 	header := &types.Header{
@@ -1081,8 +1074,6 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	txs := types.NewTransactionsByPriceAndNonce(contract.txpool.Pending())
 	work.commitTransactions(cm.mux, txs, cm.gasPrice, cm.chain)
 
-	contract.txpool.RemoveBatch(work.lowGasTxs)
-	contract.txpool.RemoveBatch(work.failedTxs)
 	var uncles []*types.Header
 
 	core.AccumulateRewards(work.state, header, uncles)
@@ -1120,6 +1111,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 
 	var coalescedLogs vm.Logs
 	for {
+		// limit the tcount in one block to reduce block creating time
 		if env.tcount >= 1000 {
 			break
 		}
@@ -1132,17 +1124,6 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 		// during transaction acceptance is the transaction pool.
 		from, _ := tx.From()
 
-		// // Ignore any transactions (and accounts subsequently) with low gas limits
-		// if tx.GasPrice().Cmp(gasPrice) < 0 && !env.ownedAccounts.Has(from) {
-		// 	// Pop the current low-priced transaction without shifting in the next from the account
-		// 	glog.V(logger.Debug).Infof("Transaction (%x) below gas price (tx=%v ask=%v). All sequential txs from this address(%x) will be ignored\n", tx.Hash().Bytes()[:4], common.CurrencyToString(tx.GasPrice()), common.CurrencyToString(gasPrice), from[:4])
-
-		// 	env.lowGasTxs = append(env.lowGasTxs, tx)
-		// 	txs.Pop()
-
-		// 	continue
-		// }
-		// Start executing the transaction
 		env.state.StartRecord(tx.Hash(), common.Hash{}, 0)
 
 		err, logs := env.commitTransaction(tx, bc, gp)
