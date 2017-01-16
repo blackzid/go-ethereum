@@ -932,10 +932,8 @@ func MakeChain(ctx *cli.Context) (chain *core.BlockChain, chainDb ethdb.Database
 		}
 	}
 	chainConfig := MustMakeChainConfigFromDb(ctx, chainDb)
-	pow := pow.PoW(core.FakePow{})
-	if !ctx.GlobalBool(FakePoWFlag.Name) {
-		pow = ethash.New()
-	}
+	pow := ethash.New()
+
 	chain, err = core.NewBlockChain(chainDb, chainConfig, pow, new(event.TypeMux))
 	if err != nil {
 		Fatalf("Could not start chainmanager: %v", err)
