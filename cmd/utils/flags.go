@@ -46,6 +46,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/pow"
+	"github.com/ethereum/go-ethereum/pow/fakepow"
 	"github.com/ethereum/go-ethereum/release"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/whisper"
@@ -927,7 +928,11 @@ func MakeChain(ctx *cli.Context) (chain *core.BlockChain, chainDb ethdb.Database
 		}
 	}
 	chainConfig := MustMakeChainConfigFromDb(ctx, chainDb)
+
 	pow := ethash.New()
+	if ctx.GlobalBool(PBFTFlag.Name) {
+		pow = fakepow.New()
+	}
 
 	chain, err = core.NewBlockChain(chainDb, chainConfig, pow, new(event.TypeMux))
 	if err != nil {
