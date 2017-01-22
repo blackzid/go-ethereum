@@ -56,7 +56,13 @@ func (cc *ConsensusContract) isValidators(v common.Address) bool {
 	return containsAddress(cc.validators, v)
 }
 func (cc *ConsensusContract) isProposer(p types.Proposal) bool {
-	return p.From() == cc.proposer(p.GetHeight(), p.GetRound())
+	if addr, err := p.From(); err != nil {
+		glog.V(logger.Error).Infof("invalid sender %v", err)
+		return false
+	} else {
+		return addr == cc.proposer(p.GetHeight(), p.GetRound())
+	}
+
 }
 func (cc *ConsensusContract) numEligibleVotes(height uint64) uint64 {
 	if height == 0 {
@@ -475,7 +481,7 @@ func (cm *ConsensusManager) SendReady(force bool) {
 		return
 	}
 	ls := cm.activeRound().lockset
-	r := types.NewReady(big.NewInt(int64(cm.readyNonce)), ls)
+	r := types.NewReady(cm.readyNonce, ls)
 	cm.Sign(r)
 	r.From()
 	cm.broadcast(r)
@@ -483,24 +489,31 @@ func (cm *ConsensusManager) SendReady(force bool) {
 }
 func (cm *ConsensusManager) AddReady(ready *types.Ready) {
 	cc := cm.contract
-	addr := ready.From()
+	addr, err := ready.From()
+	if err != nil {
+		glog.V(logger.Error).Infoln(err)
+		return
+	}
 	if !cc.isValidators(addr) {
 		glog.V(logger.Info).Infoln(addr.Hex())
-		panic("receive ready from invalid sender")
+		glog.V(logger.Debug).Infoln("receive ready from invalid sender")
+		return
 	}
 	cm.readyValidators[addr] = struct{}{}
 }
 func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
-
 	if v == nil {
-		panic("cm addvote error")
+		glog.V(logger.Debug).Infoln("cm addvote error")
+		return false
 	}
-	if !cm.contract.isValidators(v.From()) {
-		panic("invalid sender")
+	addr, _ := v.From()
+	if !cm.contract.isValidators(addr) {
+		glog.V(logger.Debug).Infoln("non-validator vote")
+		return false
 	}
-	cm.readyValidators[v.From()] = struct{}{}
+	cm.readyValidators[addr] = struct{}{}
 	// TODO FIX
-	isOwnVote := (v.From() == cm.contract.coinbase)
+	isOwnVote := (addr == cm.contract.coinbase)
 	h := cm.getHeightManager(v.Height)
 	// glog.V(logger.Debug).Infoln("addVote", v.From())
 	glog.V(logger.Debug).Infoln("addVote to ", v.Height, v.Round)
@@ -523,12 +536,16 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		glog.V(logger.Debug).Infoln("proposal from past")
 		return false
 	}
-	if !cm.contract.isValidators(p.From()) || !cm.contract.isProposer(p) {
-
+	addr, err := p.From()
+	if err != nil {
+		glog.V(logger.Debug).Infoln("proposal sender invalid", err)
+		return false
+	}
+	if !cm.contract.isValidators(addr) || !cm.contract.isProposer(p) {
 		glog.V(logger.Debug).Infoln("proposal sender invalid")
 		return false
 	}
-	cm.readyValidators[p.From()] = struct{}{}
+	cm.readyValidators[addr] = struct{}{}
 	// if proposal is valid
 
 	switch proposal := p.(type) {
@@ -823,10 +840,13 @@ func (rm *RoundManager) getTimeout() float64 {
 	return delay
 }
 func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
-	////DEBUG
 	glog.V(logger.Debug).Infof("In RM %d addvote", rm.round)
 	if !rm.lockset.Contain(vote) {
-		success := rm.lockset.Add(vote, force_replace)
+		err := rm.lockset.Add(vote, force_replace)
+		if err != nil {
+			glog.V(logger.Error).Infoln("Add vote to lockset error", err)
+			return false
+		}
 		// report faliure
 		if rm.lockset.IsValid() {
 			if rm.proposal == nil && rm.lockset.NoQuorum() {
@@ -834,10 +854,8 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 				rm.cm.trackedProtocolFailures = append(rm.cm.trackedProtocolFailures, "FailedToProposeEvidence")
 			}
 		}
-		glog.V(logger.Debug).Infoln("added", success)
-		return success
+		return true
 	}
-	////DEBUG
 	glog.V(logger.Debug).Infof("vote already in lockset")
 	return false
 }
@@ -897,8 +915,14 @@ func (rm *RoundManager) propose() types.Proposal {
 	}
 	glog.V(logger.Debug).Infoln("I am a proposer in ", rm.height, rm.round)
 	if rm.proposal != nil {
-		if rm.proposal.From() != rm.cm.coinbase {
-			glog.V(logger.Debug).Infof(rm.proposal.From().Hex(), rm.cm.coinbase.Hex())
+		addr, err := rm.proposal.From()
+		if err != nil {
+			glog.V(logger.Error).Infof("error occur %v", err)
+			return nil
+		}
+		if addr != rm.cm.coinbase {
+			addr, _ := rm.proposal.From()
+			glog.V(logger.Debug).Infof(addr.Hex(), rm.cm.coinbase.Hex())
 			panic("Propose Error: coinbase not the same")
 		}
 		if rm.voteLock == nil {
@@ -921,8 +945,13 @@ func (rm *RoundManager) propose() types.Proposal {
 	} else if rm.round == 0 || round_lockset.NoQuorum() {
 		proposal = rm.mkProposal()
 	} else if quroumpossible {
-		proposal = types.NewVotingInstruction(rm.height, rm.round, round_lockset)
-		rm.cm.Sign(proposal)
+		if p, err := types.NewVotingInstruction(rm.height, rm.round, round_lockset); err != nil {
+			glog.V(logger.Error).Infof("error occur %v", err)
+			return nil
+		} else {
+			proposal = p
+			rm.cm.Sign(proposal)
+		}
 	} else {
 		glog.V(logger.Info).Infoln("invalid ls: ", len(round_lockset.Votes))
 		for _, v := range round_lockset.Votes {
@@ -958,7 +987,11 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	time.Sleep(1000 * 1000 * 500)
 
 	block := rm.cm.newBlock()
-	blockProposal := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
+	blockProposal, err := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
+	if err != nil {
+		glog.V(logger.Error).Infof("error occur %v", err)
+		return nil
+	}
 	rm.cm.Sign(blockProposal)
 	rm.cm.setProposalLock(block)
 	return blockProposal

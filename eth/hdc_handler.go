@@ -348,7 +348,6 @@ func (pm *HDCProtocolManager) handleMsg(p *peer) error {
 			glog.V(logger.Debug).Infoln("NewBlockProposalMsg filtered")
 			return nil
 		}
-		glog.V(logger.Debug).Infof("new NewBlockProposal on %d, going to add it\n", bp.From().Hex())
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.Broadcast(bp)
 		} else {
