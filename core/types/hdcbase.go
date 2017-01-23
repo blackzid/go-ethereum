@@ -578,8 +578,8 @@ type BlockProposal struct {
 	Height         uint64
 	Round          uint64
 	Block          *Block
-	SigningLockset *LockSet
 	RoundLockset   *LockSet
+	SigningLockset *LockSet
 }
 
 func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset *LockSet, roundLockset *LockSet) (*BlockProposal, error) {
@@ -621,10 +621,12 @@ func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset 
 	if !(bp.SigningLockset.Height() == bp.Height-1) {
 		return nil, errors.New("signing lockset height mismatch")
 	}
-	if bp.RoundLockset != nil {
+	if roundLockset != nil {
 		if has := roundLockset.NoQuorum(); !has {
 			return nil, errors.New("at R>0 can only propose if there is a NoQuorum for R-1")
 		}
+	} else {
+		bp.RoundLockset = NewLockSet(0, Votes{})
 	}
 
 	return bp, nil
@@ -697,9 +699,8 @@ func (bp *BlockProposal) ValidateVotes(validators_H []common.Address, validators
 		return err
 	}
 
-	if bp.RoundLockset != nil {
+	if bp.RoundLockset != nil && bp.RoundLockset.EligibleVotesNum != 0 {
 		return checkVotes(bp.RoundLockset, validators_H)
-
 	}
 	return checkVotes(bp.SigningLockset, validators_prevH)
 

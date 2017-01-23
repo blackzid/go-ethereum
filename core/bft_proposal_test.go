@@ -129,7 +129,12 @@ func TestBlockProposal(t *testing.T) {
 		fmt.Println(err)
 		t.Error("error occur")
 	}
-
+	bps1, _ := rlp.EncodeToBytes(bp2)
+	var dbp1 *types.BlockProposal
+	if err := rlp.Decode(bytes.NewReader(bps1), &dbp1); err != nil {
+		fmt.Println(bp2, err)
+		t.Error("decode blockproposal failed")
+	}
 	// block 2 round 1 , timeout in round 0
 	rls := types.NewLockSet(uint64(len(validators)), nil)
 	for _, key := range keys {
