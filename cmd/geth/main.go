@@ -145,6 +145,10 @@ func init() {
 		utils.GpobaseStepUpFlag,
 		utils.GpobaseCorrectionFactorFlag,
 		utils.ExtraDataFlag,
+		// bft parameters
+		utils.NumValidatorsFlag,
+		utils.NodeNumFlag,
+		utils.BFTFlag,
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
 

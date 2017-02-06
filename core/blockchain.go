@@ -835,8 +835,8 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 	// If the total difficulty is higher than our known, add it to the canonical chain
 	// Second clause in the if statement reduces the vulnerability to selfish mining.
 	// Please refer to http://www.cs.cornell.edu/~ie53/publications/btcProcFC.pdf
-	if externTd.Cmp(localTd) > 0 || (externTd.Cmp(localTd) == 0 && mrand.Float64() < 0.5) {
-		// Reorganise the chain if the parent is not the head block
+
+	if self.config.BFT {
 		if block.ParentHash() != self.currentBlock.Hash() {
 			if err := self.reorg(self.currentBlock, block); err != nil {
 				return NonStatTy, err
@@ -845,7 +845,19 @@ func (self *BlockChain) WriteBlock(block *types.Block) (status WriteStatus, err 
 		self.insert(block) // Insert the block as the new head of the chain
 		status = CanonStatTy
 	} else {
-		status = SideStatTy
+
+		if externTd.Cmp(localTd) > 0 || (externTd.Cmp(localTd) == 0 && mrand.Float64() < 0.5) {
+			// Reorganise the chain if the parent is not the head block
+			if block.ParentHash() != self.currentBlock.Hash() {
+				if err := self.reorg(self.currentBlock, block); err != nil {
+					return NonStatTy, err
+				}
+			}
+			self.insert(block) // Insert the block as the new head of the chain
+			status = CanonStatTy
+		} else {
+			status = SideStatTy
+		}
 	}
 
 	self.futureBlocks.Remove(block.Hash())

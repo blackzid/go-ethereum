@@ -94,11 +94,21 @@ type ProtocolManager struct {
 	wg sync.WaitGroup
 
 	badBlockReportingEnabled bool
+
+	// bft parameters
+	msgSub             event.Subscription
+	bftdb              ethdb.Database // bft database
+	validators         []common.Address
+	consensusManager   *ConsensusManager
+	consensusContract  *ConsensusContract
+	privateKeyHex      string
+	addTransactionLock sync.Mutex
+	eventMu            sync.Mutex
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int, maxPeers int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database) (*ProtocolManager, error) {
+func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int, maxPeers int, mux *event.TypeMux, txpool txPool, pow pow.PoW, blockchain *core.BlockChain, chaindb ethdb.Database, bftdb ethdb.Database, validators []common.Address, privateKeyHex string, eth *Ethereum, extra []byte) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -182,6 +192,13 @@ func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int
 		glog.V(logger.Debug).Infoln("Bad Block Reporting is enabled")
 		manager.badBlockReportingEnabled = true
 	}
+
+	// bft setup
+	manager.bftdb = bftdb
+	manager.privateKeyHex = privateKeyHex
+	manager.validators = validators
+	manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
+	manager.consensusManager = NewConsensusManager(manager, blockchain, bftdb, manager.consensusContract, manager.privateKeyHex, extra)
 
 	return manager, nil
 }
@@ -310,9 +327,16 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	}
 	// main loop. handle incoming messages.
 	for {
-		if err := pm.handleMsg(p); err != nil {
-			glog.V(logger.Debug).Infof("%v: message handling failed: %v", p, err)
-			return err
+		if pm.chainconfig.BFT == true {
+			if err := pm.handleBFTMsg(p); err != nil {
+				glog.V(logger.Debug).Infof("%v: message handling failed: %v", p, err)
+				return err
+			}
+		} else {
+			if err := pm.handleMsg(p); err != nil {
+				glog.V(logger.Debug).Infof("%v: message handling failed: %v", p, err)
+				return err
+			}
 		}
 	}
 }

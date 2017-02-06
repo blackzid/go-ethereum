@@ -462,6 +462,9 @@ func MakeNodeKey(ctx *cli.Context) *ecdsa.PrivateKey {
 		if key, err = crypto.HexToECDSA(hex); err != nil {
 			Fatalf("Option %q: %v", NodeKeyHexFlag.Name, err)
 		}
+	case ctx.GlobalBool(BFTFlag.Name):
+		nodeNum := ctx.GlobalString(NodeNumFlag.Name)
+		key = crypto.MakePrivatekey(nodeNum)
 	}
 	return key
 }
@@ -647,6 +650,45 @@ func MakePasswordList(ctx *cli.Context) []string {
 	return lines
 }
 
+var (
+	// BFT parameters
+	NumValidatorsFlag = cli.IntFlag{
+		Name:  "num_validators",
+		Usage: "number of validators",
+		Value: 1,
+	}
+	NodeNumFlag = cli.IntFlag{
+		Name:  "node_num",
+		Usage: "node's specific number",
+		Value: 0,
+	}
+	BFTFlag = cli.BoolFlag{
+		Name:  "bft",
+		Usage: "change consensus to bft with true",
+	}
+)
+
+func MakeBFTPrivateKeyHex(ctx *cli.Context) string {
+	key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
+	return crypto.PrikeyToHex(key)
+}
+
+// create validator addresses
+func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []common.Address {
+	num_validators := ctx.GlobalInt(NumValidatorsFlag.Name)
+	validators := []common.Address{}
+
+	for i := 0; i < num_validators; i++ {
+		s := strconv.Itoa(i)
+		privatekey := crypto.MakePrivatekey(s)
+		validators = append(validators, crypto.PubkeyToAddress(privatekey.PublicKey))
+		if i == ctx.GlobalInt(NodeNumFlag.Name) {
+			accman.ImportECDSA(privatekey, "")
+		}
+	}
+	return validators
+}
+
 // MakeNode configures a node with no services from command line flags.
 func MakeNode(ctx *cli.Context, name, gitCommit string) *node.Node {
 	vsn := params.Version
@@ -684,6 +726,9 @@ func MakeNode(ctx *cli.Context, name, gitCommit string) *node.Node {
 		WSPort:            ctx.GlobalInt(WSPortFlag.Name),
 		WSOrigins:         ctx.GlobalString(WSAllowedOriginsFlag.Name),
 		WSModules:         MakeRPCModules(ctx.GlobalString(WSApiFlag.Name)),
+		// bft parameters
+		NumValidators: ctx.GlobalInt(NumValidatorsFlag.Name),
+		NodeNum:       ctx.GlobalInt(NodeNumFlag.Name),
 	}
 	if ctx.GlobalBool(DevModeFlag.Name) {
 		if !ctx.GlobalIsSet(DataDirFlag.Name) {
@@ -746,10 +791,17 @@ func RegisterEthService(ctx *cli.Context, stack *node.Node, extra []byte) {
 		SolcPath:                ctx.GlobalString(SolcPathFlag.Name),
 		AutoDAG:                 ctx.GlobalBool(AutoDAGFlag.Name) || ctx.GlobalBool(MiningEnabledFlag.Name),
 		EnablePreimageRecording: ctx.GlobalBool(VMEnableDebugFlag.Name),
+		// bft parameters
+		Validators:    MakeValidators(stack.AccountManager(), ctx),
+		BFT:           ctx.GlobalBool(BFTFlag.Name),
+		PrivateKeyHex: MakeBFTPrivateKeyHex(ctx),
 	}
 
 	// Override any default configs in dev mode or the test net
 	switch {
+	case ctx.GlobalBool(BFTFlag.Name):
+		key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
+		ethConf.Etherbase = crypto.PubkeyToAddress(key.PublicKey)
 	case ctx.GlobalBool(TestNetFlag.Name):
 		if !ctx.GlobalIsSet(NetworkIdFlag.Name) {
 			ethConf.NetworkId = 3

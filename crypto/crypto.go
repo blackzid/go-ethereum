@@ -230,3 +230,12 @@ func zeroBytes(bytes []byte) {
 		bytes[i] = 0
 	}
 }
+
+func MakePrivatekey(seed string) *ecdsa.PrivateKey {
+	s := []byte(seed)
+	return ToECDSA(Sha3(s))
+}
+
+func PrikeyToHex(key *ecdsa.PrivateKey) string {
+	return hex.EncodeToString(FromECDSA(key))
+}

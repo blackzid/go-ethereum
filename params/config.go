@@ -65,6 +65,8 @@ type ChainConfig struct {
 
 	EIP155Block *big.Int `json:"eip155Block"` // EIP155 HF block
 	EIP158Block *big.Int `json:"eip158Block"` // EIP158 HF block
+
+	BFT bool // BFT config
 }
 
 // String implements the Stringer interface.
@@ -81,7 +83,7 @@ func (c *ChainConfig) String() string {
 }
 
 var (
-	TestChainConfig = &ChainConfig{big.NewInt(1), new(big.Int), new(big.Int), true, new(big.Int), common.Hash{}, new(big.Int), new(big.Int)}
+	TestChainConfig = &ChainConfig{big.NewInt(1), new(big.Int), new(big.Int), true, new(big.Int), common.Hash{}, new(big.Int), new(big.Int), false}
 	TestRules       = TestChainConfig.Rules(new(big.Int))
 )
 

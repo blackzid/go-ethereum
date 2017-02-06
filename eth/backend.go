@@ -101,6 +101,11 @@ type Config struct {
 
 	TestGenesisBlock *types.Block   // Genesis block to seed the chain database with (testing only!)
 	TestGenesisState ethdb.Database // Genesis state to seed the database with (testing only!)
+
+	// bft parameters
+	Validators    []common.Address
+	BFT           bool
+	PrivateKeyHex string
 }
 
 type LesServer interface {
@@ -140,6 +145,9 @@ type Ethereum struct {
 
 	netVersionId  int
 	netRPCService *ethapi.PublicNetAPI
+
+	BFT           bool
+	bftValidators []common.Address
 }
 
 func (s *Ethereum) AddLesServer(ls LesServer) {
@@ -175,6 +183,9 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		MinerThreads:   config.MinerThreads,
 		AutoDAG:        config.AutoDAG,
 		solcPath:       config.SolcPath,
+		// bft setup
+		BFT:           config.BFT,
+		bftValidators: config.Validators,
 	}
 
 	if err := upgradeChainDatabase(chainDb); err != nil {
@@ -234,10 +245,16 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 			maxPeers = halfPeers
 		}
 	}
+	// bft database
+	bftDb, err := ctx.OpenDatabase("bftdata", config.DatabaseCache, config.DatabaseHandles)
+	if db, ok := bftDb.(*ethdb.LDBDatabase); ok {
+		db.Meter("eth/db/bft/")
+	}
 
-	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, maxPeers, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb); err != nil {
+	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.FastSync, config.NetworkId, maxPeers, eth.eventMux, eth.txPool, eth.pow, eth.blockchain, chainDb, bftDb, eth.bftValidators, config.PrivateKeyHex, eth, config.ExtraData); err != nil {
 		return nil, err
 	}
+
 	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.pow)
 	eth.miner.SetGasPrice(config.GasPrice)
 	eth.miner.SetExtra(config.ExtraData)
@@ -301,7 +318,11 @@ func CreatePoW(config *Config) (pow.PoW, error) {
 		glog.V(logger.Info).Infof("ethash used in shared mode")
 		return ethash.NewShared(), nil
 	default:
-		return ethash.New(), nil
+		if config.BFT {
+			return pow.PoW(core.FakePow{}), nil
+		} else {
+			return ethash.New(), nil
+		}
 	}
 }
 
