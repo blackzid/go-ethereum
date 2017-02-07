@@ -50,7 +50,7 @@ func (cc *ConsensusContract) proposer(height uint64, round uint64) common.Addres
 	// v := abs(hash(repr((height, round))))
 	s := fmt.Sprintf("(%d, %d)", height, round)
 
-	addr := cc.validators[int(hash(s))%len(cc.validators)]
+	addr := cc.validators[hash(s)%uint32(len(cc.validators))]
 	return addr
 }
 func (cc *ConsensusContract) isValidators(v common.Address) bool {
