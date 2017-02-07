@@ -205,9 +205,49 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 	default:
 		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
 	}
-
 }
 
+func (pm *ProtocolManager) BroadcastBFTFaultyMsg(msg interface{}, nodeNums []int) {
+	// TODO: expect origin
+	var err error
+
+	switch m := msg.(type) {
+	case *types.Ready:
+		peers := pm.peers.Peers(nodeNums)
+		glog.V(logger.Debug).Infoln("There are ", len(peers), " peers to broadcast.")
+		for _, peer := range peers {
+			// glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
+			err = peer.SendReadyMsg(m)
+			if err != nil {
+				glog.V(logger.Debug).Infoln(err)
+			}
+		}
+
+	case *types.BlockProposal:
+		glog.V(logger.Debug).Infoln("broadcast Blockproposal")
+		peers := pm.peers.Peers(nodeNums)
+		// glog.V(logger.Info).Infoln("Send Bp: ", m)
+		for _, peer := range peers {
+			peer.SendNewBlockProposal(m)
+		}
+	case *types.VotingInstruction:
+		glog.V(logger.Debug).Infoln("broadcast Votinginstruction")
+		peers := pm.peers.Peers(nodeNums)
+
+		for _, peer := range peers {
+			peer.SendVotingInstruction(m)
+		}
+	case *types.Vote:
+		glog.V(logger.Debug).Infoln("broadcast Vote")
+		peers := pm.peers.Peers(nodeNums)
+
+		for _, peer := range peers {
+			peer.SendVote(m)
+		}
+	default:
+		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
+	}
+}
 func (self *ProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()

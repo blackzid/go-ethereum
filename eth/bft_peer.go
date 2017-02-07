@@ -39,9 +39,6 @@ func (p *peer) RequestBlockProposals(blocknumbers []types.RequestProposalNumber)
 	return p2p.Send(p.rw, GetBlockProposalsMsg, blocknumbers)
 }
 
-// func (p *peer) SendTransaction(r types.Ready) error {
-// 	return p2p.Send(p.rw, ReadyMsg, []interface{}{r})
-// }
 func (ps *peerSet) PeersWithoutHash(hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
@@ -50,6 +47,29 @@ func (ps *peerSet) PeersWithoutHash(hash common.Hash) []*peer {
 		if !p.broadcastFilter.Has(hash) {
 			list = append(list, p)
 		}
+	}
+	return list
+}
+func (ps *peerSet) Peers(nums []int) []*peer {
+	var f func([]int, int) bool
+	f = func(s []int, e int) bool {
+		for _, a := range s {
+			if a == e {
+				return true
+			}
+		}
+		return false
+	}
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	list := make([]*peer, 0, len(ps.peers))
+	i := 0
+	for _, p := range ps.peers {
+		if f(nums, i) {
+			list = append(list, p)
+		}
+		i = i + 1
+		continue
 	}
 	return list
 }

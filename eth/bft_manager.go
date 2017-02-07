@@ -50,7 +50,7 @@ func (cc *ConsensusContract) proposer(height uint64, round uint64) common.Addres
 	// v := abs(hash(repr((height, round))))
 	s := fmt.Sprintf("(%d, %d)", height, round)
 
-	addr := cc.validators[int(hash(s))%len(cc.validators)]
+	addr := cc.validators[hash(s)%uint32(len(cc.validators))]
 	return addr
 }
 func (cc *ConsensusContract) isValidators(v common.Address) bool {
@@ -914,6 +914,7 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Debug).Infof("proposing is not waiting for proposal")
 		return nil
 	}
+
 	proposer := rm.cm.contract.proposer(rm.height, rm.round)
 	if proposer != rm.cm.coinbase {
 		glog.V(logger.Debug).Infoln("I am not proposer in", rm.height, rm.round)
@@ -1233,4 +1234,135 @@ func (env *Work) commitTransaction(tx *types.Transaction, bc *core.BlockChain, g
 	env.receipts = append(env.receipts, receipt)
 
 	return nil, receipt.Logs
+}
+
+// faulty action
+func (cm *ConsensusManager) broadcastFaulty(msg interface{}, nums []int) {
+	cm.pm.BroadcastBFTFaultyMsg(msg, nums)
+}
+func (rm *RoundManager) process2() {
+	rm.roundProcessMu.Lock()
+	defer rm.roundProcessMu.Unlock()
+	////DEBUG
+	glog.V(logger.Debug).Infoln("In RM Process", rm.height, rm.round)
+
+	if rm.cm.Round() != rm.round {
+		glog.V(logger.Debug).Infof("round process error")
+	}
+	if rm.cm.Height() != rm.height {
+		glog.V(logger.Debug).Infof("round process error")
+	}
+
+	p := rm.propose()
+	p2 := rm.propose2()
+	switch proposal := p.(type) {
+	case *types.BlockProposal:
+		if proposal != nil {
+			rm.cm.addBlockProposal(proposal)
+			rm.cm.broadcastFaulty(proposal, []int{0, 1})
+		}
+	case *types.VotingInstruction:
+		rm.cm.broadcastFaulty(proposal, []int{0, 1})
+	}
+	switch proposal := p2.(type) {
+	case *types.BlockProposal:
+		if proposal != nil {
+			rm.cm.addBlockProposal(proposal)
+			rm.cm.broadcastFaulty(proposal, []int{2})
+		}
+	case *types.VotingInstruction:
+		rm.cm.broadcastFaulty(proposal, []int{2})
+	}
+	panic("Faulty node stop consensus")
+}
+func (rm *RoundManager) propose2() types.Proposal {
+	proposal := rm.mkProposal2()
+	return proposal
+}
+func (rm *RoundManager) mkProposal2() *types.BlockProposal {
+	var roundLockset *types.LockSet
+	signingLockset := rm.cm.lastCommittingLockset().Copy()
+	if rm.round > 0 {
+		roundLockset = rm.cm.lastValidLockset().Copy()
+		if !roundLockset.NoQuorum() {
+			panic("MkProposal Error")
+		}
+	} else {
+		roundLockset = nil
+	}
+	isQuorum, _ := signingLockset.HasQuorum()
+	if !isQuorum {
+		panic("mkProposal error")
+	}
+	if !(roundLockset != nil || rm.round == 0) {
+		panic("mkProposal error")
+	}
+	block := rm.cm.newBlock2()
+	blockProposal, err := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
+	if err != nil {
+		glog.V(logger.Error).Infof("error occur %v", err)
+		return nil
+	}
+	rm.cm.Sign(blockProposal)
+	return blockProposal
+}
+func (cm *ConsensusManager) newBlock2() *types.Block {
+	config := cm.chain.Config()
+	contract := cm.contract
+
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.uncleMu.Lock()
+	defer cm.uncleMu.Unlock()
+	cm.currentMu.Lock()
+	defer cm.currentMu.Unlock()
+	tstart := time.Now()
+	parent := cm.chain.CurrentBlock()
+	tstamp := tstart.Unix()
+	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
+		tstamp = parent.Time().Int64() + 1
+	}
+
+	num := parent.Number()
+	header := &types.Header{
+		ParentHash: parent.Hash(),
+		Number:     num.Add(num, common.Big1),
+		Difficulty: new(big.Int).SetInt64(0),
+		GasLimit:   new(big.Int).SetInt64(50000000),
+		GasUsed:    new(big.Int),
+		Coinbase:   cm.coinbase,
+		Extra:      []byte("this is a faulty block"),
+		Time:       big.NewInt(tstamp),
+	}
+	state, err := cm.chain.StateAt(parent.Root())
+	if err != nil {
+		panic(err)
+	}
+	work := &Work{
+		config:    config,
+		signer:    types.NewEIP155Signer(config.ChainId),
+		state:     state,
+		ancestors: set.New(),
+		family:    set.New(),
+		uncles:    set.New(),
+		header:    header,
+		createdAt: time.Now(),
+	}
+
+	ptxs, err := contract.txpool.Pending()
+	if err != nil {
+		panic(err)
+	}
+	txs := types.NewTransactionsByPriceAndNonce(ptxs)
+	work.commitTransactions(cm.mux, txs, cm.chain)
+
+	var uncles []*types.Header
+
+	core.AccumulateRewards(work.state, header, uncles)
+	header.Root = work.state.IntermediateRoot(true)
+
+	work.Block = types.NewBlock(header, work.txs, uncles, work.receipts)
+	glog.V(logger.Debug).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
+
+	return work.Block
 }
