@@ -208,16 +208,6 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 
 }
 
-// func (self *ProtocolManager) msgBroadcastLoop() {
-// 	// automatically stops if unsubscribe
-// 	for obj := range self.msgSub.Chan() {
-// 		switch ev := obj.Data.(type) {
-// 		case core.NewMsgEvent:
-// 			self.BroadcastBFTMsg(ev)
-// 		}
-// 	}
-// }
-
 func (self *ProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
