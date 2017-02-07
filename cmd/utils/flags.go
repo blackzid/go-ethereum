@@ -925,6 +925,11 @@ func MakeChainConfigFromDb(ctx *cli.Context, db ethdb.Database) *params.ChainCon
 			config.ChainId = params.MainNetChainID
 		}
 	}
+	// bft setup
+	if ctx.GlobalBool(BFTFlag.Name) {
+		config.BFT = true
+	}
+
 	return config
 }
 

@@ -762,7 +762,7 @@ func (bp *BlockProposal) publicKey(hash common.Hash) ([]byte, error) {
 	sig := make([]byte, 65)
 	copy(sig[32-len(r):32], r)
 	copy(sig[64-len(s):64], s)
-	sig[64] = V - 27
+	sig[64] = V
 
 	// recover the public key from the signature
 	// hash := signed.SigHash()

@@ -328,11 +328,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 	// main loop. handle incoming messages.
 	for {
 		if pm.chainconfig.BFT == true {
+			glog.V(logger.Debug).Infof("BFT Msg")
 			if err := pm.handleBFTMsg(p); err != nil {
 				glog.V(logger.Debug).Infof("%v: message handling failed: %v", p, err)
 				return err
 			}
 		} else {
+			glog.V(logger.Debug).Infof("Non BFT Msg")
 			if err := pm.handleMsg(p); err != nil {
 				glog.V(logger.Debug).Infof("%v: message handling failed: %v", p, err)
 				return err

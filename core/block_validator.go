@@ -221,18 +221,20 @@ func ValidateHeader(config *params.ChainConfig, pow pow.PoW, header *types.Heade
 		return BlockEqualTSErr
 	}
 
-	expd := CalcDifficulty(config, header.Time.Uint64(), parent.Time.Uint64(), parent.Number, parent.Difficulty)
-	if expd.Cmp(header.Difficulty) != 0 {
-		return fmt.Errorf("Difficulty check failed for header (remote: %v local: %v)", header.Difficulty, expd)
-	}
+	if !config.BFT {
+		expd := CalcDifficulty(config, header.Time.Uint64(), parent.Time.Uint64(), parent.Number, parent.Difficulty)
+		if expd.Cmp(header.Difficulty) != 0 {
+			return fmt.Errorf("Difficulty check failed for header (remote: %v local: %v)", header.Difficulty, expd)
+		}
 
-	a := new(big.Int).Set(parent.GasLimit)
-	a = a.Sub(a, header.GasLimit)
-	a.Abs(a)
-	b := new(big.Int).Set(parent.GasLimit)
-	b = b.Div(b, params.GasLimitBoundDivisor)
-	if !(a.Cmp(b) < 0) || (header.GasLimit.Cmp(params.MinGasLimit) == -1) {
-		return fmt.Errorf("GasLimit check failed for header (remote: %v local_max: %v)", header.GasLimit, b)
+		a := new(big.Int).Set(parent.GasLimit)
+		a = a.Sub(a, header.GasLimit)
+		a.Abs(a)
+		b := new(big.Int).Set(parent.GasLimit)
+		b = b.Div(b, params.GasLimitBoundDivisor)
+		if !(a.Cmp(b) < 0) || (header.GasLimit.Cmp(params.MinGasLimit) == -1) {
+			return fmt.Errorf("GasLimit check failed for header (remote: %v local_max: %v)", header.GasLimit, b)
+		}
 	}
 
 	num := new(big.Int).Set(parent.Number)
