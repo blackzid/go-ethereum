@@ -80,11 +80,13 @@ func TestReady(t *testing.T) {
 	s1 := NewReady(1, ls)
 	s1.Sign(key1)
 
-	if *s != *s0 {
+	s.From()
+	s0.From()
+	if s.CurrentLockSet != s0.CurrentLockSet || s.Nonce != s0.Nonce || *s.sender != *s0.sender {
 		t.Error("readys doesn't match")
 	}
 	if *s == *s1 {
-		t.Error("readys doesn't match")
+		t.Error("readys should not match")
 	}
 }
 func TestLockSet(t *testing.T) {
