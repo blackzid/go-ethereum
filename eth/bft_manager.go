@@ -528,10 +528,10 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 		ls := cm.getHeightManager(v.Height).getRoundManager(v.Round).lockset
 		glog.V(logger.Debug).Infoln("add vote failed in LockSet:", ls, v.Height, v.Round)
 	}
-	if success && h.height == cm.Height()+1 {
-		glog.V(logger.Info).Infoln("may havev double vote attack on height : ", h.height)
-		cm.synchronizer.requestHeight(h.height, peer)
-	}
+	// if success && h.height == cm.Height()+1 {
+	// 	glog.V(logger.Info).Infoln("may havev double vote attack on height : ", h.height)
+	// 	cm.synchronizer.requestHeight(h.height, peer)
+	// }
 	return success
 }
 func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
@@ -884,9 +884,11 @@ func (rm *RoundManager) process() {
 
 	if rm.cm.Round() != rm.round {
 		glog.V(logger.Debug).Infof("round process error")
+		return
 	}
 	if rm.cm.Height() != rm.height {
 		glog.V(logger.Debug).Infof("round process error")
+		return
 	}
 
 	p := rm.propose()
