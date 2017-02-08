@@ -884,9 +884,11 @@ func (rm *RoundManager) process() {
 
 	if rm.cm.Round() != rm.round {
 		glog.V(logger.Debug).Infof("round process error")
+		return
 	}
 	if rm.cm.Height() != rm.height {
 		glog.V(logger.Debug).Infof("round process error")
+		return
 	}
 
 	p := rm.propose()
