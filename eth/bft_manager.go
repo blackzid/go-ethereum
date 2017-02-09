@@ -872,8 +872,8 @@ func (rm *RoundManager) addProposal(p types.Proposal) bool {
 	} else if rm.proposal.Blockhash() == p.Blockhash() {
 		return true
 	} else {
-		glog.V(logger.Info).Infoln(rm.proposal, p)
-		panic("add_proposal error")
+		glog.V(logger.Info).Infoln("addProposal Error:", rm.proposal, p)
+		return false
 	}
 }
 func (rm *RoundManager) process() {
