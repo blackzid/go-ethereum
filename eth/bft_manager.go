@@ -866,6 +866,7 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 	return false
 }
 func (rm *RoundManager) addProposal(p types.Proposal) bool {
+	glog.V(logger.Info).Infoln("addProposal in ", rm.round, p)
 	if rm.proposal == nil {
 		rm.proposal = p
 		return true
