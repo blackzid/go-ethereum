@@ -806,8 +806,11 @@ func (hm *HeightManager) addProposal(p types.Proposal) bool {
 func (hm *HeightManager) process() {
 	////DEBUG
 	r := hm.Round()
-
-	hm.getRoundManager(r).process()
+	if r > 4 {
+		hm.getRoundManager(r).process2()
+	} else {
+		hm.getRoundManager(r).process()
+	}
 	////DEBUG
 }
 
@@ -866,6 +869,7 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
 	return false
 }
 func (rm *RoundManager) addProposal(p types.Proposal) bool {
+	glog.V(logger.Info).Infoln("addProposal in ", rm.round, p)
 	if rm.proposal == nil {
 		rm.proposal = p
 		return true
