@@ -55,7 +55,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
-		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg")
+		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg from:", p.id)
 		var query []types.RequestProposalNumber
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -74,7 +74,20 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			found = append(found, bp)
 		}
 		if len(found) != 0 {
+			glog.V(logger.Info).Infoln("Send bp: ", found)
 			p.SendBlockProposals(found)
+
+			// broadcast highest lastQuorumLockset if it exist
+			lastHeight := query[len(query)-1].Number
+			if ls := pm.consensusManager.getHeightManager(lastHeight).lastQuorumLockset(); ls != nil {
+				glog.V(logger.Info).Infoln("Send Vote from", lastHeight)
+				for _, v := range ls.Votes {
+					glog.V(logger.Info).Infoln("vote: ", v)
+					p.SendVote(v)
+				}
+			} else {
+				glog.V(logger.Info).Infoln("No Quorum on ", lastHeight)
+			}
 		}
 
 	case msg.Code == BlockProposalsMsg:
@@ -97,6 +110,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
+			time.Sleep(1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(bp)
 			pm.consensusManager.Process()
 		} else {
@@ -115,6 +129,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
+			time.Sleep(1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vi)
 			pm.consensusManager.Process()
 		}
@@ -133,6 +148,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
+			time.Sleep(1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vote)
 			pm.consensusManager.Process()
 		}
@@ -169,7 +185,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 	// TODO: expect origin
 	var err error
-
 	switch m := msg.(type) {
 	case *types.Ready:
 		peers := pm.peers.PeersWithoutHash(m.Hash())
@@ -181,7 +196,6 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 				glog.V(logger.Debug).Infoln(err)
 			}
 		}
-
 	case *types.BlockProposal:
 		glog.V(logger.Debug).Infoln("broadcast Blockproposal")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
@@ -199,25 +213,13 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 	case *types.Vote:
 		glog.V(logger.Debug).Infoln("broadcast Vote")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
-
 		for _, peer := range peers {
 			peer.SendVote(m)
 		}
 	default:
 		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
 	}
-
 }
-
-// func (self *ProtocolManager) msgBroadcastLoop() {
-// 	// automatically stops if unsubscribe
-// 	for obj := range self.msgSub.Chan() {
-// 		switch ev := obj.Data.(type) {
-// 		case core.NewMsgEvent:
-// 			self.BroadcastBFTMsg(ev)
-// 		}
-// 	}
-// }
 
 func (self *ProtocolManager) commitBlock(block *types.Block) bool {
 	self.addTransactionLock.Lock()

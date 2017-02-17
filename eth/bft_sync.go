@@ -111,6 +111,7 @@ func (self *HDCSynchronizer) requestHeight(height uint64, peer *peer) bool {
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	for _, bp := range bps {
+		glog.V(logger.Info).Infoln("received Blocks", bp.Height)
 		self.received.Add(bp.Height)
 		self.requested.Remove(bp.Height)
 		for _, v := range bp.SigningLockset.Votes {
@@ -120,6 +121,7 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	self.cm.Process()
 	self.request()
 	for _, bp := range bps {
+		glog.V(logger.Info).Infoln("add Bps", bp)
 		self.cm.AddProposal(bp, nil)
 		self.cm.Process()
 	}

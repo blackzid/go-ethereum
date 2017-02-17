@@ -106,9 +106,10 @@ type ConsensusManager struct {
 	// lastCommittingLockset   *types.LockSet
 
 	// create bock mu
-	mu        sync.Mutex
-	currentMu sync.Mutex
-	uncleMu   sync.Mutex
+	mu         sync.Mutex
+	currentMu  sync.Mutex
+	uncleMu    sync.Mutex
+	writeMapMu sync.Mutex
 
 	processMu sync.Mutex
 	mux       *event.TypeMux
@@ -274,7 +275,8 @@ func (cm *ConsensusManager) getBlockProposal(blockhash common.Hash) *types.Block
 }
 func (cm *ConsensusManager) getBlockProposalByHeight(height uint64) *types.BlockProposal {
 	if height >= cm.Height() {
-		panic("getBlockProposalRlpByHeight error")
+		glog.V(logger.Error).Infof("getBlockProposalRlpByHeight error")
+		return nil
 	} else {
 		bh := cm.chain.GetBlockByNumber(uint64(height)).Hash()
 		return cm.loadProposal(bh)
@@ -347,6 +349,7 @@ func (cm *ConsensusManager) waitProposalAlarm(rm *RoundManager, delay float64) {
 			cm.setupAlarm()
 			return
 		} else {
+			glog.V(logger.Debug).Infoln("delay time up")
 			cm.Process()
 		}
 	}
@@ -393,7 +396,8 @@ func (cm *ConsensusManager) commit() bool {
 	for _, p := range cm.blockCandidates {
 		if p.Block.ParentHash() != cm.Head().Hash() {
 			//DEBUG
-			glog.V(logger.Debug).Infoln("wrong parent hash")
+			glog.V(logger.Debug).Infoln("wrong parent hash: ", p.Block.ParentHash(), cm.Head().Hash())
+			glog.V(logger.Debug).Infoln("candidate: ", p)
 			continue
 		}
 		if p.Height <= cm.Head().Header().Number.Uint64() {
@@ -425,6 +429,11 @@ func (cm *ConsensusManager) commit() bool {
 		} else {
 			//DEBUG
 			glog.V(logger.Debug).Infoln("no quorum for ", p.GetHeight(), p.GetRound())
+			rls := cm.getHeightManager(p.GetHeight()).getRoundManager(p.GetRound()).lockset
+			for _, v := range rls.Votes {
+				glog.V(logger.Debug).Infoln(v)
+			}
+
 			if ls != nil {
 				//DEBUG
 				glog.V(logger.Debug).Infoln("votes ", ls.Votes)
@@ -505,7 +514,11 @@ func (cm *ConsensusManager) AddReady(ready *types.Ready) {
 		glog.V(logger.Debug).Infoln("receive ready from invalid sender")
 		return
 	}
-	cm.readyValidators[addr] = struct{}{}
+	if _, ok := cm.readyValidators[addr]; !ok {
+		cm.writeMapMu.Lock()
+		cm.readyValidators[addr] = struct{}{}
+		cm.writeMapMu.Unlock()
+	}
 }
 func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 	if v == nil {
@@ -517,7 +530,11 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 		glog.V(logger.Debug).Infoln("non-validator vote")
 		return false
 	}
-	cm.readyValidators[addr] = struct{}{}
+	if _, ok := cm.readyValidators[addr]; !ok {
+		cm.writeMapMu.Lock()
+		cm.readyValidators[addr] = struct{}{}
+		cm.writeMapMu.Unlock()
+	}
 	// TODO FIX
 	isOwnVote := (addr == cm.contract.coinbase)
 	h := cm.getHeightManager(v.Height)
@@ -528,10 +545,15 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 		ls := cm.getHeightManager(v.Height).getRoundManager(v.Round).lockset
 		glog.V(logger.Debug).Infoln("add vote failed in LockSet:", ls, v.Height, v.Round)
 	}
-	// if success && h.height == cm.Height()+1 {
-	// 	glog.V(logger.Info).Infoln("may havev double vote attack on height : ", h.height)
-	// 	cm.synchronizer.requestHeight(h.height, peer)
-	// }
+
+	if success && h.height == cm.Height()+1 && v.VoteType == 2 {
+		glog.V(logger.Info).Infoln("may have double vote attack on height : ", cm.Height())
+		if peer != nil {
+			glog.V(logger.Info).Infoln("request bp from ", peer.id)
+			delete(cm.heights, cm.Height())
+			cm.synchronizer.requestHeight(cm.Height(), peer)
+		}
+	}
 	return success
 }
 func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
@@ -551,13 +573,17 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		glog.V(logger.Debug).Infoln("proposal sender invalid")
 		return false
 	}
-	cm.readyValidators[addr] = struct{}{}
+	if _, ok := cm.readyValidators[addr]; !ok {
+		cm.writeMapMu.Lock()
+		cm.readyValidators[addr] = struct{}{}
+		cm.writeMapMu.Unlock()
+	}
 	// if proposal is valid
 
 	switch proposal := p.(type) {
 	case *types.BlockProposal:
 		// cm.addLockset(p.LockSet()) // check validity
-		glog.V(logger.Debug).Infoln("adding bp in :", proposal.Height, proposal.Round)
+		glog.V(logger.Debug).Infoln("adding bp in :", proposal.Height, proposal.Round, proposal.Blockhash())
 		ls := p.LockSet()
 		if !ls.IsValid() {
 			glog.V(logger.Debug).Infoln("proposal invalid")
@@ -576,6 +602,9 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		if peer != nil {
 			cm.synchronizer.onProposal(p, peer)
 		}
+		if result, _ := proposal.LockSet().HasQuorum(); result {
+			delete(cm.heights, proposal.LockSet().Height())
+		}
 		for _, v := range proposal.LockSet().Votes {
 			glog.V(logger.Debug).Infoln("check votes")
 			cm.AddVote(v, nil) // implicit check
@@ -586,10 +615,10 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 		if proposal.Round != 0 && !proposal.LockSet().NoQuorum() {
 			return false
 		}
-		if proposal.Height > cm.Height() {
-			glog.V(logger.Debug).Infoln("proposal from the future")
-			return false
-		}
+		// if proposal.Height > cm.Height() {
+		// 	glog.V(logger.Debug).Infoln("proposal from the future")
+		// 	return false
+		// }
 		blk := cm.pm.linkBlock(proposal.Block)
 		if blk == nil {
 			glog.V(logger.Debug).Infoln("link block: already linked or wrong block")
@@ -873,6 +902,7 @@ func (rm *RoundManager) addProposal(p types.Proposal) bool {
 	} else if rm.proposal.Blockhash() == p.Blockhash() {
 		return true
 	} else {
+
 		glog.V(logger.Info).Infoln("addProposal Error:", rm.proposal, p)
 		return false
 	}
@@ -1003,6 +1033,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	}
 	rm.cm.Sign(blockProposal)
 	rm.cm.setProposalLock(block)
+	glog.V(logger.Debug).Infoln("Create block blockhash : ", blockProposal.Blockhash())
 	return blockProposal
 }
 func (rm *RoundManager) vote() *types.Vote {
