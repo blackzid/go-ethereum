@@ -105,11 +105,11 @@ type ConsensusManager struct {
 	synchronizer            *HDCSynchronizer
 	// lastCommittingLockset   *types.LockSet
 
-	// create bock mu
-	mu         sync.Mutex
-	currentMu  sync.Mutex
-	uncleMu    sync.Mutex
-	writeMapMu sync.Mutex
+	mu          sync.Mutex
+	currentMu   sync.Mutex
+	uncleMu     sync.Mutex
+	writeMapMu  sync.Mutex
+	getHeightMu sync.Mutex
 
 	processMu sync.Mutex
 	mux       *event.TypeMux
@@ -307,7 +307,9 @@ func (cm *ConsensusManager) Round() uint64 {
 }
 func (cm *ConsensusManager) getHeightManager(h uint64) *HeightManager {
 	if _, ok := cm.heights[h]; !ok {
+		cm.getHeightMu.Lock()
 		cm.heights[h] = NewHeightManager(cm, h)
+		cm.getHeightMu.Unlock()
 	}
 	return cm.heights[h]
 }
@@ -329,7 +331,6 @@ func (cm *ConsensusManager) setupAlarm() {
 		}
 	} else {
 		glog.V(logger.Debug).Infoln("wait txs alarm")
-
 		go cm.waitProposalAlarm(ar, 1)
 	}
 }
@@ -731,9 +732,10 @@ func (cm *ConsensusManager) mkLockSet(height uint64) *types.LockSet {
 }
 
 type HeightManager struct {
-	cm     *ConsensusManager
-	height uint64
-	rounds map[uint64]*RoundManager
+	cm         *ConsensusManager
+	height     uint64
+	rounds     map[uint64]*RoundManager
+	writeMapMu sync.Mutex
 	// lastValidLockset *types.LockSet
 }
 
@@ -759,7 +761,9 @@ func (hm *HeightManager) Round() uint64 {
 }
 func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
 	if _, ok := hm.rounds[r]; !ok {
+		hm.writeMapMu.Lock()
 		hm.rounds[r] = NewRoundManager(hm, r)
+		hm.writeMapMu.Unlock()
 	}
 	return hm.rounds[r]
 }
@@ -809,7 +813,7 @@ func (hm *HeightManager) lastQuorumLockset() *types.LockSet {
 			result, hash := ls.HasQuorum()
 			if result {
 				if found != nil {
-					glog.V(logger.Info).Infoln(len(hm.rounds), index)
+					glog.V(logger.Info).Infoln(hm.height, index)
 					glog.V(logger.Info).Infoln("multiple valid lockset")
 					if _, h := found.HasQuorum(); h != hash {
 						glog.V(logger.Info).Infoln("multiple valid lockset")
