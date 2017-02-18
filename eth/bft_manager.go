@@ -682,7 +682,12 @@ func (cm *ConsensusManager) addBlockProposal(bp *types.BlockProposal) bool {
 }
 
 func (cm *ConsensusManager) lastCommittingLockset() *types.LockSet {
-	return cm.getHeightManager(cm.Height() - 1).lastQuorumLockset()
+	ls := cm.getHeightManager(cm.Height() - 1).lastQuorumLockset()
+	if ls == nil {
+		glog.V(logger.Info).Infoln("lastCommittingLockset ERROR")
+		return nil
+	}
+	return ls
 }
 func (cm *ConsensusManager) HighestCommittingLockset() *types.LockSet {
 	var hcls *types.LockSet

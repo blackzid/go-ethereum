@@ -168,7 +168,9 @@ func NewLockSet(eligibleVotesNum uint64, vs Votes) *LockSet {
 }
 
 // TODO FIXME
-func (ls *LockSet) Copy() *LockSet { return NewLockSet(ls.EligibleVotesNum, ls.Votes) }
+func (ls *LockSet) Copy() *LockSet {
+	return NewLockSet(ls.EligibleVotesNum, ls.Votes)
+}
 
 type HashCount struct {
 	blockhash common.Hash
