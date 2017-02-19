@@ -114,7 +114,8 @@ type ConsensusManager struct {
 	processMu sync.Mutex
 	mux       *event.TypeMux
 	extraData []byte
-	Enable    bool
+
+	Enable bool
 }
 
 func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte) *ConsensusManager {
@@ -320,10 +321,9 @@ func (cm *ConsensusManager) activeRound() *RoundManager {
 
 func (cm *ConsensusManager) setupAlarm() {
 	// glog.V(logger.Error).Infof("in set up alarm")
-
 	ar := cm.activeRound()
-	delay := ar.getTimeout()
 	if cm.isWaitingForProposal() {
+		delay := ar.getTimeout()
 		// if timeout is setup already, skip
 		if delay > 0 {
 			glog.V(logger.Debug).Infoln("delay time :", delay)
@@ -432,7 +432,8 @@ func (cm *ConsensusManager) commit() bool {
 			glog.V(logger.Debug).Infoln("no quorum for ", p.GetHeight(), p.GetRound())
 			rls := cm.getHeightManager(p.GetHeight()).getRoundManager(p.GetRound()).lockset
 			for _, v := range rls.Votes {
-				glog.V(logger.Debug).Infoln(v)
+				addr, _ := v.From()
+				glog.V(logger.Debug).Infoln(v, addr.Hex())
 			}
 
 			if ls != nil {
@@ -550,7 +551,7 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 	if success && h.height == cm.Height()+1 && v.VoteType == 2 {
 		glog.V(logger.Info).Infoln("may have double vote attack on height : ", cm.Height())
 		if peer != nil {
-			glog.V(logger.Info).Infoln("request bp from ", peer.id)
+			glog.V(logger.Info).Infoln("request bp from ", cm.Height(), peer.id)
 			delete(cm.heights, cm.Height())
 			cm.synchronizer.requestHeight(cm.Height(), peer)
 		}

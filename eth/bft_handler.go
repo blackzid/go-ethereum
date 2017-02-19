@@ -61,6 +61,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		var found []*types.BlockProposal
+		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg request: ", query)
 		for i, height := range query {
 			if i == MaxGetproposalsCount {
 				glog.V(logger.Info).Infoln("max get proposal count")
@@ -84,6 +85,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 				for _, v := range ls.Votes {
 					glog.V(logger.Info).Infoln("vote: ", v)
 					p.SendVote(v)
+					time.Sleep(1000 * 1000 * 500)
 				}
 			} else {
 				glog.V(logger.Info).Infoln("No Quorum on ", lastHeight)
@@ -110,13 +112,13 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
-			// time.Sleep(1000 * 1000 * 0.5)
+			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(bp)
+			pm.consensusManager.Process()
 		} else {
 			glog.V(logger.Debug).Infoln("NewBlockProposalMsg failed")
 			return nil
 		}
-		pm.consensusManager.Process()
 	case msg.Code == VotingInstructionMsg:
 		glog.V(logger.Debug).Infoln("VotingInstructionMsg")
 		var viData votingInstructionData
@@ -129,10 +131,10 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
-			// time.Sleep(1000 * 1000 * 0.5)
+			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vi)
+			pm.consensusManager.Process()
 		}
-		pm.consensusManager.Process()
 	case msg.Code == VoteMsg:
 		glog.V(logger.Debug).Infoln("VoteMsg")
 		var vData voteData
@@ -147,10 +149,11 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
-			// time.Sleep(1000 * 1000 * 0.5)
+			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vote)
+			pm.consensusManager.Process()
 		}
-		pm.consensusManager.Process()
+
 	case msg.Code == ReadyMsg:
 		var r readyData
 		if err := msg.Decode(&r); err != nil {

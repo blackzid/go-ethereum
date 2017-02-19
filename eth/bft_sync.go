@@ -14,8 +14,8 @@ type HDCSynchronizer struct {
 	maxGetProposalsCount int
 	maxQueued            int
 	cm                   *ConsensusManager
-	requested            *set.Set
-	received             *set.Set
+	Requested            *set.Set
+	Received             *set.Set
 	lastActiveProtocol   *peer
 	addProposalLock      sync.Mutex
 }
@@ -24,8 +24,8 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 	return &HDCSynchronizer{
 		timeout:              5,
 		cm:                   cm,
-		requested:            set.New(),
-		received:             set.New(),
+		Requested:            set.New(),
+		Received:             set.New(),
 		maxGetProposalsCount: MaxGetproposalsCount,
 		maxQueued:            MaxGetproposalsCount * 3,
 	}
@@ -54,12 +54,12 @@ func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 }
 
 func (self *HDCSynchronizer) request() bool {
-	if self.requested.Size() != 0 {
+	if self.Requested.Size() != 0 {
 		glog.V(logger.Debug).Infoln("waiting for requested")
 		return false
 	}
 
-	if self.received.Size()+self.maxGetProposalsCount >= self.maxQueued {
+	if self.Received.Size()+self.maxGetProposalsCount >= self.maxQueued {
 		glog.V(logger.Debug).Infoln("queue is full")
 		return false
 	}
@@ -71,9 +71,9 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	var blockNumbers []types.RequestProposalNumber
 	for _, v := range missing {
-		if !self.received.Has(v.Number) && !self.requested.Has(v.Number) {
+		if !self.Received.Has(v.Number) && !self.Requested.Has(v.Number) {
 			blockNumbers = append(blockNumbers, v)
-			self.requested.Add(v.Number)
+			self.Requested.Add(v.Number)
 			if len(blockNumbers) == self.maxGetProposalsCount {
 				break
 			}
@@ -96,10 +96,7 @@ func (self *HDCSynchronizer) request() bool {
 }
 func (self *HDCSynchronizer) requestHeight(height uint64, peer *peer) bool {
 	var blockNumbers []types.RequestProposalNumber
-	if !self.received.Has(height) && !self.requested.Has(height) {
-		blockNumbers = append(blockNumbers, types.RequestProposalNumber{height})
-		self.requested.Add(height)
-	}
+	blockNumbers = append(blockNumbers, types.RequestProposalNumber{height})
 	if peer != nil {
 		err := peer.RequestBlockProposals(blockNumbers)
 		glog.V(logger.Debug).Infoln("request end, err:", err)
@@ -112,8 +109,8 @@ func (self *HDCSynchronizer) requestHeight(height uint64, peer *peer) bool {
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	for _, bp := range bps {
 		glog.V(logger.Info).Infoln("received Blocks", bp.Height)
-		self.received.Add(bp.Height)
-		self.requested.Remove(bp.Height)
+		self.Received.Add(bp.Height)
+		self.Requested.Remove(bp.Height)
 		for _, v := range bp.SigningLockset.Votes {
 			self.cm.AddVote(v, nil)
 		}
@@ -142,14 +139,14 @@ func (self *HDCSynchronizer) process() {
 func (self *HDCSynchronizer) cleanup() {
 	// set.List() may have error
 	height := self.cm.Height()
-	for _, v := range self.received.List() {
+	for _, v := range self.Received.List() {
 		if v.(uint64) < height {
-			self.received.Remove(v)
+			self.Received.Remove(v)
 		}
 	}
-	for _, v := range self.requested.List() {
+	for _, v := range self.Requested.List() {
 		if v.(uint64) < height {
-			self.requested.Remove(v)
+			self.Requested.Remove(v)
 		}
 	}
 }
