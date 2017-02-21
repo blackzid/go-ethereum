@@ -550,11 +550,11 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 
 	if success && h.height == cm.Height()+1 && v.VoteType == 2 {
 		glog.V(logger.Info).Infoln("may have double vote attack on height : ", cm.Height())
-		// if peer != nil {
-		// 	glog.V(logger.Info).Infoln("request bp from ", cm.Height(), peer.id)
-		// 	delete(cm.heights, cm.Height())
-		// 	cm.synchronizer.requestHeight(cm.Height(), peer)
-		// }
+		if peer != nil {
+			glog.V(logger.Info).Infoln("request bp from ", cm.Height(), peer.id)
+			delete(cm.heights, cm.Height())
+			cm.synchronizer.requestHeight(cm.Height(), peer)
+		}
 	}
 	return success
 }
