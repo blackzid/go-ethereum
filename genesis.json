@@ -1,0 +1,20 @@
+{
+   "difficulty": "0x0",
+   "extraData": "0x1688aa",
+   "gasLimit": "0x2FEFD8",
+   "mixhash": "0x168647572616c65787365646c6578168647572616c65787365646c6578",
+   "nonce": "0x0",
+   "timestamp": "0x0",
+   "alloc": {
+    "82a978b3f5962a5b0957d9ee9eef472ee55b42f1": {
+      "balance": "2337000000000000000000"
+    },
+    "7d577a597b2742b498cb5cf0c26cdcd726d39e6e": {
+      "balance": "2294270000000000000000"
+    },
+    "0xdceceaf3fc5c0a63d195d69b1a90011b7b19650d":{
+     "balance": "2294270000000000000000"	
+	}
+
+  }
+}
