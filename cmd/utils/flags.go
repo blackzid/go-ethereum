@@ -655,12 +655,12 @@ var (
 	NumValidatorsFlag = cli.IntFlag{
 		Name:  "num_validators",
 		Usage: "number of validators",
-		Value: 1,
+		Value: 0,
 	}
 	NodeNumFlag = cli.IntFlag{
 		Name:  "node_num",
 		Usage: "node's specific number",
-		Value: 0,
+		Value: -1,
 	}
 	BFTFlag = cli.BoolFlag{
 		Name:  "bft",
@@ -668,9 +668,13 @@ var (
 	}
 )
 
-func MakeBFTPrivateKeyHex(ctx *cli.Context) string {
-	key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
-	return crypto.PrikeyToHex(key)
+func MakeBFTPrivateKeyHex(accman *accounts.Manager, ctx *cli.Context) string {
+	if ctx.GlobalInt(NodeNumFlag.Name) >= 0 {
+		key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
+		accman.ImportECDSA(key, "")
+		return crypto.PrikeyToHex(key)
+	}
+	return ""
 }
 
 // create validator addresses
@@ -682,9 +686,6 @@ func MakeValidators(accman *accounts.Manager, ctx *cli.Context) []common.Address
 		s := strconv.Itoa(i)
 		privatekey := crypto.MakePrivatekey(s)
 		validators = append(validators, crypto.PubkeyToAddress(privatekey.PublicKey))
-		if i == ctx.GlobalInt(NodeNumFlag.Name) {
-			accman.ImportECDSA(privatekey, "")
-		}
 	}
 	return validators
 }
@@ -794,12 +795,18 @@ func RegisterEthService(ctx *cli.Context, stack *node.Node, extra []byte) {
 		// bft parameters
 		Validators:    MakeValidators(stack.AccountManager(), ctx),
 		BFT:           ctx.GlobalBool(BFTFlag.Name),
-		PrivateKeyHex: MakeBFTPrivateKeyHex(ctx),
+		PrivateKeyHex: MakeBFTPrivateKeyHex(stack.AccountManager(), ctx),
 	}
 
 	// Override any default configs in dev mode or the test net
 	switch {
 	case ctx.GlobalBool(BFTFlag.Name):
+		if ctx.GlobalInt(NumValidatorsFlag.Name) == 0 {
+			panic("please give the number of validators")
+		}
+		if ctx.GlobalInt(NodeNumFlag.Name) < 0 {
+			panic("please give the node number")
+		}
 		key := crypto.MakePrivatekey(ctx.GlobalString(NodeNumFlag.Name))
 		ethConf.Etherbase = crypto.PubkeyToAddress(key.PublicKey)
 	case ctx.GlobalBool(TestNetFlag.Name):

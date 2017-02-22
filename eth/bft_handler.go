@@ -112,7 +112,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
-			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(bp)
 			pm.consensusManager.Process()
 		} else {
@@ -131,7 +130,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
-			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vi)
 			pm.consensusManager.Process()
 		}
@@ -149,7 +147,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
-			time.Sleep(1000 * 1000 * 1000 * 0.5)
 			pm.BroadcastBFTMsg(vote)
 			pm.consensusManager.Process()
 		}

@@ -163,9 +163,7 @@ func (cm *ConsensusManager) Start() bool {
 }
 func (cm *ConsensusManager) Stop() bool {
 	cm.Enable = false
-	cm.Process()
 	glog.V(logger.Debug).Infoln("Stop Consensus")
-
 	return true
 }
 func (cm *ConsensusManager) initializeLocksets() {
@@ -307,10 +305,10 @@ func (cm *ConsensusManager) Round() uint64 {
 	return cm.getHeightManager(cm.Height()).Round()
 }
 func (cm *ConsensusManager) getHeightManager(h uint64) *HeightManager {
+	cm.getHeightMu.Lock()
+	defer cm.getHeightMu.Unlock()
 	if _, ok := cm.heights[h]; !ok {
-		cm.getHeightMu.Lock()
 		cm.heights[h] = NewHeightManager(cm, h)
-		cm.getHeightMu.Unlock()
 	}
 	return cm.heights[h]
 }
@@ -761,10 +759,10 @@ func (hm *HeightManager) Round() uint64 {
 	return 0
 }
 func (hm *HeightManager) getRoundManager(r uint64) *RoundManager {
+	hm.writeMapMu.Lock()
+	defer hm.writeMapMu.Unlock()
 	if _, ok := hm.rounds[r]; !ok {
-		hm.writeMapMu.Lock()
 		hm.rounds[r] = NewRoundManager(hm, r)
-		hm.writeMapMu.Unlock()
 	}
 	return hm.rounds[r]
 }
