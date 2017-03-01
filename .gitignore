@@ -30,6 +30,3 @@ build/_vendor/pkg
 # travis
 profile.tmp
 profile.cov
-
-# example
-/examples/bdata*

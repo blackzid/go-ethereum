@@ -1,58 +1,42 @@
-## Geth-w-BFT
+# Geth-w-BFT
 
-GitHub Markup
-=============
+Geth-w-BFT is a modulized Ethereum with BFT-like Consensus. This project is inspired by [HydraChain](https://github.com/HydraChain/hydrachain).
 
-This library is the first step of a journey that every markup file in a repository goes on before it is rendered on GitHub.com:
+## Build from source
 
-0. This library converts the raw markup to HTML. See the list of [supported markup formats](#markups) below.
-0. The HTML is sanitized, aggressively removing things that could harm you and your kin—such as `script` tags, inline-styles, and `class` or `id` attributes. See the [sanitization filter](https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/sanitization_filter.rb) for the full whitelist.
-0. Syntax highlighting is performed on code blocks. See [github/linguist](https://github.com/github/linguist#syntax-highlighting) for more information about syntax highlighting.
-0. The HTML is passed through other filters in the [html-pipeline](https://github.com/jch/html-pipeline) that add special sauce, such as [emoji](https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/emoji_filter.rb), [task lists](https://github.com/github/task_list/blob/master/lib/task_list/filter.rb), [named anchors](https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/toc_filter.rb), [CDN caching for images](https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/camo_filter.rb), and  [autolinking](https://github.com/jch/html-pipeline/blob/master/lib/html/pipeline/autolink_filter.rb).
-0. The resulting HTML is rendered on GitHub.com.
+Building geth requires both a Go and a C compiler. You can install them using your favourite package manager. Once the dependencies are installed, run:
 
-Please see our [contributing guidelines](CONTRIBUTING.md) before reporting an issue.
-
-Markups
--------
-
-The following markups are supported.  The dependencies listed are required if
-you wish to run the library. You can also run `script/bootstrap` to fetch them all.
-
-* [.markdown, .mdown, .mkdn, .md](http://daringfireball.net/projects/markdown/) -- `gem install redcarpet` (https://github.com/vmg/redcarpet)
-* [.textile](http://www.textism.com/tools/textile/) -- `gem install RedCloth`
-* [.rdoc](http://rdoc.sourceforge.net/) -- `gem install rdoc -v 3.6.1`
-* [.org](http://orgmode.org/) -- `gem install org-ruby`
-* [.creole](http://wikicreole.org/) -- `gem install creole`
-* [.mediawiki, .wiki](http://www.mediawiki.org/wiki/Help:Formatting) -- `gem install wikicloth`
-* [.rst](http://docutils.sourceforge.net/rst.html) -- `easy_install docutils`
-* [.asciidoc, .adoc, .asc](http://asciidoc.org/) -- `gem install asciidoctor` (http://asciidoctor.org)
-* [.pod](http://search.cpan.org/dist/perl/pod/perlpod.pod) -- `Pod::Simple::HTML`
-  comes with Perl >= 5.10. Lower versions should install [Pod::Simple](http://search.cpan.org/~dwheeler/Pod-Simple-3.28/lib/Pod/Simple.pod) from CPAN.
-
-Installation
------------
-
+```sh
+make geth
 ```
-gem install github-markup
+## Running geth
+
+With all flags in origin geth, there are three new command line flags to setup a BFT-consensus private chain:
+
+
+  * `--bft` Change PoW to BFT-consensus
+  * `--num_validators` The number of the validators in this chain
+  * `--node_num` The identity number of this node (start with 0)
+
+You can specify the num_validators to 1 and node_num to 0 to start a private chain with BFT-consensus on only one node.
+
+## Example
+
+In examples/4nodes, there are the scripts to start a 4-nodes BFT chain. To start the chain, go to examples/4nodes and:
+
+```sh
+./start.sh
 ```
 
-Usage
------
+To stop:
 
-```ruby
-require 'github/markup'
-GitHub::Markup.render('README.markdown', "* One\n* Two")
+```sh
+./stop.sh
 ```
 
-Or, more realistically:
+## Work In Progress
 
-```ruby
-require 'github/markup'
-GitHub::Markup.render(file, File.read(file))
-```
+This project is still working in progress, and lots of part to improve.
 
-Contributing
-------------
-
-See [Contributing](CONTRIBUTING.md)
+  * The private key and address are currently created by program, but there shuold be a way to give.   
+  * The chain's connection is based on static-nodes.json. There should be a more convenient way.
