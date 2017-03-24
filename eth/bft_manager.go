@@ -1116,18 +1116,10 @@ func (rm *RoundManager) propose() types.Proposal {
 	} else if roundLockset == nil {
 		glog.V(logger.Error).Infof("no valid round lockset for height")
 		return nil
-	} else if lastPrecommitVoteLock != nil {
-		if p, err := types.NewVotingInstruction(rm.height, rm.round, roundLockset); err != nil {
-			glog.V(logger.Error).Infof("error occur %v", err)
-			return nil
-		} else {
-			proposal = p
-			rm.cm.Sign(proposal)
-		}
 	} else {
 		quorum, _ := roundLockset.HasQuorum()
 		// quroumpossible, _ := round_lockset.QuorumPossible()
-		if !quorum && !precommitquorum {
+		if !quorum {
 			proposal = rm.mkProposal()
 		} else {
 			if p, err := types.NewVotingInstruction(rm.height, rm.round, roundLockset); err != nil {
