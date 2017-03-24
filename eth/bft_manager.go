@@ -566,7 +566,7 @@ func (cm *ConsensusManager) AddPrecommitVote(v *types.PrecommitVote, peer *peer)
 	success := h.addPrecommitVote(v, isOwnVote)
 	if !success {
 		ls := cm.getHeightManager(v.Height).getRoundManager(v.Round).precommitLockset
-		glog.V(logger.Debug).Infoln("add vote failed in LockSet:", ls, v.Height, v.Round)
+		glog.V(logger.Debug).Infoln("add vote failed in Precommit LockSet:", ls, v.Height, v.Round)
 	}
 	return success
 }
@@ -608,9 +608,9 @@ func (cm *ConsensusManager) AddProposal(p types.Proposal, peer *peer) bool {
 				return false
 			}
 			// replace with the quorum votes
-			if result, _ := ls.HasQuorum(); result {
-				delete(cm.heights, ls.Height())
-			}
+			// if result, _ := ls.HasQuorum(); result {
+			// 	delete(cm.heights, ls.Height())
+			// }
 			glog.V(logger.Debug).Infoln("check votes")
 			for _, v := range ls.Votes {
 				cm.AddVote(v, nil) // implicit check
