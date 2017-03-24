@@ -391,6 +391,8 @@ func (cm *ConsensusManager) commit() bool {
 	cm.processMu.Lock()
 	defer cm.processMu.Unlock()
 	glog.V(logger.Debug).Infoln("commit, blockcandidates:", len(cm.blockCandidates))
+	cm.writeMapMu.Lock()
+	defer cm.writeMapMu.Unlock()
 	for _, p := range cm.blockCandidates {
 		if p.Block.ParentHash() != cm.Head().Hash() {
 			//DEBUG
