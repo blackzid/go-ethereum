@@ -1088,7 +1088,7 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Debug).Infoln("I am not proposer in", rm.height, rm.round)
 		return nil
 	}
-	glog.V(logger.Debug).Infoln("I am a proposer in ", rm.height, rm.round)
+	glog.V(logger.Info).Infoln("I am a proposer in ", rm.height, rm.round)
 	if rm.proposal != nil {
 		addr, err := rm.proposal.From()
 		if err != nil {
@@ -1107,22 +1107,30 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Debug).Infoln("already propose in this HR", rm.height, rm.round)
 		return rm.proposal
 	}
-	round_lockset := rm.cm.lastValidLockset()
+	roundLockset := rm.cm.lastValidLockset()
 	var proposal types.Proposal
 
-	if round_lockset == nil && rm.round == 0 {
-		glog.V(logger.Debug).Infof("make proposal")
+	if roundLockset == nil && rm.round == 0 {
+		glog.V(logger.Info).Infof("make proposal")
 		proposal = rm.mkProposal()
-	} else if round_lockset == nil {
-		glog.V(logger.Debug).Infof("no valid round lockset for height")
+	} else if roundLockset == nil {
+		glog.V(logger.Error).Infof("no valid round lockset for height")
 		return nil
+	} else if lastPrecommitVoteLock != nil {
+		if p, err := types.NewVotingInstruction(rm.height, rm.round, roundLockset); err != nil {
+			glog.V(logger.Error).Infof("error occur %v", err)
+			return nil
+		} else {
+			proposal = p
+			rm.cm.Sign(proposal)
+		}
 	} else {
-		quorum, _ := round_lockset.HasQuorum()
+		quorum, _ := roundLockset.HasQuorum()
 		// quroumpossible, _ := round_lockset.QuorumPossible()
-		if !quorum {
+		if !quorum && !precommitquorum {
 			proposal = rm.mkProposal()
 		} else {
-			if p, err := types.NewVotingInstruction(rm.height, rm.round, round_lockset); err != nil {
+			if p, err := types.NewVotingInstruction(rm.height, rm.round, roundLockset); err != nil {
 				glog.V(logger.Error).Infof("error occur %v", err)
 				return nil
 			} else {
