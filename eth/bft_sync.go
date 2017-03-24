@@ -111,8 +111,8 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 		glog.V(logger.Info).Infoln("received Blocks", bp.Height)
 		self.Received.Add(bp.Height)
 		self.Requested.Remove(bp.Height)
-		for _, v := range bp.SigningLockset.Votes {
-			self.cm.AddVote(v, nil)
+		for _, v := range bp.SigningLockset.PrecommitVotes {
+			self.cm.AddPrecommitVote(v, nil)
 		}
 	}
 	self.cm.Process()
@@ -127,7 +127,7 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
 	glog.V(logger.Info).Infoln("synchronizer on proposal")
 	if proposal.GetHeight() >= self.cm.Height() {
-		if !proposal.LockSet().IsValid() {
+		if !proposal.LockSet().IsValid() && proposal.LockSet().EligibleVotesNum != 0 {
 			panic("onProposal error")
 		}
 		self.lastActiveProtocol = p

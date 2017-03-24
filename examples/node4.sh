@@ -1,9 +1,10 @@
 ../build/bin/geth \
 \
 --networkid 52234 \
---port 30305 \
---rpcport 8546 \
+--port 30306 \
+--rpcport 8548 \
 --datadir "bdata/node4" \
+--nodiscover \
 \
 --rpc \
 --rpccorsdomain "*" \

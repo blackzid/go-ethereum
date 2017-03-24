@@ -27,6 +27,10 @@ func (p *peer) SendVote(v *types.Vote) error {
 	p.broadcastFilter.Add(v.Hash())
 	return p2p.Send(p.rw, VoteMsg, &voteData{Vote: v})
 }
+func (p *peer) SendPrecommitVote(v *types.PrecommitVote) error {
+	p.precommitFilter.Add(v.Hash())
+	return p2p.Send(p.rw, PrecommitVoteMsg, &precommitVoteData{PrecommitVote: v})
+}
 func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
 	glog.V(logger.Info).Infof(" Sending  proposals", len(bps))
 	for _, bp := range bps {
@@ -48,6 +52,18 @@ func (ps *peerSet) PeersWithoutHash(hash common.Hash) []*peer {
 	list := make([]*peer, 0, len(ps.peers))
 	for _, p := range ps.peers {
 		if !p.broadcastFilter.Has(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+func (ps *peerSet) PeersWithoutPrecommit(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.precommitFilter.Has(hash) {
 			list = append(list, p)
 		}
 	}

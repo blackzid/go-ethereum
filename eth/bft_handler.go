@@ -80,11 +80,11 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 
 			// broadcast highest lastQuorumLockset if it exist
 			lastHeight := query[len(query)-1].Number
-			if ls := pm.consensusManager.getHeightManager(lastHeight).lastQuorumLockset(); ls != nil {
+			if ls := pm.consensusManager.getHeightManager(lastHeight).lastQuorumPrecommitLockSet(); ls != nil {
 				glog.V(logger.Info).Infoln("Send Vote from", lastHeight)
-				for _, v := range ls.Votes {
+				for _, v := range ls.PrecommitVotes {
 					glog.V(logger.Info).Infoln("vote: ", v)
-					p.SendVote(v)
+					p.SendPrecommitVote(v)
 					time.Sleep(1000 * 1000 * 500)
 				}
 			} else {
@@ -150,7 +150,23 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			pm.BroadcastBFTMsg(vote)
 			pm.consensusManager.Process()
 		}
+	case msg.Code == PrecommitVoteMsg:
+		glog.V(logger.Debug).Infoln("PrecommitVoteMsg")
+		var vData precommitVoteData
+		if err := msg.Decode(&vData); err != nil {
+			return errResp(ErrDecode, "%v: %v", msg, err)
+		}
+		vote := vData.PrecommitVote
 
+		if p.broadcastFilter.Has(vote.Hash()) {
+			glog.V(logger.Debug).Infoln("vote filtered")
+			return nil
+		}
+		glog.V(logger.Debug).Infoln("receive precommit vote with HR ", vote.Height, vote.Round)
+		if isValid := pm.consensusManager.AddPrecommitVote(vote, p); isValid {
+			pm.BroadcastBFTMsg(vote)
+			pm.consensusManager.Process()
+		}
 	case msg.Code == ReadyMsg:
 		var r readyData
 		if err := msg.Decode(&r); err != nil {
@@ -214,6 +230,16 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 		for _, peer := range peers {
 			peer.SendVote(m)
 		}
+	case *types.PrecommitVote:
+		glog.V(logger.Debug).Infoln("broadcast Precommit Vote")
+		peers := pm.peers.PeersWithoutPrecommit(m.Hash())
+		glog.V(logger.Debug).Infoln("peers to broadcast: ", len(peers))
+		for _, peer := range peers {
+			err := peer.SendPrecommitVote(m)
+			if err != nil {
+				glog.V(logger.Debug).Infoln(err)
+			}
+		}
 	default:
 		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
 	}
@@ -244,7 +270,7 @@ func (self *ProtocolManager) linkBlock(block *types.Block) *types.Block {
 	// _link_block
 	if self.blockchain.HasBlock(block.Hash()) {
 		glog.V(logger.Debug).Infoln("KNOWN BLOCK")
-		return block
+		return nil
 	}
 	if !self.blockchain.HasBlock(block.ParentHash()) {
 		glog.V(logger.Debug).Infoln("missing parent")

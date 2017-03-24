@@ -70,6 +70,7 @@ type peer struct {
 
 	// bft parameters
 	broadcastFilter *set.Set
+	precommitFilter *set.Set
 }
 
 func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
@@ -83,6 +84,7 @@ func newPeer(version int, p *p2p.Peer, rw p2p.MsgReadWriter) *peer {
 		knownTxs:        set.New(),
 		knownBlocks:     set.New(),
 		broadcastFilter: set.New(),
+		precommitFilter: set.New(),
 	}
 }
 

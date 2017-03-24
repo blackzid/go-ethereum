@@ -12,21 +12,21 @@ import (
 	// "github.com/ethereum/go-ethereum/rlp"
 )
 
-var HDCProtocolName = "hdc"
-
 const (
 	MaxGetproposalsCount = 10
 )
 
 // eth protocol message codes
 const (
-	// Protocol messages belonging to hdc
+	// Protocol messages belonging to bft
+
 	ReadyMsg             = 0x08
 	GetBlockProposalsMsg = 0x09
 	BlockProposalsMsg    = 0x0a
 	NewBlockProposalMsg  = 0x0b
 	VotingInstructionMsg = 0x0c
 	VoteMsg              = 0x0d
+	PrecommitVoteMsg     = 0x10
 )
 
 type HDCStatusData struct {
@@ -52,6 +52,9 @@ type votingInstructionData struct {
 }
 type voteData struct {
 	Vote *types.Vote
+}
+type precommitVoteData struct {
+	PrecommitVote *types.PrecommitVote
 }
 type readyData struct {
 	Ready *types.Ready
