@@ -125,7 +125,7 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	self.cleanup()
 }
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
-	glog.V(logger.Info).Infoln("synchronizer on proposal")
+	glog.V(logger.Debug).Infoln("synchronizer on proposal")
 	if proposal.GetHeight() >= self.cm.Height() {
 		if !proposal.LockSet().IsValid() && proposal.LockSet().EligibleVotesNum != 0 {
 			panic("onProposal error")

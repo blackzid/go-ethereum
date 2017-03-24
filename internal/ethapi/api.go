@@ -1091,9 +1091,9 @@ func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction, si
 	if signedTx.To() == nil {
 		from, _ := types.Sender(signer, signedTx)
 		addr := crypto.CreateAddress(from, signedTx.Nonce())
-		glog.V(logger.Info).Infof("Tx(%s) created: %s\n", signedTx.Hash().Hex(), addr.Hex())
+		glog.V(logger.Debug).Infof("Tx(%s) created: %s\n", signedTx.Hash().Hex(), addr.Hex())
 	} else {
-		glog.V(logger.Info).Infof("Tx(%s) to: %s\n", signedTx.Hash().Hex(), tx.To().Hex())
+		glog.V(logger.Debug).Infof("Tx(%s) to: %s\n", signedTx.Hash().Hex(), tx.To().Hex())
 	}
 
 	return signedTx.Hash(), nil
