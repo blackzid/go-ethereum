@@ -1061,7 +1061,11 @@ func (rm *RoundManager) process() {
 		v := rm.vote()
 		if v != nil {
 			rm.cm.broadcast(v)
+		} else {
+
 		}
+	} else {
+		glog.V(logger.Debug).Infof("voteLock is not nil in ", rm.height, rm.round)
 	}
 	if rm.lockset.IsValid() {
 		if rm.precommitVoteLock == nil {
@@ -1070,6 +1074,8 @@ func (rm *RoundManager) process() {
 				rm.cm.broadcast(pv)
 			}
 		}
+	} else {
+		glog.V(logger.Debug).Infof("precommitVoteLock is not nil in ", rm.height, rm.round)
 	}
 	if !(rm.proposal == nil || rm.voteLock != nil) {
 		glog.V(logger.Debug).Infoln(rm.proposal, rm.voteLock)
