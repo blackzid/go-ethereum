@@ -108,8 +108,8 @@ type ConsensusManager struct {
 	mu          sync.Mutex
 	currentMu   sync.Mutex
 	uncleMu     sync.Mutex
-	writeMapMu  sync.Mutex
-	getHeightMu sync.Mutex
+	writeMapMu  sync.RWMutex
+	getHeightMu sync.RWMutex
 
 	processMu sync.Mutex
 	mux       *event.TypeMux
@@ -140,6 +140,7 @@ func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db et
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
 		Enable:             true,
+		getHeightMu:        sync.RWMutex{},
 	}
 
 	if !cm.contract.isValidators(cm.coinbase) {
@@ -765,14 +766,15 @@ type HeightManager struct {
 	cm         *ConsensusManager
 	height     uint64
 	rounds     map[uint64]*RoundManager
-	writeMapMu sync.Mutex
+	writeMapMu sync.RWMutex
 }
 
 func NewHeightManager(consensusmanager *ConsensusManager, height uint64) *HeightManager {
 	return &HeightManager{
-		cm:     consensusmanager,
-		height: height,
-		rounds: make(map[uint64]*RoundManager),
+		cm:         consensusmanager,
+		height:     height,
+		rounds:     make(map[uint64]*RoundManager),
+		writeMapMu: sync.RWMutex{},
 	}
 }
 
@@ -907,6 +909,7 @@ func (hm *HeightManager) HasQuorum() (bool, common.Hash) {
 	}
 }
 func (hm *HeightManager) addVote(v *types.Vote, forceReplace bool) bool {
+
 	r := v.Round
 	return hm.getRoundManager(r).addVote(v, forceReplace)
 }
@@ -1281,7 +1284,7 @@ func (rm *RoundManager) votePrecommit() *types.PrecommitVote {
 		} else {
 			glog.V(logger.Debug).Infoln("wait more precommit")
 			time.Sleep(1000 * 1000 * 500)
-			go rm.process()
+			go rm.cm.Process()
 		}
 	} else {
 		glog.V(logger.Debug).Infoln("prevote invalid")
