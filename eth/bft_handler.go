@@ -148,7 +148,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
-			// pm.consensusManager.Process()
+			pm.consensusManager.Process()
 		}
 	case msg.Code == PrecommitVoteMsg:
 		glog.V(logger.Debug).Infoln("PrecommitVoteMsg")
@@ -165,7 +165,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		glog.V(logger.Debug).Infoln("receive precommit vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddPrecommitVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
-			// pm.consensusManager.Process()
+			pm.consensusManager.Process()
 		}
 	case msg.Code == ReadyMsg:
 		var r readyData
