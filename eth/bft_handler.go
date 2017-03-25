@@ -190,7 +190,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			}
 			p.MarkTransaction(tx.Hash())
 		}
-		// pm.addTransactions(txs)
+		pm.addTransactions(txs)
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
