@@ -1042,7 +1042,7 @@ func (rm *RoundManager) process() {
 	glog.V(logger.Debug).Infoln("In RM Process", rm.height, rm.round)
 
 	if rm.cm.Round() != rm.round {
-		glog.V(logger.Error).Infof("round process error")
+		glog.V(logger.Error).Infof("round process error: ", rm.cm.Round(), rm.round)
 		return
 	}
 	if rm.cm.Height() != rm.height {
@@ -1074,9 +1074,11 @@ func (rm *RoundManager) process() {
 			if pv != nil {
 				rm.cm.broadcast(pv)
 			}
+		} else {
+			glog.V(logger.Debug).Infof("precommitVoteLock is not nil in ", rm.height, rm.round)
 		}
 	} else {
-		glog.V(logger.Debug).Infof("precommitVoteLock is not nil in ", rm.height, rm.round)
+
 	}
 	if !(rm.proposal == nil || rm.voteLock != nil) {
 		glog.V(logger.Debug).Infoln(rm.proposal, rm.voteLock)
@@ -1085,7 +1087,6 @@ func (rm *RoundManager) process() {
 }
 
 func (rm *RoundManager) propose() types.Proposal {
-
 	if !rm.cm.isWaitingForProposal() {
 		glog.V(logger.Info).Infof("proposing is not waiting for proposal")
 		return nil
