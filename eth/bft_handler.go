@@ -284,3 +284,11 @@ func (self *ProtocolManager) addTransactions(txs []*types.Transaction) {
 	defer self.addTransactionLock.Unlock()
 	self.txpool.AddBatch(txs)
 }
+
+// BFT APIs
+func (s *PublicEthereumAPI) StartConsensus() bool {
+	return s.e.protocolManager.consensusManager.Start()
+}
+func (s *PublicEthereumAPI) StopConsensus() bool {
+	return s.e.protocolManager.consensusManager.Stop()
+}

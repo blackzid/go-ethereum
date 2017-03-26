@@ -117,6 +117,16 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'stopWS',
 			call: 'admin_stopWS'
+		}),
+		new web3._extend.Method({
+		 	name: 'startConsensus',
+		 	call: 'eth_startConsensus',
+		 	params: 0
+		}),
+		new web3._extend.Method({
+		 	name: 'stopConsensus',
+		 	call: 'eth_stopConsensus',
+		 	params: 0
 		})
 	],
 	properties:
