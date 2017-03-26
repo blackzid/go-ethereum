@@ -977,7 +977,7 @@ func (rm *RoundManager) setTimeoutPrecommit() {
 		return
 	}
 	now := rm.cm.Now()
-	timeout := 1
+	timeout := 0.5
 	timeoutFactor := 1.5
 	delay := float64(timeout) * math.Pow(timeoutFactor, float64(rm.round))
 	rm.timeoutPrecommit = float64(now) + delay
@@ -1226,7 +1226,7 @@ func (rm *RoundManager) vote() *types.Vote {
 			// assert self.proposal.block.prevhash == self.cm.head.hash
 			if lastPrecommitVoteLock == nil {
 				glog.V(logger.Debug).Infoln("voting on new proporsal")
-				vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
+				vote = types.NewVote(rm.height, rm.round, rm.proposal.Blockhash(), 1)
 			} else {
 				vt := lastPrecommitVoteLock.VoteType
 				switch vt {
