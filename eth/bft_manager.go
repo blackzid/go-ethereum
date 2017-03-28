@@ -1031,7 +1031,7 @@ func (rm *RoundManager) addProposal(p types.Proposal) bool {
 	} else if rm.proposal.Blockhash() == p.Blockhash() {
 		return true
 	} else {
-		glog.V(logger.Info).Infoln("addProposal Error:", rm.proposal, p)
+		glog.V(logger.Debug).Infoln("addProposal Error:", rm.proposal, p)
 		return false
 	}
 }
@@ -1042,11 +1042,9 @@ func (rm *RoundManager) process() {
 	glog.V(logger.Debug).Infoln("In RM Process", rm.height, rm.round)
 
 	if rm.cm.Round() != rm.round {
-		glog.V(logger.Error).Infof("round process error: ", rm.cm.Round(), rm.round)
 		return
 	}
 	if rm.cm.Height() != rm.height {
-		glog.V(logger.Error).Infof("round process error")
 		return
 	}
 
@@ -1088,7 +1086,7 @@ func (rm *RoundManager) process() {
 
 func (rm *RoundManager) propose() types.Proposal {
 	if !rm.cm.isWaitingForProposal() {
-		glog.V(logger.Info).Infof("proposing is not waiting for proposal")
+		glog.V(logger.Debug).Infof("proposing is not waiting for proposal")
 		return nil
 	}
 	proposer := rm.cm.contract.proposer(rm.height, rm.round)
@@ -1096,7 +1094,7 @@ func (rm *RoundManager) propose() types.Proposal {
 		glog.V(logger.Debug).Infoln("I am not proposer in", rm.height, rm.round)
 		return nil
 	}
-	glog.V(logger.Info).Infoln("I am a proposer in ", rm.height, rm.round)
+	glog.V(logger.Debug).Infoln("I am a proposer in ", rm.height, rm.round)
 	if rm.proposal != nil {
 		addr, err := rm.proposal.From()
 		if err != nil {
