@@ -10,7 +10,6 @@
 --rpccorsdomain "*" \
 --rpcapi "eth,net,web3,debug" \
 \
---verbosity 5 \
 --bft \
 --num-validators 4 \
 --node-num 1
