@@ -261,6 +261,7 @@ func (self *ProtocolManager) commitBlock(block *types.Block) bool {
 		glog.V(logger.Debug).Infof("committing new block")
 		time.Sleep(0.2 * 1000 * 1000 * 1000)
 	}
+	go self.consensusManager.Process()
 	glog.V(logger.Info).Infof("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
 	return true
 }

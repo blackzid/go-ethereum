@@ -483,36 +483,35 @@ func (lockset *LockSet) NoQuorum() bool {
 	if !lockset.IsValid() {
 		return false
 	}
-
 	hs := lockset.sortByBlockhash()
 	if len(hs) == 0 {
 		return true
 	}
-	if float64(hs[0].count) <= 1/3.*float64(lockset.EligibleVotesNum) {
+	if float64(hs[0].count) <= 2/3.*float64(lockset.EligibleVotesNum) {
 		return true
 	} else {
 		return false
 	}
 }
 
-func (lockset *LockSet) QuorumPossible() (bool, common.Hash) {
+// func (lockset *LockSet) QuorumPossible() (bool, common.Hash) {
 
-	if result, hs := lockset.HasQuorum(); result != false {
-		return false, hs
-	}
-	if !lockset.IsValid() {
-		return false, common.Hash{}
-	}
-	hs := lockset.sortByBlockhash()
-	if len(hs) == 0 {
-		return false, common.Hash{}
-	}
-	if float64(hs[0].count) > 1/3.*float64(lockset.EligibleVotesNum) {
-		return true, hs[0].blockhash
-	} else {
-		return false, common.Hash{}
-	}
-}
+// 	if result, hs := lockset.HasQuorum(); result != false {
+// 		return false, hs
+// 	}
+// 	if !lockset.IsValid() {
+// 		return false, common.Hash{}
+// 	}
+// 	hs := lockset.sortByBlockhash()
+// 	if len(hs) == 0 {
+// 		return false, common.Hash{}
+// 	}
+// 	if float64(hs[0].count) > 1/3.*float64(lockset.EligibleVotesNum) {
+// 		return true, hs[0].blockhash
+// 	} else {
+// 		return false, common.Hash{}
+// 	}
+// }
 func checkVotes(lockset *LockSet, validators []common.Address) error {
 	if int(lockset.EligibleVotesNum) != len(validators) {
 		return errors.New("lockset EligibleVotesNum mismatch")
@@ -1269,7 +1268,7 @@ func (vi *VotingInstruction) SigHash() common.Hash {
 	})
 }
 func (vi *VotingInstruction) Blockhash() common.Hash {
-	_, hash := vi.RoundLockset.QuorumPossible()
+	_, hash := vi.RoundLockset.HasQuorum()
 	return hash
 }
 func (vi *VotingInstruction) LockSet() *LockSet { return vi.RoundLockset }

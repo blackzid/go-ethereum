@@ -124,7 +124,7 @@ func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db et
 	cm := &ConsensusManager{
 		pm:                 manager,
 		isAllowEmptyBlocks: false,
-		numInitialBlocks:   10000,
+		numInitialBlocks:   10,
 		roundTimeout:       3,
 		roundTimeoutFactor: 1.5,
 		transactionTimeout: 0.5,
@@ -1124,7 +1124,6 @@ func (rm *RoundManager) propose() types.Proposal {
 		return nil
 	} else {
 		quorum, _ := roundLockset.HasQuorum()
-		// quroumpossible, _ := round_lockset.QuorumPossible()
 		if !quorum {
 			proposal = rm.mkProposal()
 		} else {
@@ -1166,7 +1165,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	}
 
 	// Try to wait more Tx per block
-	time.Sleep(1000 * 1000 * 500)
+	time.Sleep(1000 * 1000 * 1000 * 0.2)
 
 	block := rm.cm.newBlock()
 	blockProposal, err := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
@@ -1195,14 +1194,13 @@ func (rm *RoundManager) vote() *types.Vote {
 		switch bp := rm.proposal.(type) {
 		case *types.VotingInstruction: // vote for votinginstruction
 			quorum, _ := bp.LockSet().HasQuorum()
-			quorumPossible, _ := bp.LockSet().QuorumPossible()
+			// quorumPossible, _ := bp.LockSet().QuorumPossible()
 			if quorum {
 				glog.V(logger.Debug).Infoln("vote votinginstruction quorum")
 				vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
-			} else if quorumPossible {
-				glog.V(logger.Debug).Infoln("vote votinginstruction quorumpossible")
+			} else {
 				if lastPrecommitVoteLock == nil {
-					vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
+					vote = types.NewVote(rm.height, rm.round, common.StringToHash(""), 2)
 				} else {
 					vt := lastPrecommitVoteLock.VoteType
 					switch vt {
@@ -1210,8 +1208,7 @@ func (rm *RoundManager) vote() *types.Vote {
 						glog.V(logger.Debug).Infoln("voting on last vote")
 						vote = types.NewVote(rm.height, rm.round, lastPrecommitVoteLock.Blockhash, 1)
 					default: // vote nil
-						glog.V(logger.Debug).Infoln("voting proposed block")
-						vote = types.NewVote(rm.height, rm.round, bp.Blockhash(), 1)
+						vote = types.NewVote(rm.height, rm.round, common.StringToHash(""), 2)
 					}
 				}
 			}
