@@ -12,5 +12,5 @@
 \
 --verbosity 5 \
 --bft \
---num_validators 4 \
---node_num 2
+--num-validators 4 \
+--node-num 2
