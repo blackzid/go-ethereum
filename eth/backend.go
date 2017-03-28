@@ -106,6 +106,7 @@ type Config struct {
 	Validators    []common.Address
 	BFT           bool
 	PrivateKeyHex string
+	AllowEmpty    bool
 }
 
 type LesServer interface {
@@ -147,6 +148,7 @@ type Ethereum struct {
 	netRPCService *ethapi.PublicNetAPI
 
 	BFT           bool
+	AllowEmpty    bool
 	bftValidators []common.Address
 }
 
@@ -185,6 +187,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		solcPath:       config.SolcPath,
 		// bft setup
 		BFT:           config.BFT,
+		AllowEmpty:    config.AllowEmpty,
 		bftValidators: config.Validators,
 	}
 

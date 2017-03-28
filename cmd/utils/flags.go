@@ -653,18 +653,22 @@ func MakePasswordList(ctx *cli.Context) []string {
 var (
 	// BFT parameters
 	NumValidatorsFlag = cli.IntFlag{
-		Name:  "num_validators",
+		Name:  "num-validators",
 		Usage: "number of validators",
 		Value: 0,
 	}
 	NodeNumFlag = cli.IntFlag{
-		Name:  "node_num",
+		Name:  "node-num",
 		Usage: "node's specific number",
 		Value: -1,
 	}
 	BFTFlag = cli.BoolFlag{
 		Name:  "bft",
 		Usage: "change consensus to bft with true",
+	}
+	AllowEmptyFlag = cli.BoolFlag{
+		Name:  "allow-empty",
+		Usage: "allow empty block",
 	}
 )
 
@@ -796,6 +800,7 @@ func RegisterEthService(ctx *cli.Context, stack *node.Node, extra []byte) {
 		Validators:    MakeValidators(stack.AccountManager(), ctx),
 		BFT:           ctx.GlobalBool(BFTFlag.Name),
 		PrivateKeyHex: MakeBFTPrivateKeyHex(stack.AccountManager(), ctx),
+		AllowEmpty:    ctx.GlobalBool(AllowEmptyFlag.Name),
 	}
 
 	// Override any default configs in dev mode or the test net

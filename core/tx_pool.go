@@ -49,7 +49,7 @@ var (
 
 var (
 	minPendingPerAccount = uint64(16)    // Min number of guaranteed transaction slots per address
-	maxPendingTotal      = uint64(20000) // Max limit of pending transactions from all accounts (soft)
+	maxPendingTotal      = uint64(4096)  // Max limit of pending transactions from all accounts (soft)
 	maxQueuedPerAccount  = uint64(64)    // Max limit of queued transactions per address
 	maxQueuedInTotal     = uint64(1024)  // Max limit of queued transactions from all accounts
 	maxQueuedLifetime    = 3 * time.Hour // Max amount of time transactions from idle accounts are queued

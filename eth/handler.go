@@ -199,7 +199,7 @@ func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int
 	manager.validators = validators
 	manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
 	manager.consensusManager = NewConsensusManager(manager, blockchain, bftdb, manager.consensusContract, manager.privateKeyHex, extra)
-
+	manager.consensusManager.isAllowEmptyBlocks = eth.AllowEmpty
 	return manager, nil
 }
 

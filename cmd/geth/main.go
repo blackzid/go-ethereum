@@ -149,6 +149,7 @@ func init() {
 		utils.NumValidatorsFlag,
 		utils.NodeNumFlag,
 		utils.BFTFlag,
+		utils.AllowEmptyFlag,
 	}
 	app.Flags = append(app.Flags, debug.Flags...)
 
