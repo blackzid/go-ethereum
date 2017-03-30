@@ -446,8 +446,10 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 		s.StartAutoDAG()
 	}
 	if s.BFT == true {
+		fmt.Println("s.BFT is true")
 		s.protocolManager.StartBFT()
 	} else {
+		fmt.Println("s.BFT is false")
 		s.protocolManager.Start()
 	}
 	if s.lesServer != nil {

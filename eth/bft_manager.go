@@ -1117,7 +1117,7 @@ func (rm *RoundManager) propose() types.Proposal {
 	var proposal types.Proposal
 
 	if roundLockset == nil && rm.round == 0 {
-		glog.V(logger.Info).Infof("make proposal")
+		glog.V(logger.Debug).Infof("make proposal")
 		proposal = rm.mkProposal()
 	} else if roundLockset == nil {
 		glog.V(logger.Error).Infof("no valid round lockset for height")

@@ -194,12 +194,14 @@ func NewProtocolManager(config *params.ChainConfig, fastSync bool, networkId int
 	}
 
 	// bft setup
-	manager.bftdb = bftdb
-	manager.privateKeyHex = privateKeyHex
-	manager.validators = validators
-	manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
-	manager.consensusManager = NewConsensusManager(manager, blockchain, bftdb, manager.consensusContract, manager.privateKeyHex, extra)
-	manager.consensusManager.isAllowEmptyBlocks = eth.AllowEmpty
+	if config.BFT {
+		manager.bftdb = bftdb
+		manager.privateKeyHex = privateKeyHex
+		manager.validators = validators
+		manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
+		manager.consensusManager = NewConsensusManager(manager, blockchain, bftdb, manager.consensusContract, manager.privateKeyHex, extra)
+		manager.consensusManager.isAllowEmptyBlocks = eth.AllowEmpty
+	}
 	return manager, nil
 }
 
