@@ -156,6 +156,31 @@ func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db et
 	cm.synchronizer = NewHDCSynchronizer(cm)
 	return cm
 }
+
+// properties
+func (cm *ConsensusManager) Head() *types.Block {
+	return cm.chain.CurrentBlock()
+}
+func (cm *ConsensusManager) Now() int64 {
+	return time.Now().Unix()
+}
+func (cm *ConsensusManager) Height() uint64 {
+	h := cm.chain.CurrentBlock().NumberU64()
+	return h + 1
+}
+func (cm *ConsensusManager) Round() uint64 {
+	return cm.getHeightManager(cm.Height()).Round()
+}
+func (cm *ConsensusManager) getHeightManager(h uint64) *HeightManager {
+	if _, ok := cm.heights[h]; !ok {
+		cm.heights[h] = NewHeightManager(cm, h)
+	}
+	return cm.heights[h]
+}
+func (cm *ConsensusManager) activeRound() *RoundManager {
+	hm := cm.getHeightManager(cm.Height())
+	return hm.getRoundManager(hm.Round())
+}
 func (cm *ConsensusManager) Start() bool {
 	cm.Enable = true
 	cm.Process()
@@ -167,6 +192,7 @@ func (cm *ConsensusManager) Stop() bool {
 	glog.V(logger.Debug).Infoln("Stop Consensus")
 	return true
 }
+
 func (cm *ConsensusManager) initializeLocksets() {
 	// initializing locksets
 	// sign genesis
@@ -291,33 +317,6 @@ func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 	return false
 }
 
-// properties
-func (cm *ConsensusManager) Head() *types.Block {
-	return cm.chain.CurrentBlock()
-}
-func (cm *ConsensusManager) Now() int64 {
-	return time.Now().Unix()
-}
-func (cm *ConsensusManager) Height() uint64 {
-	h := cm.chain.CurrentBlock().NumberU64()
-	return h + 1
-}
-func (cm *ConsensusManager) Round() uint64 {
-	return cm.getHeightManager(cm.Height()).Round()
-}
-func (cm *ConsensusManager) getHeightManager(h uint64) *HeightManager {
-	cm.getHeightMu.Lock()
-	defer cm.getHeightMu.Unlock()
-	if _, ok := cm.heights[h]; !ok {
-		cm.heights[h] = NewHeightManager(cm, h)
-	}
-	return cm.heights[h]
-}
-func (cm *ConsensusManager) activeRound() *RoundManager {
-	hm := cm.getHeightManager(cm.Height())
-	return hm.getRoundManager(hm.Round())
-}
-
 func (cm *ConsensusManager) setupAlarm() {
 	// glog.V(logger.Error).Infof("in set up alarm")
 	ar := cm.activeRound()
@@ -376,8 +375,10 @@ func (cm *ConsensusManager) Process() {
 		return
 	} else {
 		cm.commit()
+		cm.getHeightMu.Lock()
 		h := cm.getHeightManager(cm.Height())
 		h.process()
+		cm.getHeightMu.Unlock()
 		// if success {
 		// 	cm.Process()
 		// 	return
