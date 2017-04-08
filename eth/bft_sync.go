@@ -31,9 +31,9 @@ func NewHDCSynchronizer(cm *ConsensusManager) *HDCSynchronizer {
 	}
 }
 func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
-
-	ls := self.cm.HighestCommittingLockset()
-
+	self.cm.getHeightMu.Lock()
+	ls := self.cm.lastCommittingLockset().Copy()
+	self.cm.getHeightMu.Unlock()
 	if ls == nil {
 		glog.V(logger.Debug).Infoln("no highest comitting lockest")
 		return []types.RequestProposalNumber{}
@@ -92,18 +92,6 @@ func (self *HDCSynchronizer) request() bool {
 	// setup alarm
 
 	self.cm.setupAlarm()
-	return true
-}
-func (self *HDCSynchronizer) requestHeight(height uint64, peer *peer) bool {
-	var blockNumbers []types.RequestProposalNumber
-	blockNumbers = append(blockNumbers, types.RequestProposalNumber{height})
-	if peer != nil {
-		err := peer.RequestBlockProposals(blockNumbers)
-		glog.V(logger.Debug).Infoln("request end, err:", err)
-	} else {
-		glog.V(logger.Debug).Infof("unknown peer")
-		return false
-	}
 	return true
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {

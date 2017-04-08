@@ -11,7 +11,6 @@
 --rpcapi "eth,net,web3,debug" \
 \
 --bft \
---verbosity 5 \
 --allow-empty \
 --num-validators 4 \
 --node-num 0
