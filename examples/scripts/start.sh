@@ -1,0 +1,1 @@
+nohup ./node.sh 2>>bdata/logs/n1.log &

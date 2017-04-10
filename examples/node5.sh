@@ -1,9 +1,9 @@
 ../build/bin/geth \
 \
 --networkid 52234 \
---port 30306 \
---rpcport 8548 \
---datadir "bdata/node4" \
+--port 30307 \
+--rpcport 8549 \
+--datadir "bdata/node5" \
 --nodiscover \
 \
 --rpc \
@@ -13,4 +13,4 @@
 --bft \
 --allow-empty \
 --num-validators 8 \
---node-num 3
+--node-num 4
