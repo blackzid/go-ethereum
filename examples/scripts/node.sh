@@ -11,6 +11,5 @@
 --rpcapi "eth,net,web3,debug,admin" \
 \
 --bft \
---allow-empty \
 --num-validators 16 \
 --node-num 7
