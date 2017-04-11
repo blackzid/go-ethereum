@@ -139,7 +139,7 @@ func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db et
 		extraData:          extraData,
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
-		Enable:             true,
+		Enable:             false,
 		getHeightMu:        sync.RWMutex{},
 	}
 

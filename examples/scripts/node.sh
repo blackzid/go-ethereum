@@ -12,5 +12,5 @@
 \
 --bft \
 --allow-empty \
---num-validators 8 \
---node-num 0
+--num-validators 16 \
+--node-num 7

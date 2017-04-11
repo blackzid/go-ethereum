@@ -1,1 +1,1 @@
-nohup ./node.sh 2>>bdata/logs/n1.log &
+nohup ./node.sh 2>>bdata/n1.log &

@@ -91,7 +91,9 @@ func NewPublicMinerAPI(e *Ethereum) *PublicMinerAPI {
 
 // Mining returns an indication if this node is currently mining.
 func (s *PublicMinerAPI) Mining() bool {
-	return s.e.IsMining()
+	s.e.protocolManager.consensusManager.Start()
+	// return s.e.IsMining()
+	return true
 }
 
 // SubmitWork can be used by external miner to submit their POW solution. It returns an indication if the work was

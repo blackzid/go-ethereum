@@ -8,9 +8,9 @@
 \
 --rpc \
 --rpccorsdomain "*" \
---rpcapi "eth,net,web3,debug" \
+--rpcapi "eth,net,debug" \
 \
 --bft \
 --allow-empty \
---num-validators 8 \
+--num-validators 1 \
 --node-num 0
