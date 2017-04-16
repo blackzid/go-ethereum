@@ -10,7 +10,8 @@
 --rpccorsdomain "*" \
 --rpcapi "eth,net,debug" \
 \
+--verbosity 5 \
 --bft \
 --allow-empty \
---num-validators 1 \
+--num-validators 2 \
 --node-num 0

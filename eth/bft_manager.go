@@ -1367,7 +1367,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	header.Root = work.state.IntermediateRoot(true)
 
 	work.Block = types.NewBlock(header, work.txs, uncles, work.receipts)
-	glog.V(logger.Debug).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
+	glog.V(logger.Info).Infof("create new work on block %v with %d txs & %d uncles. Took %v\n", work.Block.Number(), work.tcount, len(uncles), time.Since(tstart))
 
 	return work.Block
 }
@@ -1378,7 +1378,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	var coalescedLogs []*types.Log
 	for {
 		// limit the tcount in one block to reduce block creating time
-		if env.tcount >= 1000 {
+		if env.tcount >= 2000 {
 			break
 		}
 

@@ -1,1 +1,1 @@
-../build/bin/geth attach ipc:./bdata/node4/geth.ipc
+../build/bin/geth attach ipc:./bdata/node1/geth.ipc
