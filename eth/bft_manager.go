@@ -1158,7 +1158,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	}
 
 	// Try to wait more Tx per block
-	time.Sleep(1000 * 1000 * 1000 * 0.2)
+	// time.Sleep(1000 * 1000 * 1000 * 0.2)
 
 	block := rm.cm.newBlock()
 	blockProposal, err := types.NewBlockProposal(rm.height, rm.round, block, signingLockset, roundLockset)
@@ -1378,7 +1378,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	var coalescedLogs []*types.Log
 	for {
 		// limit the tcount in one block to reduce block creating time
-		if env.tcount >= 2000 {
+		if env.tcount >= 1000 {
 			break
 		}
 
