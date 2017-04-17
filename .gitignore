@@ -5,6 +5,7 @@
 #   git config --global core.excludesfile ~/.gitignore_global
 
 examples/bdata/
+examples/scripts/
 /tmp
 */**/*un~
 */**/*.test
