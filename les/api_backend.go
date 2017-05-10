@@ -17,10 +17,12 @@
 package les
 
 import (
+	"context"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -32,12 +34,11 @@ import (
 	"github.com/ethereum/go-ethereum/light"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
-	"golang.org/x/net/context"
 )
 
 type LesApiBackend struct {
 	eth *LightEthereum
-	gpo *gasprice.LightPriceOracle
+	gpo *gasprice.Oracle
 }
 
 func (b *LesApiBackend) ChainConfig() *params.ChainConfig {
@@ -49,6 +50,7 @@ func (b *LesApiBackend) CurrentBlock() *types.Block {
 }
 
 func (b *LesApiBackend) SetHead(number uint64) {
+	b.eth.protocolManager.downloader.Cancel()
 	b.eth.blockchain.SetHead(number)
 }
 
@@ -95,10 +97,10 @@ func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state etha
 	if err != nil {
 		return nil, nil, err
 	}
-	from.SetBalance(common.MaxBig)
+	from.SetBalance(math.MaxBig256)
 
 	vmstate := light.NewVMState(ctx, stateDb)
-	context := core.NewEVMContext(msg, header, b.eth.blockchain)
+	context := core.NewEVMContext(msg, header, b.eth.blockchain, nil)
 	return vm.NewEVM(context, vmstate, b.eth.chainConfig, vmCfg), vmstate.Error, nil
 }
 

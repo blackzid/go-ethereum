@@ -9,8 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 type Vote struct {
@@ -75,7 +74,7 @@ func (v *Vote) From() (common.Address, error) {
 		}
 		addr, err := v.recoverSender(v.SigHash())
 		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
+			log.Error("sender() error ", err)
 			return common.Address{}, err
 		}
 		v.sender = &addr
@@ -113,7 +112,7 @@ func (vote *Vote) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -204,7 +203,7 @@ func (v *PrecommitVote) From() (common.Address, error) {
 		}
 		addr, err := v.recoverSender(v.SigHash())
 		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
+			log.Error("sender() error ", err)
 			return common.Address{}, err
 		}
 		v.sender = &addr
@@ -242,7 +241,7 @@ func (vote *PrecommitVote) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -339,7 +338,7 @@ func (lockset *LockSet) hr() (uint64, uint64) {
 		rset[v.Round] = struct{}{}
 	}
 	if len(hset) != 1 && len(rset) != 1 {
-		glog.V(logger.Error).Infof("different hr in lockset")
+		log.Error("different hr in lockset")
 	}
 	return lockset.Votes[0].Height, lockset.Votes[0].Round
 }
@@ -352,7 +351,7 @@ func (lockset *LockSet) From() (common.Address, error) {
 		}
 		addr, err := lockset.recoverSender(lockset.SigHash())
 		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
+			log.Error("sender() error ", err)
 			return common.Address{}, err
 		}
 		lockset.sender = &addr
@@ -397,10 +396,10 @@ var ErrInvalidVoteSig = errors.New("no signature")
 var ErrDoubleVoting = errors.New("different votes on the same H,R")
 
 func (lockset *LockSet) Add(vote *Vote, force bool) error {
-	// glog.V(logger.Info).Infoln(*vote.signed.sender)
+	// log.Info(*vote.signed.sender)
 	vote.From()
 	if vote.sender == nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
+		log.Error("Could not get pubkey from signature: ", ErrInvalidVote)
 		return ErrInvalidVote
 	}
 
@@ -554,7 +553,7 @@ func (lockset *LockSet) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -656,7 +655,7 @@ func (lockset *PrecommitLockSet) hr() (uint64, uint64) {
 		rset[v.Round] = struct{}{}
 	}
 	if len(hset) != 1 && len(rset) != 1 {
-		glog.V(logger.Error).Infof("different hr in lockset")
+		log.Error("different hr in lockset")
 	}
 	return lockset.PrecommitVotes[0].Height, lockset.PrecommitVotes[0].Round
 }
@@ -669,7 +668,7 @@ func (lockset *PrecommitLockSet) From() (common.Address, error) {
 		}
 		addr, err := lockset.recoverSender(lockset.SigHash())
 		if err != nil {
-			glog.V(logger.Error).Infof("sender() error ", err)
+			log.Error("sender() error ", err)
 			return common.Address{}, err
 		}
 		lockset.sender = &addr
@@ -708,10 +707,10 @@ func (lockset *PrecommitLockSet) Sign(prv *ecdsa.PrivateKey) error {
 	return nil
 }
 func (lockset *PrecommitLockSet) Add(vote *PrecommitVote, force bool) error {
-	// glog.V(logger.Info).Infoln(*vote.signed.sender)
+	// log.Info(*vote.signed.sender)
 	vote.From()
 	if vote.sender == nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", ErrInvalidVote)
+		log.Error("Could not get pubkey from signature: ", ErrInvalidVote)
 		return ErrInvalidVote
 	}
 
@@ -845,7 +844,7 @@ func (lockset *PrecommitLockSet) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -960,7 +959,7 @@ func (ready *Ready) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -1171,7 +1170,7 @@ func (bp *BlockProposal) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {
@@ -1331,7 +1330,7 @@ func (vi *VotingInstruction) publicKey(hash common.Hash) ([]byte, error) {
 	// hash := signed.SigHash()
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
-		glog.V(logger.Error).Infof("Could not get pubkey from signature: ", err)
+		log.Error("Could not get pubkey from signature: ", err)
 		return nil, err
 	}
 	if len(pub) == 0 || pub[0] != 4 {

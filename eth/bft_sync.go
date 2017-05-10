@@ -4,8 +4,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 	"gopkg.in/fatih/set.v0"
 )
 
@@ -35,12 +34,12 @@ func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 	ls := self.cm.lastCommittingLockset().Copy()
 	self.cm.getHeightMu.Unlock()
 	if ls == nil {
-		glog.V(logger.Debug).Infoln("no highest comitting lockest")
+		log.Debug("no highest comitting lockest")
 		return []types.RequestProposalNumber{}
 	}
 	maxHeight := ls.Height()
 	current := self.cm.Head().Number()
-	glog.V(logger.Debug).Infoln("max height: %d current: %d\n", maxHeight, current)
+	log.Debug("max height: %d current: %d\n", maxHeight, current)
 
 	if maxHeight < current.Uint64() {
 		return []types.RequestProposalNumber{}
@@ -55,12 +54,12 @@ func (self *HDCSynchronizer) Missing() []types.RequestProposalNumber {
 
 func (self *HDCSynchronizer) request() bool {
 	if self.Requested.Size() != 0 {
-		glog.V(logger.Debug).Infoln("waiting for requested")
+		log.Debug("waiting for requested")
 		return false
 	}
 
 	if self.Received.Size()+self.maxGetProposalsCount >= self.maxQueued {
-		glog.V(logger.Debug).Infoln("queue is full")
+		log.Debug("queue is full")
 		return false
 	}
 
@@ -84,9 +83,9 @@ func (self *HDCSynchronizer) request() bool {
 	}
 	if self.lastActiveProtocol != nil {
 		err := self.lastActiveProtocol.RequestBlockProposals(blockNumbers)
-		glog.V(logger.Debug).Infoln("request end, err:", err)
+		log.Debug("request end, err:", err)
 	} else {
-		glog.V(logger.Debug).Infof("no active protocol")
+		log.Debug("no active protocol")
 
 	}
 	// setup alarm
@@ -96,7 +95,7 @@ func (self *HDCSynchronizer) request() bool {
 }
 func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	for _, bp := range bps {
-		glog.V(logger.Info).Infoln("received Blocks", bp.Height)
+		log.Info("received Blocks", bp.Height)
 		self.Received.Add(bp.Height)
 		self.Requested.Remove(bp.Height)
 		for _, v := range bp.SigningLockset.PrecommitVotes {
@@ -106,14 +105,14 @@ func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
 	self.cm.Process()
 	self.request()
 	for _, bp := range bps {
-		glog.V(logger.Info).Infoln("add Bps", bp)
+		log.Info("add Bps", bp)
 		self.cm.AddProposal(bp, nil)
 		self.cm.Process()
 	}
 	self.cleanup()
 }
 func (self *HDCSynchronizer) onProposal(proposal types.Proposal, p *peer) {
-	glog.V(logger.Debug).Infoln("synchronizer on proposal")
+	log.Debug("synchronizer on proposal")
 	if proposal.GetHeight() >= self.cm.Height() {
 		if !proposal.LockSet().IsValid() && proposal.LockSet().EligibleVotesNum != 0 {
 			panic("onProposal error")

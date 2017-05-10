@@ -5,8 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 func (pm *ProtocolManager) StartBFT() {
@@ -30,12 +29,12 @@ func (pm *ProtocolManager) announce() {
 	pm.eventMu.Lock()
 	defer pm.eventMu.Unlock()
 	for !pm.consensusManager.isReady() {
-		glog.V(logger.Debug).Infoln("consensusManager not ready ")
+		log.Debug("consensusManager not ready ")
 		pm.consensusManager.SendReady(false)
 		time.Sleep(0.5 * 1000 * 1000 * 1000)
 	}
 	pm.consensusManager.SendReady(true)
-	glog.V(logger.Debug).Infoln("-----------------consensusManager Ready-------------------------")
+	log.Debug("-----------------consensusManager Ready-------------------------")
 }
 
 func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
@@ -55,45 +54,45 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		// Status messages should never arrive after the handshake
 		return errResp(ErrExtraStatusMsg, "uncontrolled status message")
 	case msg.Code == GetBlockProposalsMsg:
-		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg from:", p.id)
+		log.Debug("GetBlockProposalsMsg from:", p.id)
 		var query []types.RequestProposalNumber
 		if err := msg.Decode(&query); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		var found []*types.BlockProposal
-		glog.V(logger.Debug).Infoln("GetBlockProposalsMsg request: ", query)
+		log.Debug("GetBlockProposalsMsg request: ", query)
 		for i, height := range query {
 			if i == MaxGetproposalsCount {
-				glog.V(logger.Info).Infoln("max get proposal count")
+				log.Info("max get proposal count")
 				break
 			}
 			if height.Number > pm.blockchain.CurrentBlock().NumberU64() {
-				glog.V(logger.Info).Infoln("Request future block")
+				log.Info("Request future block")
 				break
 			}
 			bp := pm.consensusManager.getBlockProposalByHeight(height.Number)
 			found = append(found, bp)
 		}
 		if len(found) != 0 {
-			glog.V(logger.Info).Infoln("Send bp: ", found)
+			log.Info("Send bp: ", found)
 			p.SendBlockProposals(found)
 
 			// broadcast highest lastQuorumLockset if it exist
 			lastHeight := query[len(query)-1].Number
 			if ls := pm.consensusManager.getHeightManager(lastHeight).lastQuorumPrecommitLockSet(); ls != nil {
-				glog.V(logger.Info).Infoln("Send Vote from", lastHeight)
+				log.Info("Send Vote from", lastHeight)
 				for _, v := range ls.PrecommitVotes {
-					glog.V(logger.Info).Infoln("vote: ", v)
+					log.Info("vote: ", v)
 					p.SendPrecommitVote(v)
 					time.Sleep(1000 * 1000 * 500)
 				}
 			} else {
-				glog.V(logger.Info).Infoln("No Quorum on ", lastHeight)
+				log.Info("No Quorum on ", lastHeight)
 			}
 		}
 
 	case msg.Code == BlockProposalsMsg:
-		glog.V(logger.Debug).Infoln("BlockProposalsMsg")
+		log.Debug("BlockProposalsMsg")
 		var proposals []*types.BlockProposal
 		if err := msg.Decode(&proposals); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -101,32 +100,32 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		pm.consensusManager.synchronizer.receiveBlockproposals(proposals)
 
 	case msg.Code == NewBlockProposalMsg:
-		glog.V(logger.Debug).Infoln("NewBlockProposalMsg")
+		log.Debug("NewBlockProposalMsg")
 		var bpData newBlockProposals
 		if err := msg.Decode(&bpData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		bp := bpData.BlockProposal
 		if p.broadcastFilter.Has(bp.Hash()) {
-			glog.V(logger.Debug).Infoln("NewBlockProposalMsg filtered")
+			log.Debug("NewBlockProposalMsg filtered")
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.BroadcastBFTMsg(bp)
 			pm.consensusManager.Process()
 		} else {
-			glog.V(logger.Debug).Infoln("NewBlockProposalMsg failed")
+			log.Debug("NewBlockProposalMsg failed")
 			return nil
 		}
 	case msg.Code == VotingInstructionMsg:
-		glog.V(logger.Debug).Infoln("VotingInstructionMsg")
+		log.Debug("VotingInstructionMsg")
 		var viData votingInstructionData
 		if err := msg.Decode(&viData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		vi := viData.VotingInstruction
 		if p.broadcastFilter.Has(vi.Hash()) {
-			glog.V(logger.Debug).Infoln("votinginstruction filtered")
+			log.Debug("votinginstruction filtered")
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
@@ -134,7 +133,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			pm.consensusManager.Process()
 		}
 	case msg.Code == VoteMsg:
-		glog.V(logger.Debug).Infoln("VoteMsg")
+		log.Debug("VoteMsg")
 		var vData voteData
 		if err := msg.Decode(&vData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -142,16 +141,16 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		vote := vData.Vote
 
 		if p.broadcastFilter.Has(vote.Hash()) {
-			glog.V(logger.Debug).Infoln("vote filtered")
+			log.Debug("vote filtered")
 			return nil
 		}
-		glog.V(logger.Debug).Infoln("receive vote with HR ", vote.Height, vote.Round)
+		log.Debug("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
 			pm.consensusManager.Process()
 		}
 	case msg.Code == PrecommitVoteMsg:
-		glog.V(logger.Debug).Infoln("PrecommitVoteMsg")
+		log.Debug("PrecommitVoteMsg")
 		var vData precommitVoteData
 		if err := msg.Decode(&vData); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
@@ -159,10 +158,10 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		vote := vData.PrecommitVote
 
 		if p.broadcastFilter.Has(vote.Hash()) {
-			glog.V(logger.Debug).Infoln("vote filtered")
+			log.Debug("vote filtered")
 			return nil
 		}
-		glog.V(logger.Debug).Infoln("receive precommit vote with HR ", vote.Height, vote.Round)
+		log.Debug("receive precommit vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddPrecommitVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
 			pm.consensusManager.Process()
@@ -170,7 +169,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 	case msg.Code == ReadyMsg:
 		var r readyData
 		if err := msg.Decode(&r); err != nil {
-			glog.V(logger.Debug).Infoln(err)
+			log.Debug("err: ", err)
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
 		ready := r.Ready
@@ -182,7 +181,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		if err := msg.Decode(&txs); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		glog.V(logger.Debug).Infoln("add txs")
+		log.Debug("add txs")
 		for i, tx := range txs {
 			// Validate and mark the remote transaction
 			if tx == nil {
@@ -202,46 +201,46 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 	switch m := msg.(type) {
 	case *types.Ready:
 		peers := pm.peers.PeersWithoutHash(m.Hash())
-		glog.V(logger.Debug).Infoln("There are ", len(peers), " peers to broadcast.")
+		log.Debug("There are ", len(peers), " peers to broadcast.")
 		for _, peer := range peers {
-			// glog.V(logger.Info).Infoln("send Ready msg to ", peer.String())
+			// log.Info("send Ready msg to ", peer.String())
 			err = peer.SendReadyMsg(m)
 			if err != nil {
-				glog.V(logger.Debug).Infoln(err)
+				log.Debug("err: ", err)
 			}
 		}
 	case *types.BlockProposal:
-		glog.V(logger.Debug).Infoln("broadcast Blockproposal")
+		log.Debug("broadcast Blockproposal")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
-		// glog.V(logger.Info).Infoln("Send Bp: ", m)
+		// log.Info("Send Bp: ", m)
 		for _, peer := range peers {
 			peer.SendNewBlockProposal(m)
 		}
 	case *types.VotingInstruction:
-		glog.V(logger.Debug).Infoln("broadcast Votinginstruction")
+		log.Debug("broadcast Votinginstruction")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 
 		for _, peer := range peers {
 			peer.SendVotingInstruction(m)
 		}
 	case *types.Vote:
-		glog.V(logger.Debug).Infoln("broadcast Vote")
+		log.Debug("broadcast Vote")
 		peers := pm.peers.PeersWithoutHash(m.Hash())
 		for _, peer := range peers {
 			peer.SendVote(m)
 		}
 	case *types.PrecommitVote:
-		glog.V(logger.Debug).Infoln("broadcast Precommit Vote")
+		log.Debug("broadcast Precommit Vote")
 		peers := pm.peers.PeersWithoutPrecommit(m.Hash())
-		glog.V(logger.Debug).Infoln("peers to broadcast: ", len(peers))
+		log.Debug("peers to broadcast: ", len(peers))
 		for _, peer := range peers {
 			err := peer.SendPrecommitVote(m)
 			if err != nil {
-				glog.V(logger.Debug).Infoln(err)
+				log.Debug("err: ", err)
 			}
 		}
 	default:
-		glog.V(logger.Info).Infoln("broadcast unknown type:", m)
+		log.Info("broadcast unknown type:", m)
 	}
 }
 
@@ -251,18 +250,18 @@ func (self *ProtocolManager) commitBlock(block *types.Block) bool {
 	oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
 	n, err := self.blockchain.InsertChain(types.Blocks{block})
 	if err != nil {
-		glog.V(logger.Info).Infoln("Block error on :", n)
-		glog.V(logger.Info).Infoln(err)
+		log.Info("Block error on :", n)
+		log.Debug("err: ", err)
 		return false
 	}
 	// wait until block insert to chain
 	for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
 		// DEBUG
-		glog.V(logger.Debug).Infof("committing new block")
+		log.Debug("committing new block")
 		time.Sleep(0.2 * 1000 * 1000 * 1000)
 	}
 	go self.consensusManager.Process()
-	glog.V(logger.Info).Infof("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
+	log.Info("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
 	return true
 }
 func (self *ProtocolManager) linkBlock(block *types.Block) *types.Block {
@@ -270,11 +269,11 @@ func (self *ProtocolManager) linkBlock(block *types.Block) *types.Block {
 	defer self.addTransactionLock.Unlock()
 	// _link_block
 	if self.blockchain.HasBlock(block.Hash()) {
-		glog.V(logger.Debug).Infoln("KNOWN BLOCK")
+		log.Debug("KNOWN BLOCK")
 		return nil
 	}
 	if !self.blockchain.HasBlock(block.ParentHash()) {
-		glog.V(logger.Debug).Infoln("missing parent")
+		log.Debug("missing parent")
 		return nil
 	}
 

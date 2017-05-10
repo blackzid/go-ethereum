@@ -3,16 +3,13 @@ package eth
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 )
 
 func (p *peer) SendReadyMsg(r *types.Ready) error {
 	p.broadcastFilter.Add(r.Hash())
 	err := p2p.Send(p.rw, ReadyMsg, []interface{}{r})
-	// fmt.Println("SendReady msg :", r)
-	// fmt.Println("SendReady msg error:", err)
 	return err
 }
 func (p *peer) SendNewBlockProposal(bp *types.BlockProposal) error {
@@ -32,11 +29,10 @@ func (p *peer) SendPrecommitVote(v *types.PrecommitVote) error {
 	return p2p.Send(p.rw, PrecommitVoteMsg, &precommitVoteData{PrecommitVote: v})
 }
 func (p *peer) SendBlockProposals(bps []*types.BlockProposal) error {
-	glog.V(logger.Info).Infof(" Sending  proposals", len(bps))
+	log.Debug(" Sending  proposals", len(bps))
 	for _, bp := range bps {
 		p.broadcastFilter.Add(bp.Hash())
 	}
-	glog.V(logger.Info).Infof(" -----send")
 	return p2p.Send(p.rw, BlockProposalsMsg, bps)
 }
 func (p *peer) RequestBlockProposals(blocknumbers []types.RequestProposalNumber) error {

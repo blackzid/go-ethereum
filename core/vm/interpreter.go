@@ -18,15 +18,13 @@ package vm
 
 import (
 	"fmt"
-	"math/big"
 	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -118,22 +116,16 @@ func (evm *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err e
 		if err != nil && evm.cfg.Debug {
 			// XXX For debugging
 			//fmt.Printf("%04d: %8v    cost = %-8d stack = %-8d ERR = %v\n", pc, op, cost, stack.len(), err)
-			// TODO update the tracer
-			g, c := new(big.Int).SetUint64(contract.Gas), new(big.Int).SetUint64(cost)
-			evm.cfg.Tracer.CaptureState(evm.env, pc, op, g, c, mem, stack, contract, evm.env.depth, err)
+			evm.cfg.Tracer.CaptureState(evm.env, pc, op, contract.Gas, cost, mem, stack, contract, evm.env.depth, err)
 		}
 	}()
 
-	if glog.V(logger.Debug) {
-		glog.Infof("evm running: %x\n", codehash[:4])
-		tstart := time.Now()
-		defer func() {
-			glog.Infof("evm done: %x. time: %v\n", codehash[:4], time.Since(tstart))
-		}()
-	}
+	log.Debug("EVM running contract", "hash", codehash[:])
+	tstart := time.Now()
+	defer log.Debug("EVM finished running contract", "hash", codehash[:], "elapsed", time.Since(tstart))
 
 	// The Interpreter main run loop (contextual). This loop runs until either an
-	// explicit STOP, RETURN or SUICIDE is executed, an error occurred during
+	// explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
 	// the execution of one of the operations or until the evm.done is set by
 	// the parent context.Context.
 	for atomic.LoadInt32(&evm.env.abort) == 0 {
@@ -182,8 +174,7 @@ func (evm *Interpreter) Run(contract *Contract, input []byte) (ret []byte, err e
 		}
 
 		if evm.cfg.Debug {
-			g, c := new(big.Int).SetUint64(contract.Gas), new(big.Int).SetUint64(cost)
-			evm.cfg.Tracer.CaptureState(evm.env, pc, op, g, c, mem, stack, contract, evm.env.depth, err)
+			evm.cfg.Tracer.CaptureState(evm.env, pc, op, contract.Gas, cost, mem, stack, contract, evm.env.depth, err)
 		}
 		// XXX For debugging
 		//fmt.Printf("%04d: %8v    cost = %-8d stack = %-8d\n", pc, op, cost, stack.len())

@@ -17,11 +17,14 @@
 package vm
 
 import (
+	"crypto/sha256"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/logger"
-	"github.com/ethereum/go-ethereum/logger/glog"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // Precompiled contract is the basic interface for native Go contracts. The implementation
@@ -35,8 +38,8 @@ type PrecompiledContract interface {
 // Precompiled contains the default set of ethereum contracts
 var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{1}): &ecrecover{},
-	common.BytesToAddress([]byte{2}): &sha256{},
-	common.BytesToAddress([]byte{3}): &ripemd160{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	common.BytesToAddress([]byte{3}): &ripemd160hash{},
 	common.BytesToAddress([]byte{4}): &dataCopy{},
 }
 
@@ -66,20 +69,20 @@ func (c *ecrecover) Run(in []byte) []byte {
 	// "in" is (hash, v, r, s), each 32 bytes
 	// but for ecrecover we want (r, s, v)
 
-	r := common.BytesToBig(in[64:96])
-	s := common.BytesToBig(in[96:128])
+	r := new(big.Int).SetBytes(in[64:96])
+	s := new(big.Int).SetBytes(in[96:128])
 	v := in[63] - 27
 
 	// tighter sig s values in homestead only apply to tx sigs
-	if common.Bytes2Big(in[32:63]).BitLen() > 0 || !crypto.ValidateSignatureValues(v, r, s, false) {
-		glog.V(logger.Detail).Infof("ECRECOVER error: v, r or s value invalid")
+	if !allZero(in[32:63]) || !crypto.ValidateSignatureValues(v, r, s, false) {
+		log.Trace("ECRECOVER error: v, r or s value invalid")
 		return nil
 	}
 	// v needs to be at the end for libsecp256k1
 	pubKey, err := crypto.Ecrecover(in[:32], append(in[64:128], v))
 	// make sure the public key is a valid one
 	if err != nil {
-		glog.V(logger.Detail).Infoln("ECRECOVER error: ", err)
+		log.Trace("ECRECOVER failed", "err", err)
 		return nil
 	}
 
@@ -88,31 +91,34 @@ func (c *ecrecover) Run(in []byte) []byte {
 }
 
 // SHA256 implemented as a native contract
-type sha256 struct{}
+type sha256hash struct{}
 
 // RequiredGas returns the gas required to execute the pre-compiled contract.
 //
 // This method does not require any overflow checking as the input size gas costs
 // required for anything significant is so high it's impossible to pay for.
-func (c *sha256) RequiredGas(inputSize int) uint64 {
+func (c *sha256hash) RequiredGas(inputSize int) uint64 {
 	return uint64(inputSize+31)/32*params.Sha256WordGas + params.Sha256Gas
 }
-func (c *sha256) Run(in []byte) []byte {
-	return crypto.Sha256(in)
+func (c *sha256hash) Run(in []byte) []byte {
+	h := sha256.Sum256(in)
+	return h[:]
 }
 
 // RIPMED160 implemented as a native contract
-type ripemd160 struct{}
+type ripemd160hash struct{}
 
 // RequiredGas returns the gas required to execute the pre-compiled contract.
 //
 // This method does not require any overflow checking as the input size gas costs
 // required for anything significant is so high it's impossible to pay for.
-func (c *ripemd160) RequiredGas(inputSize int) uint64 {
+func (c *ripemd160hash) RequiredGas(inputSize int) uint64 {
 	return uint64(inputSize+31)/32*params.Ripemd160WordGas + params.Ripemd160Gas
 }
-func (c *ripemd160) Run(in []byte) []byte {
-	return common.LeftPadBytes(crypto.Ripemd160(in), 32)
+func (c *ripemd160hash) Run(in []byte) []byte {
+	ripemd := ripemd160.New()
+	ripemd.Write(in)
+	return common.LeftPadBytes(ripemd.Sum(nil), 32)
 }
 
 // data copy implemented as a native contract
