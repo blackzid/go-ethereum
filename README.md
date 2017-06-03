@@ -3,10 +3,6 @@
 Geth-w-BFT is a modulized Ethereum with BFT-like Consensus. This project is inspired by [HydraChain](https://github.com/HydraChain/hydrachain).
 
 ## Build from source
-
-<<<<<<< HEAD
-Building geth requires both a Go and a C compiler. You can install them using your favourite package manager. Once the dependencies are installed, run:
-
 ```sh
 make geth
 ```

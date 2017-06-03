@@ -397,7 +397,6 @@ func (cm *ConsensusManager) commit() bool {
 	// cm.getHeightMu.Lock()
 	// defer cm.getHeightMu.Unlock()
 	for _, p := range cm.blockCandidates {
-		log.Debug("111111")
 
 		if p.Block.ParentHash() != cm.Head().Hash() {
 			//DEBUG
@@ -412,11 +411,8 @@ func (cm *ConsensusManager) commit() bool {
 		}
 		ls := cm.getHeightManager(p.GetHeight()).lastQuorumPrecommitLockSet()
 		if ls != nil {
-			log.Debug("22222222")
 			_, hash := ls.HasQuorum()
 			if p.Blockhash() == hash {
-				log.Debug("333333333")
-
 				cm.storeProposal(p)
 				cm.storeLastCommittingLockset(ls)
 				success := cm.pm.commitBlock(p.Block)
@@ -899,7 +895,6 @@ func (hm *HeightManager) lastQuorumPrecommitLockSet() *types.PrecommitLockSet {
 			result, hash := ls.HasQuorum()
 			if result {
 				if found != nil {
-					log.Info("height: ", hm.height, index)
 					log.Info("multiple valid lockset on precommit lockset")
 					if _, h := found.HasQuorum(); h != hash {
 						log.Info("multiple valid lockset")
@@ -1358,7 +1353,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		Difficulty: new(big.Int).SetInt64(0),
+		Difficulty: new(big.Int).SetInt64(1),
 		GasLimit:   new(big.Int).SetInt64(50000000),
 		GasUsed:    new(big.Int),
 		Coinbase:   cm.coinbase,
@@ -1405,6 +1400,7 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 	gp := new(core.GasPool).AddGas(env.header.GasLimit)
 
 	var coalescedLogs []*types.Log
+
 	for {
 		// limit the tcount in one block to reduce block creating time
 		if env.tcount >= 1000 {
@@ -1429,19 +1425,8 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 			txs.Pop()
 			continue
 		}
-
-		// Ignore any transactions (and accounts subsequently) with low gas limits
-		if tx.GasPrice().Cmp(gasPrice) < 0 && !env.ownedAccounts.Has(from) {
-			// Pop the current low-priced transaction without shifting in the next from the account
-			log.Warn("Transaction below gas price", "sender", from, "hash", tx.Hash(), "have", tx.GasPrice(), "want", gasPrice)
-
-			env.lowGasTxs = append(env.lowGasTxs, tx)
-			txs.Pop()
-
-			continue
-		}
 		// Start executing the transaction
-		env.state.StartRecord(tx.Hash(), common.Hash{}, env.tcount)
+		env.state.Prepare(tx.Hash(), common.Hash{}, env.tcount)
 
 		err, logs := env.commitTransaction(tx, bc, coinbase, gp)
 		switch err {
@@ -1463,7 +1448,6 @@ func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsB
 			txs.Pop()
 		}
 	}
-
 	if len(coalescedLogs) > 0 || env.tcount > 0 {
 		// make a copy, the state caches the logs and these logs get "upgraded" from pending to mined
 		// logs by filling in the block hash when the block was mined by the local miner. This can
@@ -1504,19 +1488,3 @@ var (
 	big8                 = big.NewInt(8)
 	big32                = big.NewInt(32)
 )
-
-func AccumulateRewards(state *state.StateDB, header *types.Header, uncles []*types.Header) {
-	reward := new(big.Int).Set(blockReward)
-	r := new(big.Int)
-	for _, uncle := range uncles {
-		r.Add(uncle.Number, big8)
-		r.Sub(r, header.Number)
-		r.Mul(r, blockReward)
-		r.Div(r, big8)
-		state.AddBalance(uncle.Coinbase, r)
-
-		r.Div(blockReward, big32)
-		reward.Add(reward, r)
-	}
-	state.AddBalance(header.Coinbase, reward)
-}

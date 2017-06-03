@@ -367,31 +367,24 @@ func (pm *ProtocolManager) BroadcastBFTMsg(msg interface{}) {
 }
 
 func (self *ProtocolManager) commitBlock(block *types.Block) bool {
-	log.Info("commmitBlock")
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
 	oldHeight := self.blockchain.CurrentBlock().Header().Number.Uint64()
-	log.Info("commmitBlock2")
-	n, err := self.blockchain.InsertChain(types.Blocks{block})
+	_, err := self.blockchain.InsertChain(types.Blocks{block})
 	if err != nil {
-		log.Info("Block error on :", "number", n)
-		// log.Debug(err)
+		log.Info("Block error on :", "err", err)
 		return false
 	}
 	// wait until block insert to chain
 	for oldHeight >= self.blockchain.CurrentBlock().Header().Number.Uint64() {
-		// DEBUG
-		log.Info("commmitBlock222")
-
-		log.Debug("committing new block")
+		log.Debug("waiting", "old", oldHeight, "now", self.blockchain.CurrentBlock().Header().Number.Uint64())
 		time.Sleep(0.2 * 1000 * 1000 * 1000)
 	}
 	go self.consensusManager.Process()
-	log.Info("commmitBlock3")
-
-	log.Info("commited block, new Head Number is %d ", self.blockchain.CurrentBlock().Header().Number)
+	log.Info("commited block, new Head Number is", "number", self.blockchain.CurrentBlock().Header().Number)
 	return true
 }
+
 func (self *ProtocolManager) linkBlock(block *types.Block) *types.Block {
 	self.addTransactionLock.Lock()
 	defer self.addTransactionLock.Unlock()
