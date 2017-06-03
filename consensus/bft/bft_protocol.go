@@ -1,6 +1,4 @@
-// HydraChain Wire Protocol
-
-package eth
+package bft
 
 import (
 	// "fmt"
@@ -19,7 +17,6 @@ const (
 // eth protocol message codes
 const (
 	// Protocol messages belonging to bft
-
 	ReadyMsg             = 0x08
 	GetBlockProposalsMsg = 0x09
 	BlockProposalsMsg    = 0x0a

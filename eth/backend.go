@@ -28,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/consensus/bft"
 	"github.com/ethereum/go-ethereum/consensus/clique"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
@@ -125,10 +126,6 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		networkId:      config.NetworkId,
 		etherbase:      config.Etherbase,
 		MinerThreads:   config.MinerThreads,
-		// bft setup
-		BFT:           config.BFT,
-		bftValidators: config.Validators,
-		AllowEmpty:    config.AllowEmpty,
 	}
 
 	if err := addMipmapBloomBins(chainDb); err != nil {
@@ -169,14 +166,22 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 			maxPeers = halfPeers
 		}
 	}
-	// bft database
-	bftDb, err := ctx.OpenDatabase("bftdata", config.DatabaseCache, config.DatabaseHandles)
-	if db, ok := bftDb.(*ethdb.LDBDatabase); ok {
-		db.Meter("eth/db/bft/")
+
+	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, config.NetworkId, maxPeers, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb); err != nil {
+		return nil, err
 	}
 
-	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, config.NetworkId, maxPeers, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb, bftDb, eth.bftValidators, config.PrivateKeyHex, eth, config.ExtraData); err != nil {
-		return nil, err
+	if config.BFT {
+		if bft, ok := eth.engine.(*bft.BFT); ok {
+			bftDb, err := CreateDB(ctx, config, "bftData")
+			if err != nil {
+				return nil, err
+			}
+			if err = bft.SetupProtocolManager(chainConfig, eth.protocolManager.networkId, eth.eventMux, eth.txPool, eth.blockchain, chainDb, bftDb, config.Validators, config.PrivateKeyHex, config.Etherbase, config.AllowEmpty); err != nil {
+				return nil, err
+			}
+			bft.Start()
+		}
 	}
 	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.engine)
 	eth.miner.SetGasPrice(config.GasPrice)
@@ -237,7 +242,7 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *Config, chainConfig
 		return ethash.NewShared()
 	default:
 		if config.BFT {
-			engine := ethash.New("", 1, 0, "", 1, 0)
+			engine := bft.New(chainConfig, db)
 			return engine
 		} else {
 			engine := ethash.New(ctx.ResolvePath(config.EthashCacheDir), config.EthashCachesInMem, config.EthashCachesOnDisk,
@@ -370,7 +375,9 @@ func (s *Ethereum) Downloader() *downloader.Downloader { return s.protocolManage
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *Ethereum) Protocols() []p2p.Protocol {
-	if s.lesServer == nil {
+	if bft, ok := s.engine.(*bft.BFT); ok {
+		return append(s.protocolManager.SubProtocols, bft.Protocols()...)
+	} else if s.lesServer == nil {
 		return s.protocolManager.SubProtocols
 	} else {
 		return append(s.protocolManager.SubProtocols, s.lesServer.Protocols()...)
@@ -381,11 +388,7 @@ func (s *Ethereum) Protocols() []p2p.Protocol {
 // Ethereum protocol implementation.
 func (s *Ethereum) Start(srvr *p2p.Server) error {
 	s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
-	if s.BFT == true {
-		s.protocolManager.StartBFT()
-	} else {
-		s.protocolManager.Start()
-	}
+	s.protocolManager.Start()
 	if s.lesServer != nil {
 		s.lesServer.Start(srvr)
 	}

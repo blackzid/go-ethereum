@@ -1,6 +1,6 @@
 ../build/bin/geth \
 \
---networkid 52234 \
+--networkid 2234 \
 --port 30303 \
 --rpcport 8545 \
 --datadir "bdata/node1" \
@@ -12,5 +12,6 @@
 \
 --bft \
 --allow-empty \
---num-validators 4 \
+--num-validators 1 \
+--verbosity 5 \
 --node-num 0

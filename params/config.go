@@ -87,7 +87,6 @@ type ChainConfig struct {
 	Clique *CliqueConfig `json:"clique,omitempty"`
 
 	BFT bool // BFT config
-
 }
 
 // EthashConfig is the consensus engine configs for proof-of-work based sealing.

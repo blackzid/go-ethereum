@@ -411,12 +411,12 @@ var (
 
 	// BFT parameters
 	NumValidatorsFlag = cli.IntFlag{
-		Name:  "num_validators",
+		Name:  "num-validators",
 		Usage: "number of validators",
 		Value: 1,
 	}
 	NodeNumFlag = cli.IntFlag{
-		Name:  "node_num",
+		Name:  "node-num",
 		Usage: "node's specific number",
 		Value: 0,
 	}

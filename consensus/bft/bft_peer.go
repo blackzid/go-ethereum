@@ -1,4 +1,4 @@
-package eth
+package bft
 
 import (
 	"github.com/ethereum/go-ethereum/common"

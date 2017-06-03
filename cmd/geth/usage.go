@@ -184,6 +184,15 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.WhisperEnabledFlag,
 		},
 	},
+	{
+		Name: "BFT",
+		Flags: []cli.Flag{
+			utils.NumValidatorsFlag,
+			utils.NodeNumFlag,
+			utils.BFTFlag,
+			utils.AllowEmptyFlag,
+		},
+	},
 }
 
 func init() {

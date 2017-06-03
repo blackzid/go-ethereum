@@ -92,21 +92,12 @@ type ProtocolManager struct {
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
-
-	// bft parameters
-	msgSub             event.Subscription
-	bftdb              ethdb.Database // bft database
-	validators         []common.Address
-	consensusManager   *ConsensusManager
-	consensusContract  *ConsensusContract
-	privateKeyHex      string
-	addTransactionLock sync.Mutex
-	eventMu            sync.Mutex
 }
 
 // NewProtocolManager returns a new ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the ethereum network.
-func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, maxPeers int, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database, bftdb ethdb.Database, validators []common.Address, privateKeyHex string, eth *Ethereum, extra []byte) (*ProtocolManager, error) {
+// func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, maxPeers int, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database)
+func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, maxPeers int, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -186,15 +177,6 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	}
 	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
 
-	// bft setup
-	if config.BFT {
-		manager.bftdb = bftdb
-		manager.privateKeyHex = privateKeyHex
-		manager.validators = validators
-		manager.consensusContract = NewConsensusContract(eth.EventMux(), eth.etherbase, eth.TxPool(), validators)
-		manager.consensusManager = NewConsensusManager(manager, blockchain, bftdb, manager.consensusContract, manager.privateKeyHex, extra)
-		manager.consensusManager.isAllowEmptyBlocks = eth.AllowEmpty
-	}
 	return manager, nil
 }
 
@@ -310,20 +292,11 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			}
 		}()
 	}
-	// main loop. handle incoming messages.
-	if pm.chainconfig.BFT == true {
-		for {
-			if err := pm.handleBFTMsg(p); err != nil {
-				p.Log().Debug("%v: message handling failed: %v", p, err)
-				return err
-			}
-		}
-	} else {
-		for {
-			if err := pm.handleMsg(p); err != nil {
-				p.Log().Debug("Ethereum message handling failed", "err", err)
-				return err
-			}
+
+	for {
+		if err := pm.handleMsg(p); err != nil {
+			p.Log().Debug("Ethereum message handling failed", "err", err)
+			return err
 		}
 	}
 }
@@ -333,6 +306,8 @@ func (pm *ProtocolManager) handle(p *peer) error {
 func (pm *ProtocolManager) handleMsg(p *peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
 	msg, err := p.rw.ReadMsg()
+	log.Info("Handle Msg,", "code", msg.Code)
+	fmt.Println(msg.Code)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,278 @@
+Incorrect Usage. flag provided but not defined: -num-validators
+
+Incorrect Usage. flag provided but not defined: -num-validators
+
+NAME:
+   geth - the go-ethereum command line interface
+
+   Copyright 2013-2017 The go-ethereum Authors
+
+USAGE:
+   geth [options] command [command options] [arguments...]
+   
+VERSION:
+   1.6.1-unstable-e1f986df
+NAME:   
+
+COMMANDS:
+   geth - the go-ethereum command line interface
+
+   Copyright 2013-2017 The go-ethereum Authors
+
+USAGE:
+   geth [options] command [command options] [arguments...]
+   
+VERSION:
+   1.6.1-unstable-e1f986df
+   
+COMMANDS:
+   init        Bootstrap and initialize a new genesis block
+   import      Import a blockchain file
+   export      Export blockchain into file
+   removedb    Remove blockchain and state databases
+   dump        Dump a specific block from storage
+   monitor     Monitor and visualize node metrics
+   account     Manage accounts
+   wallet      Manage Ethereum presale wallets
+   console     Start an interactive JavaScript environment
+   attach      Start an interactive JavaScript environment (connect to node)
+   js          Execute the specified JavaScript files
+   makedag     Generate ethash DAG (for testing)
+   version     Print version numbers
+   bug         opens a window to report a bug on the geth repo
+   license     Display license information
+   dumpconfig   init          Show configuration valuesBootstrap and initialize a new genesis block
+
+   help, h   import           Shows a list of commands or help for one commandImport a blockchain file
+
+      export
+      Export blockchain into file
+ETHEREUM OPTIONS:   removedb
+    Remove blockchain and state databases
+   dump        Dump a specific block from storage
+   monitor     Monitor and visualize node metrics
+   account     Manage accounts
+   wallet      Manage Ethereum presale wallets
+   console     Start an interactive JavaScript environment
+   attach      Start an interactive JavaScript environment (connect to node)
+   js          Execute the specified JavaScript files
+   makedag     Generate ethash DAG (for testing)
+  --config value   version                     Print version numbers        
+TOML configuration file   bug
+          --datadir "/home/blackzid/.ethereum"   Data directory for the databases and keystoreopens a window to report a bug on the geth repo
+
+  --keystore    license                     Display license information        
+      dumpconfigDirectory for the keystore (default = inside the datadir)  
+Show configuration values  --nousb
+           help, h                     Shows a list of commands or help for one command       
+Disables monitoring for and managine USB hardware wallets   
+
+  --networkid value                     ETHEREUM OPTIONS:Network identifier (integer, 1=Frontier, 2=Morden (disused), 3=Ropsten) (default: 1)
+
+  --testnet                             Ropsten network: pre-configured proof-of-work test network
+  --dev                                 Developer mode: pre-configured private network with several debugging flags
+  --syncmode "fast"                     Blockchain sync mode ("fast", "full", or "light")
+  --ethstats value                      Reporting URL of a ethstats service (nodename:secret@host:port)
+  --identity value                      Custom node name
+  --lightserv value                     Maximum percentage of time allowed for serving LES requests (0-90) (default: 0)
+  --lightpeers value                    Maximum number of LES client peers (default: 20)
+  --lightkdf                            Reduce key-derivation RAM & CPU usage at some expense of KDF strength
+  
+  --config value                ETHASH OPTIONS:        
+TOML configuration file
+  --datadir "/home/blackzid/.ethereum"  Data directory for the databases and keystore
+  --keystore                            Directory for the keystore (default = inside the datadir)
+  --nousb  --ethash.cachedir                                                        Directory to store the ethash verification caches (default = inside the datadir)Disables monitoring for and managine USB hardware wallets
+
+  --ethash.cachesinmem value  --networkid value                                Number of recent ethash caches to keep in memory (16MB each) (default: 2)     
+Network identifier (integer, 1=Frontier, 2=Morden (disused), 3=Ropsten) (default: 1)  --ethash.cachesondisk value
+          --testnet               Number of recent ethash caches to keep on disk (16MB each) (default: 3)        
+          --ethash.dagdir "/home/blackzid/.ethash"       Ropsten network: pre-configured proof-of-work test networkDirectory to store the ethash mining DAGs (default = inside home folder)
+
+  --dev  --ethash.dagsinmem value                                                  Number of recent ethash mining DAGs to keep in memory (1+GB each) (default: 1) 
+Developer mode: pre-configured private network with several debugging flags  --ethash.dagsondisk value
+          --syncmode "fast"                         Number of recent ethash mining DAGs to keep on disk (1+GB each) (default: 2)     
+Blockchain sync mode ("fast", "full", or "light")  
+
+  --ethstats value                PERFORMANCE TUNING OPTIONS:      
+Reporting URL of a ethstats service (nodename:secret@host:port)
+  --identity value                        --cache valueCustom node name        
+      --lightserv valueMegabytes of memory allocated to internal caching (min 16MB / database forced) (default: 128)        
+          --trie-cache-gens value       Maximum percentage of time allowed for serving LES requests (0-90) (default: 0)Number of trie node generations to keep in memory (default: 120)
+
+  --lightpeers value          
+            ACCOUNT OPTIONS:Maximum number of LES client peers (default: 20)
+
+  --lightkdf                            Reduce key-derivation RAM & CPU usage at some expense of KDF strength  --unlock value
+      Comma separated list of accounts to unlock
+
+  --password value  ETHASH OPTIONS:Password file to use for non-inteactive password input
+
+  
+API AND CONSOLE OPTIONS:
+  --ethash.cachedir                         Directory to store the ethash verification caches (default = inside the datadir)
+  --ethash.cachesinmem value                Number of recent ethash caches to keep in memory (16MB each) (default: 2)
+  --ethash.cachesondisk value               Number of recent ethash caches to keep on disk (16MB each) (default: 3)
+  --ethash.dagdir "/home/blackzid/.ethash"  Directory to store the ethash mining DAGs (default = inside home folder)
+  --ethash.dagsinmem value          --rpc                          Number of recent ethash mining DAGs to keep in memory (1+GB each) (default: 1)  
+Enable the HTTP-RPC server  --ethash.dagsondisk value
+          --rpcaddr value                 HTTP-RPC server listening interface (default: "localhost")Number of recent ethash mining DAGs to keep on disk (1+GB each) (default: 2)
+
+  --rpcport value          
+HTTP-RPC server listening port (default: 8545)
+  --rpcapi value        PERFORMANCE TUNING OPTIONS: 
+API's offered over the HTTP-RPC interface
+  --ws                   Enable the WS-RPC server
+  --wsaddr value          --cache value         WS-RPC server listening interface (default: "localhost")    
+Megabytes of memory allocated to internal caching (min 16MB / database forced) (default: 128)  --wsport value
+          --trie-cache-gens value   WS-RPC server listening port (default: 8546)Number of trie node generations to keep in memory (default: 120)
+
+  --wsapi value          
+  API's offered over the WS-RPC interface
+ACCOUNT OPTIONS:  --wsorigins value
+      Origins from which to accept websockets requests
+  --ipcdisable           Disable the IPC-RPC server
+  --ipcpath              Filename for IPC socket/pipe within the datadir (explicit paths escape it)
+  --unlock value  --rpccorsdomain value      Comma separated list of accounts to unlockComma separated list of domains from which to accept cross origin requests (browser enforced)
+
+  --password value  --jspath loadScript      Password file to use for non-inteactive password inputJavaScript root path for loadScript (default: ".")
+
+    --exec value
+           Execute JavaScript statement (only in combination with console/attach)API AND CONSOLE OPTIONS:
+
+  --preload value        Comma separated list of JavaScript files to preload into the console
+  
+NETWORKING OPTIONS:
+  --bootnodes value     Comma separated enode URLs for P2P discovery bootstrap
+  --port value          --rpc          Network listening port (default: 30303)        
+    --maxpeers valueEnable the HTTP-RPC server      
+Maximum number of network peers (network disabled if set to 0) (default: 25)  --rpcaddr value
+          --maxpendpeers valueHTTP-RPC server listening interface (default: "localhost")  
+Maximum number of pending connection attempts (defaults used if set to 0) (default: 0)  --rpcport value
+          --nat valueHTTP-RPC server listening port (default: 8545)        
+     --rpcapi valueNAT port mapping mechanism (any|none|upnp|pmp|extip:<IP>) (default: "any")        
+   --nodiscoverAPI's offered over the HTTP-RPC interface        
+    --wsDisables the peer discovery mechanism (manual peer addition)        
+          --v5disc           Enable the WS-RPC server      
+Enables the experimental RLPx V5 (Topic Discovery) mechanism  --wsaddr value
+          --netrestrict value    WS-RPC server listening interface (default: "localhost")Restricts network communication to the given IP networks (CIDR masks)
+
+  --wsport value  --nodekey value                P2P node key fileWS-RPC server listening port (default: 8546)
+
+  --nodekeyhex value  --wsapi value            P2P node key as hex (for testing)  
+API's offered over the WS-RPC interface  
+
+  --wsorigins value      Origins from which to accept websockets requestsMINER OPTIONS:
+
+  --ipcdisable           Disable the IPC-RPC server
+  --ipcpath              Filename for IPC socket/pipe within the datadir (explicit paths escape it)
+  --rpccorsdomain value  Comma separated list of domains from which to accept cross origin requests (browser enforced)
+  --mine  --jspath loadScript                    JavaScript root path for loadScript (default: ".")    
+Enable mining  --exec value
+          --minerthreads value         Execute JavaScript statement (only in combination with console/attach)Number of CPU threads to use for mining (default: 8)
+
+  --preload value  --etherbase value                Comma separated list of JavaScript files to preload into the console 
+Public address for block mining rewards (default = first account created) (default: "0")  
+
+  --targetgaslimit value    Target gas limit sets the artificial target gas floor for the blocks to mine (default: 4712388)NETWORKING OPTIONS:
+
+  --gasprice "20000000000"  Minimal gas price to accept for mining a transactions
+  --extradata value         Block extra data set by the miner (default = client version)
+  
+GAS PRICE ORACLE OPTIONS:
+  --gpoblocks value      Number of recent blocks to check for gas prices (default: 10)
+  --gpopercentile value  Suggested gas price is the given percentile of a set of recent transaction gas prices (default: 50)
+  
+VIRTUAL MACHINE OPTIONS:
+  --vmdebug    --bootnodes valueRecord information useful for VM and contract debugging     
+Comma separated enode URLs for P2P discovery bootstrap  
+
+  --port value        LOGGING AND DEBUGGING OPTIONS:  
+Network listening port (default: 30303)
+  --maxpeers value      Maximum number of network peers (network disabled if set to 0) (default: 25)
+  --maxpendpeers value  Maximum number of pending connection attempts (defaults used if set to 0) (default: 0)
+  --nat value           NAT port mapping mechanism (any|none|upnp|pmp|extip:<IP>) (default: "any")
+  --nodiscover          Disables the peer discovery mechanism (manual peer addition)
+  --v5disc                --metricsEnables the experimental RLPx V5 (Topic Discovery) mechanism        
+          --netrestrict value    Enable metrics collection and reportingRestricts network communication to the given IP networks (CIDR masks)
+
+  --fakepow  --nodekey value                       P2P node key file 
+Disables proof-of-work verification  --nodekeyhex value
+      --nocompactionP2P node key as hex (for testing)        
+      Disables db compaction after import
+
+  --verbosity value         MINER OPTIONS:Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)
+
+  --vmodule value           Per-module verbosity: comma-separated list of <pattern>=<level> (e.g. eth/*=5,p2p=4)
+  --backtrace value         Request a stack trace at a specific logging statement (e.g. "block.go:271")
+  --debug                   Prepends log messages with call-site location (file and line number)
+  --pprof                   Enable the pprof HTTP server
+  --pprofaddr value         pprof HTTP server listening interface (default: "127.0.0.1")
+  --pprofport value           --minepprof HTTP server listening port (default: 6060)        
+          --memprofilerate value        Enable miningTurn on memory profiling with the given rate (default: 524288)
+
+  --minerthreads value  --blockprofilerate value        Number of CPU threads to use for mining (default: 8)Turn on block profiling with the given rate (default: 0)
+
+  --etherbase value  --cpuprofile value                 Write CPU profile to the given filePublic address for block mining rewards (default = first account created) (default: "0")
+
+  --trace value  --targetgaslimit value                 Target gas limit sets the artificial target gas floor for the blocks to mine (default: 4712388)Write execution trace to the given file
+
+  --gasprice "20000000000"    
+Minimal gas price to accept for mining a transactions
+DEPRECATED OPTIONS:  --extradata value
+         Block extra data set by the miner (default = client version)
+  --fast     
+Enable fast syncing through state downloads
+  --light  GAS PRICE ORACLE OPTIONS:Enable light client mode
+
+  
+EXPERIMENTAL OPTIONS:
+  --gpoblocks value      Number of recent blocks to check for gas prices (default: 10)
+  --gpopercentile value  Suggested gas price is the given percentile of a set of recent transaction gas prices (default: 50)  --shh
+                  
+   Enable Whisper
+  --num_validators valueVIRTUAL MACHINE OPTIONS:  
+number of validators (default: 1)
+  --node_num value        node's specific number (default: 0)
+  --bft  --vmdebug                  Record information useful for VM and contract debugging   
+change consensus to bft with true  
+
+  --allow-empty           LOGGING AND DEBUGGING OPTIONS:allow empty block
+
+  --help, -h              show help
+  
+
+COPYRIGHT:
+   Copyright 2013-2017 The go-ethereum Authors
+   
+  --metrics                 Enable metrics collection and reporting
+  --fakepow                 Disables proof-of-work verification
+  --nocompaction            Disables db compaction after import
+  --verbosity value         Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)
+  --vmodule value           Per-module verbosity: comma-separated list of <pattern>=<level> (e.g. eth/*=5,p2p=4)
+  --backtrace value         Request a stack trace at a specific logging statement (e.g. "block.go:271")
+  --debug                   Prepends log messages with call-site location (file and line number)
+  --pprof                   Enable the pprof HTTP server
+  --pprofaddr value         pprof HTTP server listening interface (default: "127.0.0.1")
+  --pprofport value         pprof HTTP server listening port (default: 6060)
+  --memprofilerate value    Turn on memory profiling with the given rate (default: 524288)
+  --blockprofilerate value  Turn on block profiling with the given rate (default: 0)
+  --cpuprofile value        Write CPU profile to the given file
+  --trace value             Write execution trace to the given file
+  
+DEPRECATED OPTIONS:
+  --fast   Enable fast syncing through state downloads
+  --light  Enable light client mode
+  
+EXPERIMENTAL OPTIONS:
+  --shh                   Enable Whisper
+  --num_validators value  number of validators (default: 1)
+  --node_num value        node's specific number (default: 0)
+  --bft                   change consensus to bft with true
+  --allow-empty           allow empty block
+  --help, -h              show help
+  
+
+COPYRIGHT:
+   Copyright 2013-2017 The go-ethereum Authors
+   

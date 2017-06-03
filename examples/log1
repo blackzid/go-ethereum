@@ -1,0 +1,541 @@
+TRACE[06-03|15:08:52] Started watching keystore folder         path=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/keystore
+DEBUG[06-03|15:08:52] Reloaded keystore contents               accounts=1
+DEBUG[06-03|15:08:52] Reloaded keystore contents               accounts=1
+INFO [06-03|15:08:52] Starting peer-to-peer node               instance=Geth/v1.6.1-unstable-e1f986df/linux-amd64/go1.8
+INFO [06-03|15:08:52] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/chaindata cache=128 handles=1024
+WARN [06-03|15:08:52] Upgrading chain database to use sequential keys 
+INFO [06-03|15:08:52] Initialised chain configuration          config="{ChainID: 2234 Homestead: 1 DAO: <nil> DAOSupport: false EIP150: 2 EIP155: 3 EIP158: 3 Engine: ethash}"
+INFO [06-03|15:08:52] Database conversion successful 
+WARN [06-03|15:08:52] Upgrading db log bloom bins 
+INFO [06-03|15:08:52] Bloom-bin upgrade completed              elapsed=63.931µs
+INFO [06-03|15:08:52] Initialising Ethereum protocol           versions="[63 62]" network=2234
+INFO [06-03|15:08:52] Loaded most recent local header          number=0 hash=358ace…0573b0 td=1048576
+INFO [06-03|15:08:52] Loaded most recent local full block      number=0 hash=358ace…0573b0 td=1048576
+INFO [06-03|15:08:52] Loaded most recent local fast block      number=0 hash=358ace…0573b0 td=1048576
+INFO [06-03|15:08:52] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/bftData   cache=128 handles=1024
+DEBUG[06-03|15:08:52] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
+DEBUG[06-03|15:08:52] initialize locksets 
+DEBUG[06-03|15:08:52] CM Sign 
+DEBUG[06-03|15:08:52] addPrecommitVote to                      LOG15_ERROR=
+DEBUG[06-03|15:08:52] add inintial lockset 
+DEBUG[06-03|15:08:52] ---------------process------------------ 
+DEBUG[06-03|15:08:52] commit, blockcandidates:                 len=0
+DEBUG[06-03|15:08:52] no blockcandidate to commit 
+DEBUG[06-03|15:08:52] In RM Process                            height=1 round=0
+DEBUG[06-03|15:08:52] I am a proposer in                       height=1 round=0
+DEBUG[06-03|15:08:52] make proposal 
+DEBUG[06-03|15:08:52] CM Sign 
+DEBUG[06-03|15:08:52] create new work on block %v with %d txs & %d uncles. Took %v
+ LOG15_ERROR= LOG15_ERROR=
+DEBUG[06-03|15:08:52] CM Sign 
+DEBUG[06-03|15:08:52] There are                                peer count=0
+DEBUG[06-03|15:08:52] -----------------consensusManager Ready------------------------- 
+DEBUG[06-03|15:08:52] Create block blockhash :                 LOG15_ERROR= LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-03|15:08:52] broadcast Blockproposal 
+DEBUG[06-03|15:08:52] voting on new proporsal 
+DEBUG[06-03|15:08:52] CM Sign 
+DEBUG[06-03|15:08:52] vote success in                          height=1
+DEBUG[06-03|15:08:52] In RM addvote                            round=0
+DEBUG[06-03|15:08:52] RM get timeoutPrecommit                  height=1 round=0
+DEBUG[06-03|15:08:52] broadcast Vote 
+DEBUG[06-03|15:08:52] precommit voteing 
+DEBUG[06-03|15:08:52] prevote quorum. vote precommit on block 
+DEBUG[06-03|15:08:52] CM Sign 
+DEBUG[06-03|15:08:52] precommit vote success in H:             height=1
+DEBUG[06-03|15:08:52] broadcast Precommit Vote 
+DEBUG[06-03|15:08:52] in cleanup,current Head Number is        number=0
+DEBUG[06-03|15:08:52] RM gettimout                             height=1 round=1
+DEBUG[06-03|15:08:52] delay time :                             delay=4.500
+INFO [06-03|15:08:52] Starting P2P networking 
+INFO [06-03|15:08:52] RLPx listener up                         self="enode://d67104e65b61fca1fc73a74175667c11f16c037fa8e414499189df9d68706aca6e1a1b4ea02b702f101eb609c4cd2964d4790047a06458ba8a1a19040ab1fe0d@[::]:30303?discport=0"
+DEBUG[06-03|15:08:52] InProc registered *node.PrivateAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] InProc registered *node.PublicAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] InProc registered *debug.HandlerT under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *node.PublicWeb3API under 'web3' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicEthereumAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicTxPoolAPI under 'txpool' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PrivateAccountAPI under 'personal' 
+DEBUG[06-03|15:08:52] InProc registered *bft.API under 'bft' 
+DEBUG[06-03|15:08:52] InProc registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-03|15:08:52] Executing EVM call finished              runtime=701.923µs
+DEBUG[06-03|15:08:52] InProc registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-03|15:08:52] Release oracle not found                 contract=0xfa7b9770ca4cb04296cac84f37736d4041251cdf
+DEBUG[06-03|15:08:52] InProc registered *eth.PrivateMinerAPI under 'miner' 
+DEBUG[06-03|15:08:52] InProc registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-03|15:08:52] InProc registered *eth.PrivateAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] InProc registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] InProc registered *ethapi.PublicNetAPI under 'net' 
+DEBUG[06-03|15:08:52] IPC registered *node.PrivateAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] IPC registered *node.PublicAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] IPC registered *debug.HandlerT under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *node.PublicWeb3API under 'web3' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicEthereumAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicTxPoolAPI under 'txpool' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PrivateAccountAPI under 'personal' 
+DEBUG[06-03|15:08:52] IPC registered *bft.API under 'bft' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PrivateMinerAPI under 'miner' 
+DEBUG[06-03|15:08:52] IPC registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PrivateAdminAPI under 'admin' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] IPC registered *ethapi.PublicNetAPI under 'net' 
+DEBUG[06-03|15:08:52] HTTP registered *debug.HandlerT under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicEthereumAPI under 'eth' 
+INFO [06-03|15:08:52] IPC endpoint opened: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-03|15:08:52] HTTP registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-03|15:08:52] HTTP registered *ethapi.PublicNetAPI under 'net' 
+INFO [06-03|15:08:52] HTTP endpoint opened: http://127.0.0.1:8545 
+DEBUG[06-03|15:08:54] Couldn't add port mapping                proto=tcp extport=30303 intport=30303 interface="UPnP or NAT-PMP" err="no UPnP or NAT-PMP router discovered"
+DEBUG[06-03|15:08:56] delay time up 
+DEBUG[06-03|15:08:56] ---------------process------------------ 
+DEBUG[06-03|15:08:56] commit, blockcandidates:                 len=1
+DEBUG[06-03|15:08:56] 111111 
+DEBUG[06-03|15:08:56] 22222222 
+DEBUG[06-03|15:08:56] 333333333 
+INFO [06-03|15:08:56] commmitBlock 
+INFO [06-03|15:08:56] commmitBlock2 
+INFO [06-03|15:09:05] Got interrupt, shutting down... 
+INFO [06-03|15:09:05] HTTP endpoint closed: http://127.0.0.1:8545 
+DEBUG[06-03|15:09:05] RPC Server shutdown initiatied 
+INFO [06-03|15:09:05] IPC endpoint closed: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
+DEBUG[06-03|15:09:05] RPC Server shutdown initiatied 
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=9
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=8
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=7
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=6
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=5
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=4
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=3
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=2
+WARN [06-03|15:09:05] Already shutting down, interrupt more to panic. times=1
+panic: boom
+
+goroutine 73 [running]:
+github.com/ethereum/go-ethereum/internal/debug.LoudPanic(0xd61ce0, 0xc4201e0790)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/internal/debug/loudpanic.go:26 +0x4e
+github.com/ethereum/go-ethereum/cmd/utils.StartNode.func1(0xc4200ce000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/utils/cmd.go:79 +0x1df
+created by github.com/ethereum/go-ethereum/cmd/utils.StartNode
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/utils/cmd.go:80 +0xb7
+
+goroutine 1 [chan receive]:
+github.com/ethereum/go-ethereum/node.(*Node).Wait(0xc4200ce000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/node/node.go:545 +0x8b
+main.geth(0xc420387680, 0xf80f10, 0xb2d05e00)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/geth/main.go:189 +0x56
+github.com/ethereum/go-ethereum/vendor/gopkg.in/urfave/cli%2ev1.HandleAction(0xd79c80, 0xf82178, 0xc420387680, 0xc420387680, 0xc42017df48)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/gopkg.in/urfave/cli.v1/app.go:485 +0xd4
+github.com/ethereum/go-ethereum/vendor/gopkg.in/urfave/cli%2ev1.(*App).Run(0xc420113520, 0xc420010180, 0x17, 0x18, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/gopkg.in/urfave/cli.v1/app.go:259 +0x70d
+main.main()
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/geth/main.go:177 +0x55
+
+goroutine 17 [syscall, locked to thread]:
+runtime.goexit()
+	/usr/local/go/src/runtime/asm_amd64.s:2197 +0x1
+
+goroutine 6 [chan receive]:
+github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*nonrecursiveTree).dispatch(0xc42001eae0, 0xc42001ea20)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/tree_nonrecursive.go:36 +0x5a
+created by github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.newNonrecursiveTree
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/tree_nonrecursive.go:29 +0x176
+
+goroutine 7 [chan receive]:
+github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*nonrecursiveTree).internal(0xc42001eae0, 0xc42001ea80)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/tree_nonrecursive.go:81 +0x94
+created by github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.newNonrecursiveTree
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/tree_nonrecursive.go:30 +0x1a2
+
+goroutine 8 [syscall]:
+os/signal.signal_recv(0x1707ac0)
+	/usr/local/go/src/runtime/sigqueue.go:116 +0x104
+os/signal.loop()
+	/usr/local/go/src/os/signal/signal_unix.go:22 +0x22
+created by os/signal.init.1
+	/usr/local/go/src/os/signal/signal_unix.go:28 +0x41
+
+goroutine 9 [chan receive]:
+github.com/ethereum/go-ethereum/vendor/github.com/rcrowley/go-metrics.(*meterArbiter).tick(0x17e1f00)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rcrowley/go-metrics/meter.go:221 +0x4c
+created by github.com/ethereum/go-ethereum/vendor/github.com/rcrowley/go-metrics.NewMeter
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rcrowley/go-metrics/meter.go:40 +0x127
+
+goroutine 34 [syscall]:
+syscall.Syscall6(0xe8, 0xb, 0xc42003276c, 0x1, 0xffffffffffffffff, 0x0, 0x0, 0x1, 0xc420032760, 0x8aa8c3)
+	/usr/local/go/src/syscall/asm_linux_amd64.s:44 +0x5
+syscall.EpollWait(0xb, 0xc42003276c, 0x1, 0x1, 0xffffffffffffffff, 0x0, 0x12, 0xc4200327a0)
+	/usr/local/go/src/syscall/zsyscall_linux_amd64.go:365 +0x77
+github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).loop(0xc4200d0000, 0xc4204b2060)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:193 +0x81
+created by github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).lazyinit
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:133 +0x13d
+
+goroutine 79 [semacquire]:
+sync.runtime_Semacquire(0xc42024a0d4)
+	/usr/local/go/src/runtime/sema.go:47 +0x34
+sync.(*WaitGroup).Wait(0xc42024a0c8)
+	/usr/local/go/src/sync/waitgroup.go:131 +0x7a
+github.com/ethereum/go-ethereum/core.(*BlockChain).Stop(0xc42024a000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/blockchain.go:605 +0x6c
+github.com/ethereum/go-ethereum/eth.(*Ethereum).Stop(0xc420020a50, 0xc4204b07b0, 0xc42450ff58)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/backend.go:404 +0x40
+github.com/ethereum/go-ethereum/node.(*Node).Stop(0xc4200ce000, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/node/node.go:502 +0x21c
+created by github.com/ethereum/go-ethereum/cmd/utils.StartNode.func1
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/utils/cmd.go:71 +0x147
+
+goroutine 21 [select]:
+github.com/ethereum/go-ethereum/accounts/keystore.(*watcher).loop(0xc420466b00)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/keystore/watch.go:91 +0x622
+created by github.com/ethereum/go-ethereum/accounts/keystore.(*watcher).start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/keystore/watch.go:52 +0x5f
+
+goroutine 35 [chan receive]:
+github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).send(0xc4200d0000, 0xc4204b2060)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:253 +0x66
+created by github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).lazyinit
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:136 +0x198
+
+goroutine 36 [chan receive]:
+github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).send(0xc4200d0000, 0xc4204b2060)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:253 +0x66
+created by github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify.(*inotify).lazyinit
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/rjeczalik/notify/watcher_inotify.go:136 +0x198
+
+goroutine 37 [select]:
+github.com/ethereum/go-ethereum/accounts/keystore.(*KeyStore).updater(0xc4200203c0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/keystore/keystore.go:203 +0x18d
+created by github.com/ethereum/go-ethereum/accounts/keystore.(*KeyStore).Subscribe
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/keystore/keystore.go:190 +0x133
+
+goroutine 38 [chan receive]:
+github.com/ethereum/go-ethereum/accounts/usbwallet.(*LedgerHub).updater(0xc4200200f0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/usbwallet/ledger_hub.go:203 +0x5a
+created by github.com/ethereum/go-ethereum/accounts/usbwallet.(*LedgerHub).Subscribe
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/usbwallet/ledger_hub.go:188 +0x133
+
+goroutine 39 [select]:
+github.com/ethereum/go-ethereum/accounts.(*Manager).update(0xc4204bc1a0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/manager.go:95 +0x40e
+created by github.com/ethereum/go-ethereum/accounts.NewManager
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/accounts/manager.go:68 +0x5ed
+
+goroutine 40 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util.(*BufferPool).drain(0xc4200bc000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util/buffer_pool.go:206 +0x23f
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util.NewBufferPool
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util/buffer_pool.go:237 +0x19c
+
+goroutine 41 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).compactionError(0xc420010480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:90 +0x5d9
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:139 +0x583
+
+goroutine 42 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).mpoolDrain(0xc420010480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_state.go:96 +0x249
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:140 +0x5a5
+
+goroutine 43 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).tCompaction(0xc420010480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:804 +0x638
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:146 +0x722
+
+goroutine 44 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).mCompaction(0xc420010480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:751 +0x242
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:147 +0x744
+
+goroutine 114 [select]:
+github.com/ethereum/go-ethereum/eth/fetcher.(*Fetcher).loop(0xc4204bc8f0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/fetcher/fetcher.go:314 +0x4691
+created by github.com/ethereum/go-ethereum/eth/fetcher.(*Fetcher).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/fetcher/fetcher.go:176 +0x3f
+
+goroutine 47 [chan receive]:
+github.com/ethereum/go-ethereum/core.(*TxPool).eventLoop(0xc4204ba000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/tx_pool.go:140 +0xbb
+created by github.com/ethereum/go-ethereum/core.NewTxPool
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/tx_pool.go:128 +0x556
+
+goroutine 48 [select]:
+github.com/ethereum/go-ethereum/core.(*TxPool).expirationLoop(0xc4204ba000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/tx_pool.go:676 +0x3e2
+created by github.com/ethereum/go-ethereum/core.NewTxPool
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/tx_pool.go:129 +0x578
+
+goroutine 49 [select]:
+github.com/ethereum/go-ethereum/eth/downloader.(*Downloader).qosTuner(0xc4201b7880)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/downloader/downloader.go:1481 +0x3b8
+created by github.com/ethereum/go-ethereum/eth/downloader.New
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/downloader/downloader.go:202 +0xeb7
+
+goroutine 50 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util.(*BufferPool).drain(0xc4200bc0e0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util/buffer_pool.go:206 +0x23f
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util.NewBufferPool
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/util/buffer_pool.go:237 +0x19c
+
+goroutine 51 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).compactionError(0xc420372480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:90 +0x5d9
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:139 +0x583
+
+goroutine 52 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).mpoolDrain(0xc420372480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_state.go:96 +0x249
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:140 +0x5a5
+
+goroutine 53 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).tCompaction(0xc420372480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:804 +0x638
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:146 +0x722
+
+goroutine 54 [select]:
+github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.(*DB).mCompaction(0xc420372480)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db_compaction.go:751 +0x242
+created by github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb.openDB
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb/db.go:147 +0x744
+
+goroutine 146 [select, locked to thread]:
+runtime.gopark(0xf82aa0, 0x0, 0xed0536, 0x6, 0x18, 0x2)
+	/usr/local/go/src/runtime/proc.go:271 +0x13a
+runtime.selectgoImpl(0xc4202b8f50, 0x0, 0x18)
+	/usr/local/go/src/runtime/select.go:423 +0x1364
+runtime.selectgo(0xc4202b8f50)
+	/usr/local/go/src/runtime/select.go:238 +0x1c
+runtime.ensureSigM.func1()
+	/usr/local/go/src/runtime/signal_unix.go:434 +0x2dd
+runtime.goexit()
+	/usr/local/go/src/runtime/asm_amd64.s:2197 +0x1
+
+goroutine 56 [chan receive]:
+github.com/ethereum/go-ethereum/core.(*BlockChain).InsertChain(0xc42024a000, 0xc424507bf0, 0x1, 0x1, 0x0, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/core/blockchain.go:938 +0x6fe
+github.com/ethereum/go-ethereum/consensus/bft.(*ProtocolManager).commitBlock(0xc4204cc000, 0xc420024f30, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/handler.go:376 +0x180
+github.com/ethereum/go-ethereum/consensus/bft.(*ConsensusManager).commit(0xc4200a4240, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft_manager.go:422 +0x820
+github.com/ethereum/go-ethereum/consensus/bft.(*ConsensusManager).Process(0xc4200a4240)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft_manager.go:381 +0xda
+github.com/ethereum/go-ethereum/consensus/bft.(*ConsensusManager).waitProposalAlarm(0xc4200a4240, 0xc4200be1c0, 0x4012000000000000)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft_manager.go:355 +0x196
+created by github.com/ethereum/go-ethereum/consensus/bft.(*ConsensusManager).setupAlarm
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft_manager.go:328 +0x1cf
+
+goroutine 57 [chan receive]:
+github.com/ethereum/go-ethereum/miner.(*worker).update(0xc4200a59e0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/worker.go:237 +0x82
+created by github.com/ethereum/go-ethereum/miner.newWorker
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/worker.go:146 +0x4d5
+
+goroutine 58 [chan receive]:
+github.com/ethereum/go-ethereum/miner.(*worker).wait(0xc4200a59e0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/worker.go:265 +0xab
+created by github.com/ethereum/go-ethereum/miner.newWorker
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/worker.go:148 +0x4f7
+
+goroutine 59 [chan receive]:
+github.com/ethereum/go-ethereum/miner.(*Miner).update(0xc4201f73b0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/miner.go:82 +0x155
+created by github.com/ethereum/go-ethereum/miner.New
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/miner/miner.go:70 +0x285
+
+goroutine 60 [IO wait]:
+net.runtime_pollWait(0x7f3b958f6b58, 0x72, 0x1703bc0)
+	/usr/local/go/src/runtime/netpoll.go:164 +0x59
+net.(*pollDesc).wait(0xc4200be8b8, 0x72, 0x16fcda8, 0xc4204be1a0)
+	/usr/local/go/src/net/fd_poll_runtime.go:75 +0x38
+net.(*pollDesc).waitRead(0xc4200be8b8, 0xffffffffffffffff, 0x0)
+	/usr/local/go/src/net/fd_poll_runtime.go:80 +0x34
+net.(*netFD).accept(0xc4200be850, 0x0, 0x17019c0, 0xc4204be1a0)
+	/usr/local/go/src/net/fd_unix.go:430 +0x1e5
+net.(*TCPListener).accept(0xc4204d81e8, 0xc4202ade48, 0x40acb5, 0xd58ca0)
+	/usr/local/go/src/net/tcpsock_posix.go:136 +0x2e
+net.(*TCPListener).Accept(0xc4204d81e8, 0xc4204565a0, 0x0, 0x2, 0x2)
+	/usr/local/go/src/net/tcpsock.go:228 +0x49
+github.com/ethereum/go-ethereum/p2p.(*Server).listenLoop(0xc4201b6a80)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:641 +0x24d
+created by github.com/ethereum/go-ethereum/p2p.(*Server).startListening
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:432 +0x162
+
+goroutine 61 [select]:
+github.com/ethereum/go-ethereum/p2p/nat.Map(0x170bf00, 0xc4201ed480, 0xc4204b2ea0, 0xecd26f, 0x3, 0x765f, 0x765f, 0xed9e54, 0xc)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/nat/nat.go:114 +0x83f
+github.com/ethereum/go-ethereum/p2p.(*Server).startListening.func1(0xc4201b6a80, 0xc4204b1890)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:437 +0x8b
+created by github.com/ethereum/go-ethereum/p2p.(*Server).startListening
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:439 +0x206
+
+goroutine 62 [select]:
+github.com/ethereum/go-ethereum/p2p.(*Server).run(0xc4201b6a80, 0x170be80, 0xc4200a03c0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:501 +0x15a2
+created by github.com/ethereum/go-ethereum/p2p.(*Server).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/p2p/server.go:417 +0x6a6
+
+goroutine 63 [chan receive]:
+github.com/ethereum/go-ethereum/eth.(*ProtocolManager).txBroadcastLoop(0xc4204bc820)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:730 +0x6b
+created by github.com/ethereum/go-ethereum/eth.(*ProtocolManager).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:205 +0xbb
+
+goroutine 64 [chan receive]:
+github.com/ethereum/go-ethereum/eth.(*ProtocolManager).minedBroadcastLoop(0xc4204bc820)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:719 +0x5e
+created by github.com/ethereum/go-ethereum/eth.(*ProtocolManager).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:208 +0x14f
+
+goroutine 65 [select]:
+github.com/ethereum/go-ethereum/eth.(*ProtocolManager).syncer(0xc4204bc820)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/sync.go:143 +0x285
+created by github.com/ethereum/go-ethereum/eth.(*ProtocolManager).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:211 +0x171
+
+goroutine 66 [select]:
+github.com/ethereum/go-ethereum/eth.(*ProtocolManager).txsyncLoop(0xc4204bc820)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/sync.go:109 +0x637
+created by github.com/ethereum/go-ethereum/eth.(*ProtocolManager).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/handler.go:212 +0x193
+
+goroutine 67 [select]:
+github.com/ethereum/go-ethereum/contracts/release.(*ReleaseService).checker(0xc42011e1e0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/contracts/release/release.go:118 +0x1ae
+created by github.com/ethereum/go-ethereum/contracts/release.(*ReleaseService).Start
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/contracts/release/release.go:98 +0x3f
+
+goroutine 68 [select]:
+github.com/ethereum/go-ethereum/eth/downloader.(*PublicDownloaderAPI).eventLoop(0xc4201e4a40)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/downloader/api.go:63 +0x5d0
+created by github.com/ethereum/go-ethereum/eth/downloader.NewPublicDownloaderAPI
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/downloader/api.go:49 +0xff
+
+goroutine 69 [select]:
+github.com/ethereum/go-ethereum/eth/filters.(*EventSystem).eventLoop(0xc4201ed340)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/filters/filter_system.go:407 +0x7b4
+created by github.com/ethereum/go-ethereum/eth/filters.NewEventSystem
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/filters/filter_system.go:100 +0x10e
+
+goroutine 70 [chan receive]:
+github.com/ethereum/go-ethereum/eth/filters.(*PublicFilterAPI).timeoutLoop(0xc42011e280)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/filters/api.go:85 +0x6d
+created by github.com/ethereum/go-ethereum/eth/filters.NewPublicFilterAPI
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/eth/filters/api.go:75 +0x1b9
+
+goroutine 71 [semacquire]:
+sync.runtime_Semacquire(0xc4200ce224)
+	/usr/local/go/src/runtime/sema.go:47 +0x34
+sync.(*RWMutex).RLock(0xc4200ce218)
+	/usr/local/go/src/sync/rwmutex.go:43 +0x49
+github.com/ethereum/go-ethereum/node.(*Node).startIPC.func1(0xc4200ce000, 0x170a500, 0xc424523bc0, 0xc4245228d0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/node/node.go:340 +0x136
+created by github.com/ethereum/go-ethereum/node.(*Node).startIPC
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/node/node.go:352 +0x2e1
+
+goroutine 74 [chan receive]:
+main.startNode.func1(0xc4200ce000, 0xc420457e60)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/geth/main.go:231 +0x3aa
+created by main.startNode
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/cmd/geth/main.go:244 +0x255
+
+goroutine 75 [semacquire]:
+sync.runtime_notifyListWait(0xc424588340, 0xc400000000)
+	/usr/local/go/src/runtime/sema.go:297 +0x10b
+sync.(*Cond).Wait(0xc424588330)
+	/usr/local/go/src/sync/cond.go:57 +0x89
+io.(*pipe).read(0xc424588300, 0xc4200b4e00, 0x200, 0x200, 0x0, 0x0, 0x0)
+	/usr/local/go/src/io/pipe.go:47 +0x104
+io.(*PipeReader).Read(0xc424564c28, 0xc4200b4e00, 0x200, 0x200, 0x0, 0x0, 0x0)
+	/usr/local/go/src/io/pipe.go:130 +0x4c
+encoding/json.(*Decoder).refill(0xc4201b6000, 0x20, 0x18)
+	/usr/local/go/src/encoding/json/stream.go:152 +0x109
+encoding/json.(*Decoder).readValue(0xc4201b6000, 0x0, 0x0, 0x415ff8)
+	/usr/local/go/src/encoding/json/stream.go:128 +0x1ca
+encoding/json.(*Decoder).Decode(0xc4201b6000, 0xdb6c20, 0xc42049e7c0, 0x415ff8, 0x50)
+	/usr/local/go/src/encoding/json/stream.go:57 +0x85
+github.com/ethereum/go-ethereum/rpc.(*jsonCodec).ReadRequestHeaders(0xc4201f69b0, 0x0, 0x0, 0x0, 0xc42003a800, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/json.go:126 +0x10c
+github.com/ethereum/go-ethereum/rpc.(*Server).readRequest(0xc4204b19e0, 0x170ffc0, 0xc4201f69b0, 0x1, 0xdfe020, 0xc4245b3880, 0x170b8c0, 0xc4204ce600, 0x45bc50)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/server.go:396 +0x5f
+github.com/ethereum/go-ethereum/rpc.(*Server).serveRequest(0xc4204b19e0, 0x170ffc0, 0xc4201f69b0, 0x0, 0x3, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/server.go:180 +0x242
+github.com/ethereum/go-ethereum/rpc.(*Server).ServeCodec(0xc4204b19e0, 0x170ffc0, 0xc4201f69b0, 0x3)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/server.go:236 +0x7c
+created by github.com/ethereum/go-ethereum/rpc.DialInProc.func1
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/inproc.go:29 +0x2cb
+
+goroutine 76 [select]:
+github.com/ethereum/go-ethereum/rpc.(*Client).dispatch(0xc42020aaf0, 0x170fb80, 0xc4204b8c40)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/client.go:489 +0xf2b
+created by github.com/ethereum/go-ethereum/rpc.newClient
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/client.go:202 +0x3bf
+
+goroutine 77 [semacquire]:
+sync.runtime_notifyListWait(0xc424588400, 0xc400000000)
+	/usr/local/go/src/runtime/sema.go:297 +0x10b
+sync.(*Cond).Wait(0xc4245883f0)
+	/usr/local/go/src/sync/cond.go:57 +0x89
+io.(*pipe).read(0xc4245883c0, 0xc4200b4c00, 0x200, 0x200, 0x0, 0x0, 0x0)
+	/usr/local/go/src/io/pipe.go:47 +0x104
+io.(*PipeReader).Read(0xc424564c38, 0xc4200b4c00, 0x200, 0x200, 0x0, 0x0, 0x0)
+	/usr/local/go/src/io/pipe.go:130 +0x4c
+encoding/json.(*Decoder).refill(0xc4201b61c0, 0x20, 0x18)
+	/usr/local/go/src/encoding/json/stream.go:152 +0x109
+encoding/json.(*Decoder).readValue(0xc4201b61c0, 0x0, 0x0, 0x415ff8)
+	/usr/local/go/src/encoding/json/stream.go:128 +0x1ca
+encoding/json.(*Decoder).Decode(0xc4201b61c0, 0xdb6c20, 0xc42049e760, 0xc42046ffc8, 0xb6fb15)
+	/usr/local/go/src/encoding/json/stream.go:57 +0x85
+github.com/ethereum/go-ethereum/rpc.(*Client).read.func1(0xe04f60, 0xc42049e780, 0xc4204b8c40, 0x7f3b958f6c50, 0xc4204b8c40)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/client.go:630 +0x90
+github.com/ethereum/go-ethereum/rpc.(*Client).read(0xc42020aaf0, 0x170fb80, 0xc4204b8c40, 0x4409c2, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/client.go:643 +0x13c
+created by github.com/ethereum/go-ethereum/rpc.(*Client).dispatch
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/rpc/client.go:465 +0x71
+
+goroutine 147 [semacquire]:
+sync.runtime_SemacquireMutex(0xc4200a4344)
+	/usr/local/go/src/runtime/sema.go:62 +0x34
+sync.(*Mutex).Lock(0xc4200a4340)
+	/usr/local/go/src/sync/mutex.go:87 +0x9d
+github.com/ethereum/go-ethereum/consensus/bft.(*ConsensusManager).verifyVotes(0xc4200a4240, 0xd00297d60f77d588, 0x8e28256718abf5d4, 0x43259ae0bd34318b, 0x10b85952433783e5, 0x0, 0x0)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft_manager.go:442 +0x6c
+github.com/ethereum/go-ethereum/consensus/bft.(*BFT).verifyHeader(0xc4201f60f0, 0x170e980, 0xc42024a000, 0xc4200ced80, 0xc4200cfb00, 0x0, 0xc4200cfb00)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft.go:114 +0x1ba
+github.com/ethereum/go-ethereum/consensus/bft.(*BFT).VerifyHeaders.func1(0xc4204d2070, 0x1, 0x1, 0x170e980, 0xc42024a000, 0xc4201f60f0, 0xc42023c3c0, 0xc42023c420)
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft.go:90 +0xf5
+created by github.com/ethereum/go-ethereum/consensus/bft.(*BFT).VerifyHeaders
+	/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/build/_workspace/src/github.com/ethereum/go-ethereum/consensus/bft/bft.go:98 +0xda

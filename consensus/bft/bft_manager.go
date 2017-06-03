@@ -1,8 +1,9 @@
-package eth
+package bft
 
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"math"
@@ -112,12 +113,11 @@ type ConsensusManager struct {
 
 	processMu sync.Mutex
 	mux       *event.TypeMux
-	extraData []byte
 
 	Enable bool
 }
 
-func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string, extraData []byte) *ConsensusManager {
+func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db ethdb.Database, cc *ConsensusContract, privkeyhex string) *ConsensusManager {
 
 	privkey, _ := crypto.HexToECDSA(privkeyhex)
 	cm := &ConsensusManager{
@@ -135,7 +135,6 @@ func NewConsensusManager(manager *ProtocolManager, chain *core.BlockChain, db et
 		readyNonce:         0,
 		blockCandidates:    make(map[common.Hash]*types.BlockProposal),
 		contract:           cc,
-		extraData:          extraData,
 		mux:                cc.eventMux,
 		coinbase:           cc.coinbase,
 		Enable:             true,
@@ -325,7 +324,7 @@ func (cm *ConsensusManager) setupAlarm() {
 		delay := ar.getTimeout()
 		// if timeout is setup already, skip
 		if delay > 0 {
-			log.Debug("delay time :", delay)
+			log.Debug("delay time :", "delay", delay)
 			go cm.waitProposalAlarm(ar, delay)
 		}
 	} else {
@@ -384,7 +383,7 @@ func (cm *ConsensusManager) Process() {
 		h.process()
 		cm.getHeightMu.Unlock()
 		cm.cleanup()
-		cm.synchronizer.process()
+		// cm.synchronizer.process()
 		cm.setupAlarm()
 		// check failed nodes
 	}
@@ -392,12 +391,14 @@ func (cm *ConsensusManager) Process() {
 func (cm *ConsensusManager) commit() bool {
 	cm.processMu.Lock()
 	defer cm.processMu.Unlock()
-	log.Debug("commit, blockcandidates:", len(cm.blockCandidates))
+	log.Debug("commit, blockcandidates:", "len", len(cm.blockCandidates))
 	cm.writeMapMu.Lock()
 	defer cm.writeMapMu.Unlock()
 	// cm.getHeightMu.Lock()
 	// defer cm.getHeightMu.Unlock()
 	for _, p := range cm.blockCandidates {
+		log.Debug("111111")
+
 		if p.Block.ParentHash() != cm.Head().Hash() {
 			//DEBUG
 			log.Debug("wrong parent hash: ", p.Block.ParentHash(), cm.Head().Hash())
@@ -411,14 +412,16 @@ func (cm *ConsensusManager) commit() bool {
 		}
 		ls := cm.getHeightManager(p.GetHeight()).lastQuorumPrecommitLockSet()
 		if ls != nil {
+			log.Debug("22222222")
 			_, hash := ls.HasQuorum()
 			if p.Blockhash() == hash {
+				log.Debug("333333333")
+
 				cm.storeProposal(p)
 				cm.storeLastCommittingLockset(ls)
 				success := cm.pm.commitBlock(p.Block)
 				if success {
 					log.Debug("commited")
-					log.Debug("lockest is", ls.Height(), ls.Round())
 					return true
 				} else {
 					log.Debug("could not commit")
@@ -434,8 +437,34 @@ func (cm *ConsensusManager) commit() bool {
 
 	return false
 }
+
+func (cm *ConsensusManager) verifyVotes(hash common.Hash) error {
+	log.Debug("verify votes", "len", len(cm.blockCandidates))
+	p := cm.blockCandidates[hash]
+
+	if p.Height <= cm.Head().Header().Number.Uint64() {
+		log.Debug("past proposal")
+		return errors.New("verify votes failed, Past Proposal")
+	}
+
+	ls := cm.getHeightManager(p.GetHeight()).lastQuorumPrecommitLockSet()
+
+	if ls != nil {
+		_, hash := ls.HasQuorum()
+		if p.Blockhash() == hash {
+			cm.storeProposal(p)
+			cm.storeLastCommittingLockset(ls)
+			return nil
+		}
+		log.Debug("block hashes not the same,", p.Blockhash(), hash)
+	} else {
+		return errors.New("no Quorum precommit lockset")
+	}
+	return errors.New("verify votes failed")
+}
+
 func (cm *ConsensusManager) cleanup() {
-	log.Debug("in cleanup,current Head Number is ", cm.Head().Header().Number.Uint64())
+	log.Debug("in cleanup,current Head Number is ", "number", cm.Head().Header().Number.Uint64())
 	cm.writeMapMu.Lock()
 	for hash, p := range cm.blockCandidates {
 		if cm.Head().Header().Number.Uint64() >= p.GetHeight() {
@@ -963,7 +992,7 @@ func (rm *RoundManager) getTimeout() float64 {
 	roundTimeoutFactor := rm.cm.roundTimeoutFactor
 	delay := float64(roundTimeout) * math.Pow(roundTimeoutFactor, float64(rm.round))
 	rm.timeoutTime = float64(now) + delay
-	log.Debug("RM gettimout", rm.height, rm.round)
+	log.Debug("RM gettimout", "height", rm.height, "round", rm.round)
 	return delay
 }
 func (rm *RoundManager) setTimeoutPrecommit() {
@@ -975,11 +1004,11 @@ func (rm *RoundManager) setTimeoutPrecommit() {
 	timeoutFactor := 1.5
 	delay := float64(timeout) * math.Pow(timeoutFactor, float64(rm.round))
 	rm.timeoutPrecommit = float64(now) + delay
-	log.Debug("RM get timeoutPrecommit", rm.height, rm.round)
+	log.Debug("RM get timeoutPrecommit", "height", rm.height, "round", rm.round)
 }
 
 func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool) bool {
-	log.Debug("In RM %d addvote", rm.round)
+	log.Debug("In RM addvote", "round", rm.round)
 	if !rm.lockset.Contain(vote) {
 		err := rm.lockset.Add(vote, force_replace)
 		if err != nil {
@@ -1029,7 +1058,7 @@ func (rm *RoundManager) process() {
 	rm.roundProcessMu.Lock()
 	defer rm.roundProcessMu.Unlock()
 	////DEBUG
-	log.Debug("In RM Process", rm.height, rm.round)
+	log.Debug("In RM Process", "height", rm.height, "round", rm.round)
 
 	if rm.hm.Round() != rm.round {
 		return
@@ -1079,10 +1108,10 @@ func (rm *RoundManager) propose() types.Proposal {
 	}
 	proposer := rm.cm.contract.proposer(rm.height, rm.round)
 	if proposer != rm.cm.coinbase {
-		log.Debug("I am not proposer in", rm.height, rm.round)
+		log.Debug("I am not proposer in", "height", rm.height, "round", rm.round)
 		return nil
 	}
-	log.Debug("I am a proposer in ", rm.height, rm.round)
+	log.Debug("I am a proposer in ", "height", rm.height, "round", rm.round)
 	if rm.proposal != nil {
 		addr, err := rm.proposal.From()
 		if err != nil {
@@ -1174,7 +1203,7 @@ func (rm *RoundManager) vote() *types.Vote {
 		return nil
 	}
 	// DEBUG
-	log.Debug("in vote in RM", rm.height, rm.round)
+	// log.Debug("in vote in RM", "height", rm.height, "round", rm.round)
 	lastPrecommitVoteLock := rm.hm.LastPrecommitVoteLock()
 
 	var vote *types.Vote
@@ -1246,7 +1275,7 @@ func (rm *RoundManager) vote() *types.Vote {
 	}
 	rm.cm.Sign(vote)
 	rm.voteLock = vote
-	log.Debug("vote success in H:", rm.height, vote)
+	log.Debug("vote success in", "height", rm.height)
 	rm.addVote(vote, false)
 	rm.setTimeoutPrecommit()
 	return vote
@@ -1278,7 +1307,7 @@ func (rm *RoundManager) votePrecommit() *types.PrecommitVote {
 		if vote.VoteType == 1 {
 			rm.precommitVoteLock = vote
 		}
-		log.Debug("precommit vote success in H:", rm.height, vote)
+		log.Debug("precommit vote success in H:", "height", rm.height)
 		rm.addPrecommitVote(vote, false)
 	}
 	return vote
@@ -1333,7 +1362,7 @@ func (cm *ConsensusManager) newBlock() *types.Block {
 		GasLimit:   new(big.Int).SetInt64(50000000),
 		GasUsed:    new(big.Int),
 		Coinbase:   cm.coinbase,
-		Extra:      cm.extraData,
+		Extra:      []byte(""),
 		Time:       big.NewInt(tstamp),
 	}
 	state, err := cm.chain.StateAt(parent.Root())
