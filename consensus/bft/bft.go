@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -19,13 +20,15 @@ import (
 )
 
 var (
-	errZeroBlockTime = errors.New("timestamp equals parent's")
+	errZeroBlockTime     = errors.New("timestamp equals parent's")
+	errInvalidDifficulty = errors.New("invalid difficulty")
+
+	fixDifficulty = big.NewInt(1)
 )
 
 type BFT struct {
 	config     *params.ChainConfig // Consensus engine configuration parameters
 	db         ethdb.Database      // Database to store and retrieve snapshot checkpoints
-	eventMux   *event.TypeMux
 	blockchain *core.BlockChain
 
 	pm *ProtocolManager
@@ -45,6 +48,10 @@ func New(config *params.ChainConfig, db ethdb.Database) *BFT {
 
 func (b *BFT) SetupProtocolManager(chainConfig *params.ChainConfig, networkId uint64, mux *event.TypeMux, txpool *core.TxPool, blockchain *core.BlockChain, chainDb ethdb.Database, bftDb ethdb.Database, validators []common.Address, privateKeyHex string, etherbase common.Address, allowEmpty bool) error {
 	var err error
+	privkey, _ := crypto.HexToECDSA(privateKeyHex)
+	// addr := crypto.ToECDSAPub(crypto.FromECDSA(privkey))
+	b.signer = crypto.PubkeyToAddress(privkey.PublicKey)
+	b.blockchain = blockchain
 	if b.pm, err = NewProtocolManager(chainConfig, networkId, mux, txpool, blockchain, chainDb, bftDb, validators, privateKeyHex, etherbase, allowEmpty); err != nil {
 		return err
 	}
@@ -53,12 +60,6 @@ func (b *BFT) SetupProtocolManager(chainConfig *params.ChainConfig, networkId ui
 
 func (b *BFT) Start() {
 	b.pm.Start()
-}
-
-func (b *BFT) RunPeer(p *peer) {
-	if err := b.pm.handle(p); err != nil {
-		log.Debug("handle error: ", err)
-	}
 }
 
 func (b *BFT) Author(header *types.Header) (common.Address, error) {
@@ -75,8 +76,7 @@ func (b *BFT) VerifyHeader(chain consensus.ChainReader, header *types.Header, se
 	if parent == nil {
 		return consensus.ErrUnknownAncestor
 	}
-	// Sanity checks passed, do a proper verification
-	return b.verifyHeader(chain, header, parent)
+	return b.verifyHeader(chain, header)
 }
 
 func (b *BFT) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
@@ -85,9 +85,7 @@ func (b *BFT) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header
 
 	go func() {
 		for _, header := range headers {
-			number := header.Number.Uint64()
-			parent := chain.GetHeader(header.ParentHash, number-1)
-			err := b.verifyHeader(chain, header, parent)
+			err := b.verifyHeader(chain, header)
 			select {
 			case <-abort:
 				return
@@ -98,23 +96,18 @@ func (b *BFT) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header
 	return abort, results
 }
 
-func (b *BFT) verifyHeader(chain consensus.ChainReader, header, parent *types.Header) error {
+func (b *BFT) verifyHeader(chain consensus.ChainReader, header *types.Header) error {
 	if header.Time.Cmp(big.NewInt(time.Now().Unix())) > 0 {
 		return consensus.ErrFutureBlock
 	}
-	if header.Time.Cmp(parent.Time) <= 0 {
-		return errZeroBlockTime
-	}
-	// Verify that the block number is parent's +1
-	if diff := new(big.Int).Sub(header.Number, parent.Number); diff.Cmp(big.NewInt(1)) != 0 {
-		return consensus.ErrInvalidNumber
-	}
+	number := header.Number.Uint64()
 
-	if err := b.pm.consensusManager.verifyVotes(header.Hash()); err != nil {
-		return err
+	if number > 0 {
+		if header.Difficulty == nil || header.Difficulty.Cmp(fixDifficulty) != 0 {
+			return errInvalidDifficulty
+		}
 	}
-
-	return nil
+	return b.verifySeal(chain, header)
 }
 
 func (b *BFT) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
@@ -125,26 +118,61 @@ func (b *BFT) VerifyUncles(chain consensus.ChainReader, block *types.Block) erro
 }
 
 func (b *BFT) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
+	return b.verifySeal(chain, header)
+}
+
+func (b *BFT) verifySeal(chain consensus.ChainReader, header *types.Header) error {
+	if err := b.pm.consensusManager.verifyVotes(header); err != nil {
+		log.Error("verifySeal failed", "err", err)
+		return err
+	}
+
 	return nil
 }
 
 func (b *BFT) Prepare(chain consensus.ChainReader, header *types.Header) error {
+	log.Info("Preparing")
+
+	header.Difficulty = fixDifficulty
+	header.Coinbase = b.signer
 	return nil
 }
 
 func (b *BFT) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
-	// No block rewards in PoA, so the state remains as is and uncles are dropped
-	// Accumulate any block and uncle rewards and commit the final state root
-	AccumulateRewards(state, header, uncles)
-	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	log.Info("Finalizing")
 
-	// Assemble and return the final block for sealing
+	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+	header.UncleHash = types.CalcUncleHash(nil)
+
 	return types.NewBlock(header, txs, nil, receipts), nil
 }
 
 func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
-	log.Info("Sealing", "block", block)
-	return block, nil
+	log.Info("Sealing")
+	// start voting mechanism
+	b.pm.consensusManager.currentBlock = block
+	found := make(chan *types.Block)
+	b.pm.consensusManager.blockCh = found
+	go b.pm.consensusManager.Process(block.Number().Uint64())
+	var result *types.Block
+
+	select {
+	case <-stop:
+		b.pm.consensusManager.currentBlock = nil
+		close(found)
+		return nil, nil
+	case result = <-found:
+		log.Info("have a consensus on the block")
+	}
+	b.pm.consensusManager.currentBlock = nil
+	b.pm.consensusManager.blockCh = nil
+	close(found)
+	log.Info("End Seal")
+
+	if result.Header().Coinbase != b.signer {
+		return nil, nil
+	}
+	return result, nil
 }
 
 func (b *BFT) APIs(chain consensus.ChainReader) []rpc.API {
@@ -158,20 +186,4 @@ func (b *BFT) APIs(chain consensus.ChainReader) []rpc.API {
 
 func (b *BFT) Protocols() []p2p.Protocol {
 	return b.pm.SubProtocols
-}
-
-func AccumulateRewards(state *state.StateDB, header *types.Header, uncles []*types.Header) {
-	reward := new(big.Int).Set(blockReward)
-	r := new(big.Int)
-	for _, uncle := range uncles {
-		r.Add(uncle.Number, big8)
-		r.Sub(r, header.Number)
-		r.Mul(r, blockReward)
-		r.Div(r, big8)
-		state.AddBalance(uncle.Coinbase, r)
-
-		r.Div(blockReward, big32)
-		reward.Add(reward, r)
-	}
-	state.AddBalance(header.Coinbase, reward)
 }

@@ -17,13 +17,14 @@ const (
 // eth protocol message codes
 const (
 	// Protocol messages belonging to bft
-	ReadyMsg             = 0x08
-	GetBlockProposalsMsg = 0x09
-	BlockProposalsMsg    = 0x0a
-	NewBlockProposalMsg  = 0x0b
-	VotingInstructionMsg = 0x0c
-	VoteMsg              = 0x0d
-	PrecommitVoteMsg     = 0x10
+	StatusMsg               = 0x01
+	ReadyMsg                = 0x08
+	GetPrecommitLocksetsMsg = 0x09
+	PrecommitLocksetMsg     = 0x0a
+	NewBlockProposalMsg     = 0x0b
+	VotingInstructionMsg    = 0x0c
+	VoteMsg                 = 0x11
+	PrecommitVoteMsg        = 0x12
 )
 
 type HDCStatusData struct {
@@ -39,7 +40,7 @@ type HDCStatusData struct {
 // in a single message - you might have to re-request them.
 
 type blockProposalsData struct {
-	BlockProposals []*types.BlockProposal
+	PrecommitLockset []*types.PrecommitLockSet
 }
 type newBlockProposals struct {
 	BlockProposal *types.BlockProposal

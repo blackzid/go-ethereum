@@ -1,16 +1,19 @@
 ../build/bin/geth \
 \
---networkid 52234 \
+--networkid 2234 \
 --port 30305 \
 --rpcport 8547 \
 --datadir "bdata/node3" \
 --nodiscover \
+--mine \
+--minerthreads 1 \
 \
 --rpc \
 --rpccorsdomain "*" \
 --rpcapi "eth,net,web3,debug" \
-console \
-#--bft \
-#--allow-empty \
-#--num-validators 4 \
-#--node-num 2
+\
+--verbosity 5 \
+--bft \
+--allow-empty \
+--num-validators 4 \
+--node-num 2

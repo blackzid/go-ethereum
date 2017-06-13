@@ -175,7 +175,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 
 	if config.BFT {
 		if bft, ok := eth.engine.(*bft.BFT); ok {
-			bftDb, err := CreateDB(ctx, config, "bftData")
+			bftDb, err := ctx.OpenDatabase("bftData", config.DatabaseCache, config.DatabaseHandles)
 			if err != nil {
 				return nil, err
 			}
@@ -242,8 +242,10 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *Config, chainConfig
 		log.Warn("Ethash used in shared mode")
 		return ethash.NewShared()
 	default:
+		log.Info("config bft is ", "bft", config.BFT)
 		if config.BFT {
 			engine := bft.New(chainConfig, db)
+			config.SyncMode = downloader.FullSync
 			return engine
 		} else {
 			engine := ethash.New(ctx.ResolvePath(config.EthashCacheDir), config.EthashCachesInMem, config.EthashCachesOnDisk,

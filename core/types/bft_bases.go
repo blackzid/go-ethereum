@@ -1057,13 +1057,14 @@ func NewBlockProposal(height uint64, round uint64, block *Block, signingLockset 
 	}
 	return bp, nil
 }
+
 func (bp *BlockProposal) GetHeight() uint64 { return bp.Height }
 func (bp *BlockProposal) GetRound() uint64  { return bp.Round }
-
 func (bp *BlockProposal) From() (common.Address, error) {
 	if bp.sender != nil {
 		if *bp.sender != bp.Block.Coinbase() {
 			return common.Address{}, errors.New("signature does not match")
+
 		}
 		return *bp.sender, nil
 	} else {
@@ -1357,8 +1358,4 @@ func (vi *VotingInstruction) SignECDSA(prv *ecdsa.PrivateKey, hash common.Hash) 
 		return nil, err
 	}
 	return vi.WithSignature(sig)
-}
-
-type RequestProposalNumber struct {
-	Number uint64
 }

@@ -1,625 +1,492 @@
-DEBUG[06-03|19:06:49] Reloaded keystore contents               accounts=1
-TRACE[06-03|19:06:49] Started watching keystore folder         path=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/keystore
-DEBUG[06-03|19:06:49] Reloaded keystore contents               accounts=1
-INFO [06-03|19:06:49] Starting peer-to-peer node               instance=Geth/v1.6.6-unstable-8fe68631/linux-amd64/go1.8
-INFO [06-03|19:06:49] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/chaindata cache=128 handles=1024
-WARN [06-03|19:06:50] Upgrading chain database to use sequential keys 
-INFO [06-03|19:06:50] Initialised chain configuration          config="{ChainID: 2234 Homestead: 1 DAO: <nil> DAOSupport: false EIP150: 2 EIP155: 3 EIP158: 3 Metropolis: <nil> Engine: ethash}"
-INFO [06-03|19:06:50] Database conversion successful 
-WARN [06-03|19:06:50] Upgrading db log bloom bins 
-INFO [06-03|19:06:50] Bloom-bin upgrade completed              elapsed=88.416µs
-INFO [06-03|19:06:50] Initialising Ethereum protocol           versions="[63 62]" network=2234
-INFO [06-03|19:06:50] Loaded most recent local header          number=0 hash=358ace…0573b0 td=1048576
-INFO [06-03|19:06:50] Loaded most recent local full block      number=0 hash=358ace…0573b0 td=1048576
-INFO [06-03|19:06:50] Loaded most recent local fast block      number=0 hash=358ace…0573b0 td=1048576
-INFO [06-03|19:06:50] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/bftData   cache=128 handles=1024
-DEBUG[06-03|19:06:50] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
-DEBUG[06-03|19:06:50] initialize locksets 
-DEBUG[06-03|19:06:50] CM Sign 
-DEBUG[06-03|19:06:50] addPrecommitVote to                      LOG15_ERROR=
-DEBUG[06-03|19:06:50] add inintial lockset 
-DEBUG[06-03|19:06:50] ---------------process------------------ 
-DEBUG[06-03|19:06:50] commit, blockcandidates:                 len=0
-DEBUG[06-03|19:06:50] no blockcandidate to commit 
-DEBUG[06-03|19:06:50] In RM Process                            height=1 round=0
-DEBUG[06-03|19:06:50] I am a proposer in                       height=1 round=0
-DEBUG[06-03|19:06:50] make proposal 
-DEBUG[06-03|19:06:50] CM Sign 
-DEBUG[06-03|19:06:50] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR= LOG15_ERROR=
-DEBUG[06-03|19:06:50] CM Sign 
-DEBUG[06-03|19:06:50] There are                                peer count=0
-DEBUG[06-03|19:06:50] -----------------consensusManager Ready------------------------- 
-DEBUG[06-03|19:06:50] Create block blockhash :                 LOG15_ERROR= LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:50] broadcast Blockproposal 
-DEBUG[06-03|19:06:50] voting on new proporsal 
-DEBUG[06-03|19:06:50] CM Sign 
-DEBUG[06-03|19:06:50] vote success in                          height=1
-DEBUG[06-03|19:06:50] In RM addvote                            round=0
-DEBUG[06-03|19:06:50] RM get timeoutPrecommit                  height=1 round=0
-DEBUG[06-03|19:06:50] broadcast Vote 
-DEBUG[06-03|19:06:50] precommit voteing 
-DEBUG[06-03|19:06:50] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:06:50] CM Sign 
-DEBUG[06-03|19:06:50] precommit vote success in H:             height=1
-DEBUG[06-03|19:06:50] broadcast Precommit Vote 
-DEBUG[06-03|19:06:50] in cleanup,current Head Number is        number=0
-DEBUG[06-03|19:06:50] RM gettimout                             height=1 round=1
-DEBUG[06-03|19:06:50] delay time :                             delay=4.500
-INFO [06-03|19:06:50] Starting P2P networking 
-INFO [06-03|19:06:50] RLPx listener up                         self="enode://d67104e65b61fca1fc73a74175667c11f16c037fa8e414499189df9d68706aca6e1a1b4ea02b702f101eb609c4cd2964d4790047a06458ba8a1a19040ab1fe0d@[::]:30303?discport=0"
-DEBUG[06-03|19:06:50] InProc registered *node.PrivateAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] InProc registered *node.PublicAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] InProc registered *debug.HandlerT under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *node.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *node.PublicWeb3API under 'web3' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicEthereumAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicBlockChainAPI under 'eth' 
-DEBUG[06-03|19:06:50] Executing EVM call finished              runtime=498.066µs
-DEBUG[06-03|19:06:50] Release oracle not found                 contract=0xfa7b9770ca4cb04296cac84f37736d4041251cdf
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicTransactionPoolAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicTxPoolAPI under 'txpool' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicAccountAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PrivateAccountAPI under 'personal' 
-DEBUG[06-03|19:06:50] InProc registered *bft.API under 'bft' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PublicEthereumAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PublicMinerAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *downloader.PublicDownloaderAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PrivateMinerAPI under 'miner' 
-DEBUG[06-03|19:06:50] InProc registered *filters.PublicFilterAPI under 'eth' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PrivateAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *eth.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] InProc registered *ethapi.PublicNetAPI under 'net' 
-DEBUG[06-03|19:06:50] IPC registered *node.PrivateAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] IPC registered *node.PublicAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] IPC registered *debug.HandlerT under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *node.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *node.PublicWeb3API under 'web3' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicEthereumAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicBlockChainAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicTransactionPoolAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicTxPoolAPI under 'txpool' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicAccountAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PrivateAccountAPI under 'personal' 
-DEBUG[06-03|19:06:50] IPC registered *bft.API under 'bft' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PublicEthereumAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PublicMinerAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *downloader.PublicDownloaderAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PrivateMinerAPI under 'miner' 
-DEBUG[06-03|19:06:50] IPC registered *filters.PublicFilterAPI under 'eth' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PrivateAdminAPI under 'admin' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *eth.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] IPC registered *ethapi.PublicNetAPI under 'net' 
-DEBUG[06-03|19:06:50] HTTP registered *debug.HandlerT under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *node.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicEthereumAPI under 'eth' 
-INFO [06-03|19:06:50] IPC endpoint opened: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicBlockChainAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicTransactionPoolAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicAccountAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *eth.PublicEthereumAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *eth.PublicMinerAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *downloader.PublicDownloaderAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *filters.PublicFilterAPI under 'eth' 
-DEBUG[06-03|19:06:50] HTTP registered *eth.PublicDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *eth.PrivateDebugAPI under 'debug' 
-DEBUG[06-03|19:06:50] HTTP registered *ethapi.PublicNetAPI under 'net' 
-INFO [06-03|19:06:50] HTTP endpoint opened: http://127.0.0.1:8545 
-DEBUG[06-03|19:06:52] Couldn't add port mapping                proto=tcp extport=30303 intport=30303 interface="UPnP or NAT-PMP" err="no UPnP or NAT-PMP router discovered"
-DEBUG[06-03|19:06:54] delay time up 
-DEBUG[06-03|19:06:54] ---------------process------------------ 
-DEBUG[06-03|19:06:54] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:06:54] verify votes                             len=1
-DEBUG[06-03|19:06:54] Trie cache stats after commit            misses=27 unloads=0
-INFO [06-03|19:06:54] config bft flag:                         BFT=false
-DEBUG[06-03|19:06:54] Inserted new block                       number=1 hash=913211…f88061 uncles=0 txs=0 gas=0 elapsed=416.623µs
-INFO [06-03|19:06:54] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=473.491µs mgasps=0.000 number=1 hash=913211…f88061
-INFO [06-03|19:06:54] commited block, new Head Number is       number=1
-DEBUG[06-03|19:06:54] commited 
-DEBUG[06-03|19:06:54] In RM Process                            height=2 round=0
-DEBUG[06-03|19:06:54] I am a proposer in                       height=2 round=0
-DEBUG[06-03|19:06:54] make proposal 
-DEBUG[06-03|19:06:54] ---------------process------------------ 
-DEBUG[06-03|19:06:54] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:54] broadcast Blockproposal 
-DEBUG[06-03|19:06:54] voting on new proporsal 
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] vote success in                          height=2
-DEBUG[06-03|19:06:54] In RM addvote                            round=0
-DEBUG[06-03|19:06:54] RM get timeoutPrecommit                  height=2 round=0
-DEBUG[06-03|19:06:54] broadcast Vote 
-DEBUG[06-03|19:06:54] precommit voteing 
-DEBUG[06-03|19:06:54] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] precommit vote success in H:             height=2
-DEBUG[06-03|19:06:54] broadcast Precommit Vote 
-DEBUG[06-03|19:06:54] in cleanup,current Head Number is        number=1
-DEBUG[06-03|19:06:54] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:54] RM gettimout                             height=2 round=1
-DEBUG[06-03|19:06:54] delay time :                             delay=4.500
-DEBUG[06-03|19:06:54] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:06:54] verify votes                             len=1
-DEBUG[06-03|19:06:54] Trie cache stats after commit            misses=29 unloads=0
-INFO [06-03|19:06:54] config bft flag:                         BFT=false
-DEBUG[06-03|19:06:54] Inserted new block                       number=2 hash=a2b195…818afb uncles=0 txs=0 gas=0 elapsed=321.567µs
-INFO [06-03|19:06:54] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=378.512µs mgasps=0.000 number=2 hash=a2b195…818afb
-INFO [06-03|19:06:54] commited block, new Head Number is       number=2
-DEBUG[06-03|19:06:54] commited 
-DEBUG[06-03|19:06:54] In RM Process                            height=3 round=0
-DEBUG[06-03|19:06:54] I am a proposer in                       height=3 round=0
-DEBUG[06-03|19:06:54] make proposal 
-DEBUG[06-03|19:06:54] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] ---------------process------------------ 
-DEBUG[06-03|19:06:54] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:54] broadcast Blockproposal 
-DEBUG[06-03|19:06:54] voting on new proporsal 
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] vote success in                          height=3
-DEBUG[06-03|19:06:54] In RM addvote                            round=0
-DEBUG[06-03|19:06:54] RM get timeoutPrecommit                  height=3 round=0
-DEBUG[06-03|19:06:54] broadcast Vote 
-DEBUG[06-03|19:06:54] precommit voteing 
-DEBUG[06-03|19:06:54] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:06:54] CM Sign 
-DEBUG[06-03|19:06:54] precommit vote success in H:             height=3
-DEBUG[06-03|19:06:54] broadcast Precommit Vote 
-DEBUG[06-03|19:06:54] in cleanup,current Head Number is        number=2
-DEBUG[06-03|19:06:54] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:54] RM gettimout                             height=3 round=1
-DEBUG[06-03|19:06:54] delay time :                             delay=4.500
-DEBUG[06-03|19:06:54] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:06:54] waiting                                  old=2 now=2
-DEBUG[06-03|19:06:54] waiting                                  old=2 now=2
-DEBUG[06-03|19:06:54] waiting                                  old=2 now=2
-DEBUG[06-03|19:06:55] verify votes                             len=1
-DEBUG[06-03|19:06:55] Trie cache stats after commit            misses=31 unloads=0
-INFO [06-03|19:06:55] config bft flag:                         BFT=false
-DEBUG[06-03|19:06:55] Inserted new block                       number=3 hash=0c522d…6b7fe4 uncles=0 txs=0 gas=0 elapsed=719.184µs
-INFO [06-03|19:06:55] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=837.326µs mgasps=0.000 number=3 hash=0c522d…6b7fe4
-INFO [06-03|19:06:55] commited block, new Head Number is       number=3
-DEBUG[06-03|19:06:55] commited 
-DEBUG[06-03|19:06:55] In RM Process                            height=4 round=0
-DEBUG[06-03|19:06:55] I am a proposer in                       height=4 round=0
-DEBUG[06-03|19:06:55] make proposal 
-DEBUG[06-03|19:06:55] ---------------process------------------ 
-DEBUG[06-03|19:06:55] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:06:55] CM Sign 
-DEBUG[06-03|19:06:55] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:55] broadcast Blockproposal 
-DEBUG[06-03|19:06:55] voting on new proporsal 
-DEBUG[06-03|19:06:55] CM Sign 
-DEBUG[06-03|19:06:55] vote success in                          height=4
-DEBUG[06-03|19:06:55] In RM addvote                            round=0
-DEBUG[06-03|19:06:55] RM get timeoutPrecommit                  height=4 round=0
-DEBUG[06-03|19:06:55] broadcast Vote 
-DEBUG[06-03|19:06:55] precommit voteing 
-DEBUG[06-03|19:06:55] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:06:55] CM Sign 
-DEBUG[06-03|19:06:55] precommit vote success in H:             height=4
-DEBUG[06-03|19:06:55] broadcast Precommit Vote 
-DEBUG[06-03|19:06:55] in cleanup,current Head Number is        number=3
-DEBUG[06-03|19:06:55] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:06:55] RM gettimout                             height=4 round=1
-DEBUG[06-03|19:06:55] delay time :                             delay=4.500
-DEBUG[06-03|19:06:55] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:06:55] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:55] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:55] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:55] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:55] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:56] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:56] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:56] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:56] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:56] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:57] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:57] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:57] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:57] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:57] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:58] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:58] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:58] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:58] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:58] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:59] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:59] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:59] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:59] waiting                                  old=3 now=3
-DEBUG[06-03|19:06:59] waiting                                  old=3 now=3
-DEBUG[06-03|19:07:00] verify votes                             len=1
-DEBUG[06-03|19:07:00] Trie cache stats after commit            misses=33 unloads=0
-INFO [06-03|19:07:00] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:00] Inserted new block                       number=4 hash=08d153…e13a26 uncles=0 txs=0 gas=0 elapsed=771.819µs
-INFO [06-03|19:07:00] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=888.947µs mgasps=0.000 number=4 hash=08d153…e13a26
-INFO [06-03|19:07:00] commited block, new Head Number is       number=4
-DEBUG[06-03|19:07:00] commited 
-DEBUG[06-03|19:07:00] In RM Process                            height=5 round=0
-DEBUG[06-03|19:07:00] I am a proposer in                       height=5 round=0
-DEBUG[06-03|19:07:00] make proposal 
-DEBUG[06-03|19:07:00] ---------------process------------------ 
-DEBUG[06-03|19:07:00] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:00] broadcast Blockproposal 
-DEBUG[06-03|19:07:00] voting on new proporsal 
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] vote success in                          height=5
-DEBUG[06-03|19:07:00] In RM addvote                            round=0
-DEBUG[06-03|19:07:00] RM get timeoutPrecommit                  height=5 round=0
-DEBUG[06-03|19:07:00] broadcast Vote 
-DEBUG[06-03|19:07:00] precommit voteing 
-DEBUG[06-03|19:07:00] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] precommit vote success in H:             height=5
-DEBUG[06-03|19:07:00] broadcast Precommit Vote 
-DEBUG[06-03|19:07:00] in cleanup,current Head Number is        number=4
-DEBUG[06-03|19:07:00] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:00] RM gettimout                             height=5 round=1
-DEBUG[06-03|19:07:00] delay time :                             delay=4.500
-DEBUG[06-03|19:07:00] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:00] verify votes                             len=1
-DEBUG[06-03|19:07:00] Trie cache stats after commit            misses=35 unloads=0
-INFO [06-03|19:07:00] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:00] Inserted new block                       number=5 hash=3f6246…fdea51 uncles=0 txs=0 gas=0 elapsed=348.381µs
-INFO [06-03|19:07:00] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=418.323µs mgasps=0.000 number=5 hash=3f6246…fdea51
-INFO [06-03|19:07:00] commited block, new Head Number is       number=5
-DEBUG[06-03|19:07:00] commited 
-DEBUG[06-03|19:07:00] In RM Process                            height=6 round=0
-DEBUG[06-03|19:07:00] I am a proposer in                       height=6 round=0
-DEBUG[06-03|19:07:00] make proposal 
-DEBUG[06-03|19:07:00] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:00] ---------------process------------------ 
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:00] broadcast Blockproposal 
-DEBUG[06-03|19:07:00] voting on new proporsal 
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] vote success in                          height=6
-DEBUG[06-03|19:07:00] In RM addvote                            round=0
-DEBUG[06-03|19:07:00] RM get timeoutPrecommit                  height=6 round=0
-DEBUG[06-03|19:07:00] broadcast Vote 
-DEBUG[06-03|19:07:00] precommit voteing 
-DEBUG[06-03|19:07:00] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:00] CM Sign 
-DEBUG[06-03|19:07:00] precommit vote success in H:             height=6
-DEBUG[06-03|19:07:00] broadcast Precommit Vote 
-DEBUG[06-03|19:07:00] in cleanup,current Head Number is        number=5
-DEBUG[06-03|19:07:00] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:00] RM gettimout                             height=6 round=1
-DEBUG[06-03|19:07:00] delay time :                             delay=4.500
-DEBUG[06-03|19:07:00] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:00] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:00] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:00] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:00] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:00] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:01] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:01] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:01] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:01] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:01] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:02] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:02] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:02] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:02] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:02] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:03] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:03] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:03] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:03] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:03] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:04] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:04] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:04] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:04] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:04] waiting                                  old=5 now=5
-DEBUG[06-03|19:07:05] verify votes                             len=1
-DEBUG[06-03|19:07:05] Trie cache stats after commit            misses=37 unloads=0
-INFO [06-03|19:07:05] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:05] Inserted new block                       number=6 hash=9b5d43…dfb1a1 uncles=0 txs=0 gas=0 elapsed=450.744µs
-INFO [06-03|19:07:05] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=518.672µs mgasps=0.000 number=6 hash=9b5d43…dfb1a1
-INFO [06-03|19:07:05] commited block, new Head Number is       number=6
-DEBUG[06-03|19:07:05] commited 
-DEBUG[06-03|19:07:05] In RM Process                            height=7 round=0
-DEBUG[06-03|19:07:05] I am a proposer in                       height=7 round=0
-DEBUG[06-03|19:07:05] make proposal 
-DEBUG[06-03|19:07:05] ---------------process------------------ 
-DEBUG[06-03|19:07:05] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:05] broadcast Blockproposal 
-DEBUG[06-03|19:07:05] voting on new proporsal 
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] vote success in                          height=7
-DEBUG[06-03|19:07:05] In RM addvote                            round=0
-DEBUG[06-03|19:07:05] RM get timeoutPrecommit                  height=7 round=0
-DEBUG[06-03|19:07:05] broadcast Vote 
-DEBUG[06-03|19:07:05] precommit voteing 
-DEBUG[06-03|19:07:05] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] precommit vote success in H:             height=7
-DEBUG[06-03|19:07:05] broadcast Precommit Vote 
-DEBUG[06-03|19:07:05] in cleanup,current Head Number is        number=6
-DEBUG[06-03|19:07:05] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:05] RM gettimout                             height=7 round=1
-DEBUG[06-03|19:07:05] delay time :                             delay=4.500
-DEBUG[06-03|19:07:05] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:05] verify votes                             len=1
-DEBUG[06-03|19:07:05] Trie cache stats after commit            misses=39 unloads=0
-INFO [06-03|19:07:05] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:05] Inserted new block                       number=7 hash=93120f…f29967 uncles=0 txs=0 gas=0 elapsed=414.15µs
-INFO [06-03|19:07:05] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=486.731µs mgasps=0.000 number=7 hash=93120f…f29967
-INFO [06-03|19:07:05] commited block, new Head Number is       number=7
-DEBUG[06-03|19:07:05] commited 
-DEBUG[06-03|19:07:05] In RM Process                            height=8 round=0
-DEBUG[06-03|19:07:05] I am a proposer in                       height=8 round=0
-DEBUG[06-03|19:07:05] make proposal 
-DEBUG[06-03|19:07:05] ---------------process------------------ 
-DEBUG[06-03|19:07:05] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:05] broadcast Blockproposal 
-DEBUG[06-03|19:07:05] voting on new proporsal 
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] vote success in                          height=8
-DEBUG[06-03|19:07:05] In RM addvote                            round=0
-DEBUG[06-03|19:07:05] RM get timeoutPrecommit                  height=8 round=0
-DEBUG[06-03|19:07:05] broadcast Vote 
-DEBUG[06-03|19:07:05] precommit voteing 
-DEBUG[06-03|19:07:05] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:05] CM Sign 
-DEBUG[06-03|19:07:05] precommit vote success in H:             height=8
-DEBUG[06-03|19:07:05] broadcast Precommit Vote 
-DEBUG[06-03|19:07:05] in cleanup,current Head Number is        number=7
-DEBUG[06-03|19:07:05] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:05] RM gettimout                             height=8 round=1
-DEBUG[06-03|19:07:05] delay time :                             delay=4.500
-DEBUG[06-03|19:07:05] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:05] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:05] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:05] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:05] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:05] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:06] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:06] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:06] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:06] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:06] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:07] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:07] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:07] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:07] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:08] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:08] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:08] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:08] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:08] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:09] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:09] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:09] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:09] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:09] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:10] waiting                                  old=7 now=7
-DEBUG[06-03|19:07:10] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
-DEBUG[06-03|19:07:10] verify votes                             len=1
-DEBUG[06-03|19:07:10] Trie cache stats after commit            misses=41 unloads=0
-INFO [06-03|19:07:10] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:10] Inserted new block                       number=8 hash=41e9d9…f27c1d uncles=0 txs=0 gas=0 elapsed=414.463µs
-INFO [06-03|19:07:10] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=482.909µs mgasps=0.000 number=8 hash=41e9d9…f27c1d
-INFO [06-03|19:07:10] commited block, new Head Number is       number=8
-DEBUG[06-03|19:07:10] commited 
-DEBUG[06-03|19:07:10] In RM Process                            height=9 round=0
-DEBUG[06-03|19:07:10] I am a proposer in                       height=9 round=0
-DEBUG[06-03|19:07:10] make proposal 
-DEBUG[06-03|19:07:10] ---------------process------------------ 
-DEBUG[06-03|19:07:10] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:10] broadcast Blockproposal 
-DEBUG[06-03|19:07:10] voting on new proporsal 
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] vote success in                          height=9
-DEBUG[06-03|19:07:10] In RM addvote                            round=0
-DEBUG[06-03|19:07:10] RM get timeoutPrecommit                  height=9 round=0
-DEBUG[06-03|19:07:10] broadcast Vote 
-DEBUG[06-03|19:07:10] precommit voteing 
-DEBUG[06-03|19:07:10] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] precommit vote success in H:             height=9
-DEBUG[06-03|19:07:10] broadcast Precommit Vote 
-DEBUG[06-03|19:07:10] in cleanup,current Head Number is        number=8
-DEBUG[06-03|19:07:10] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:10] RM gettimout                             height=9 round=1
-DEBUG[06-03|19:07:10] delay time :                             delay=4.500
-DEBUG[06-03|19:07:10] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:10] verify votes                             len=1
-DEBUG[06-03|19:07:10] Trie cache stats after commit            misses=43 unloads=0
-INFO [06-03|19:07:10] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:10] Inserted new block                       number=9 hash=07771e…5017d6 uncles=0 txs=0 gas=0 elapsed=418.342µs
-INFO [06-03|19:07:10] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=487.06µs  mgasps=0.000 number=9 hash=07771e…5017d6
-INFO [06-03|19:07:10] commited block, new Head Number is       number=9
-DEBUG[06-03|19:07:10] commited 
-DEBUG[06-03|19:07:10] In RM Process                            height=10 round=0
-DEBUG[06-03|19:07:10] I am a proposer in                       height=10 round=0
-DEBUG[06-03|19:07:10] make proposal 
-DEBUG[06-03|19:07:10] ---------------process------------------ 
-DEBUG[06-03|19:07:10] create new work on block %v with %d txs & %d uncles. Took %v
- LOG15_ERROR=                                                   LOG15_ERROR=
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:10] broadcast Blockproposal 
-DEBUG[06-03|19:07:10] voting on new proporsal 
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] vote success in                          height=10
-DEBUG[06-03|19:07:10] In RM addvote                            round=0
-DEBUG[06-03|19:07:10] RM get timeoutPrecommit                  height=10 round=0
-DEBUG[06-03|19:07:10] broadcast Vote 
-DEBUG[06-03|19:07:10] precommit voteing 
-DEBUG[06-03|19:07:10] prevote quorum. vote precommit on block 
-DEBUG[06-03|19:07:10] CM Sign 
-DEBUG[06-03|19:07:10] precommit vote success in H:             height=10
-DEBUG[06-03|19:07:10] broadcast Precommit Vote 
-DEBUG[06-03|19:07:10] in cleanup,current Head Number is        number=9
-DEBUG[06-03|19:07:10] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:10] RM gettimout                             height=10 round=1
-DEBUG[06-03|19:07:10] delay time :                             delay=4.500
-DEBUG[06-03|19:07:10] commit, blockcandidates:                 len=1
-DEBUG[06-03|19:07:10] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:10] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:10] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:10] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:11] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:11] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:11] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:11] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:11] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:12] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:12] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:12] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:12] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:12] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:13] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:13] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:13] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:13] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:13] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:14] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:14] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:14] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:14] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:14] waiting                                  old=9 now=9
-DEBUG[06-03|19:07:15] verify votes                             len=1
-DEBUG[06-03|19:07:15] Trie cache stats after commit            misses=45 unloads=0
-INFO [06-03|19:07:15] config bft flag:                         BFT=false
-DEBUG[06-03|19:07:15] Inserted new block                       number=10 hash=b31118…de5393 uncles=0 txs=0 gas=0 elapsed=428.198µs
-INFO [06-03|19:07:15] Imported new chain segment               blocks=1 txs=0 mgas=0.000 elapsed=487.566µs mgasps=0.000 number=10 hash=b31118…de5393
-INFO [06-03|19:07:15] commited block, new Head Number is       number=10
-DEBUG[06-03|19:07:15] commited 
-DEBUG[06-03|19:07:15] In RM Process                            height=11 round=0
-DEBUG[06-03|19:07:15] proposing is not waiting for proposal 
-DEBUG[06-03|19:07:15] Timeout time not reach, curr vs timeout: LOG15_ERROR=
-DEBUG[06-03|19:07:15] In Vote: Waiting for proposal 
-DEBUG[06-03|19:07:15] in cleanup,current Head Number is        number=10
-DEBUG[06-03|19:07:15] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
-DEBUG[06-03|19:07:15] wait txs alarm 
-DEBUG[06-03|19:07:15] ---------------process------------------ 
-DEBUG[06-03|19:07:15] commit, blockcandidates:                 len=0
-DEBUG[06-03|19:07:15] no blockcandidate to commit 
-DEBUG[06-03|19:07:15] In RM Process                            height=11 round=0
-DEBUG[06-03|19:07:15] proposing is not waiting for proposal 
-DEBUG[06-03|19:07:15] Timeout time not reach, curr vs timeout: LOG15_ERROR=
-DEBUG[06-03|19:07:15] In Vote: Waiting for proposal 
-DEBUG[06-03|19:07:15] in cleanup,current Head Number is        number=10
-DEBUG[06-03|19:07:15] wait txs alarm 
-DEBUG[06-03|19:07:30] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
-DEBUG[06-03|19:07:38] waiting for txs 
-DEBUG[06-03|19:07:38] wait txs alarm 
-DEBUG[06-03|19:07:39] waiting for txs 
-DEBUG[06-03|19:07:39] wait txs alarm 
-DEBUG[06-03|19:07:40] waiting for txs 
-DEBUG[06-03|19:07:40] wait txs alarm 
-DEBUG[06-03|19:07:41] waiting for txs 
-DEBUG[06-03|19:07:41] wait txs alarm 
-DEBUG[06-03|19:07:42] waiting for txs 
-DEBUG[06-03|19:07:42] wait txs alarm 
-DEBUG[06-03|19:07:43] waiting for txs 
-DEBUG[06-03|19:07:43] wait txs alarm 
-DEBUG[06-03|19:07:44] waiting for txs 
-DEBUG[06-03|19:07:44] wait txs alarm 
-DEBUG[06-03|19:07:45] waiting for txs 
-DEBUG[06-03|19:07:45] wait txs alarm 
-DEBUG[06-03|19:07:46] waiting for txs 
-DEBUG[06-03|19:07:46] wait txs alarm 
-DEBUG[06-03|19:07:47] waiting for txs 
-DEBUG[06-03|19:07:47] wait txs alarm 
-DEBUG[06-03|19:07:48] waiting for txs 
-DEBUG[06-03|19:07:48] wait txs alarm 
-DEBUG[06-03|19:07:49] waiting for txs 
-DEBUG[06-03|19:07:49] wait txs alarm 
-DEBUG[06-03|19:07:50] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
-DEBUG[06-03|19:07:50] waiting for txs 
-DEBUG[06-03|19:07:50] wait txs alarm 
-DEBUG[06-03|19:07:51] waiting for txs 
-DEBUG[06-03|19:07:51] wait txs alarm 
-DEBUG[06-03|19:07:52] waiting for txs 
-DEBUG[06-03|19:07:52] wait txs alarm 
-DEBUG[06-03|19:07:53] waiting for txs 
-DEBUG[06-03|19:07:53] wait txs alarm 
-DEBUG[06-03|19:07:54] waiting for txs 
-DEBUG[06-03|19:07:54] wait txs alarm 
-DEBUG[06-03|19:07:55] waiting for txs 
-DEBUG[06-03|19:07:55] wait txs alarm 
-DEBUG[06-03|19:07:56] waiting for txs 
-DEBUG[06-03|19:07:56] wait txs alarm 
-DEBUG[06-03|19:07:57] waiting for txs 
-DEBUG[06-03|19:07:57] wait txs alarm 
-DEBUG[06-03|19:07:58] waiting for txs 
-DEBUG[06-03|19:07:58] wait txs alarm 
-DEBUG[06-03|19:07:59] waiting for txs 
-DEBUG[06-03|19:07:59] wait txs alarm 
-DEBUG[06-03|19:08:00] waiting for txs 
-DEBUG[06-03|19:08:00] wait txs alarm 
-DEBUG[06-03|19:08:01] waiting for txs 
-DEBUG[06-03|19:08:01] wait txs alarm 
-DEBUG[06-03|19:08:02] waiting for txs 
-DEBUG[06-03|19:08:02] wait txs alarm 
-DEBUG[06-03|19:08:03] waiting for txs 
-DEBUG[06-03|19:08:03] wait txs alarm 
-DEBUG[06-03|19:08:04] waiting for txs 
-DEBUG[06-03|19:08:04] wait txs alarm 
-DEBUG[06-03|19:08:05] waiting for txs 
-DEBUG[06-03|19:08:05] wait txs alarm 
-DEBUG[06-03|19:08:06] waiting for txs 
-DEBUG[06-03|19:08:06] wait txs alarm 
-DEBUG[06-03|19:08:07] waiting for txs 
-DEBUG[06-03|19:08:07] wait txs alarm 
-DEBUG[06-03|19:08:08] waiting for txs 
-DEBUG[06-03|19:08:08] wait txs alarm 
-DEBUG[06-03|19:08:09] waiting for txs 
-DEBUG[06-03|19:08:09] wait txs alarm 
-DEBUG[06-03|19:08:10] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
-DEBUG[06-03|19:08:10] waiting for txs 
-DEBUG[06-03|19:08:10] wait txs alarm 
-DEBUG[06-03|19:08:11] waiting for txs 
-DEBUG[06-03|19:08:11] wait txs alarm 
-DEBUG[06-03|19:08:12] waiting for txs 
-DEBUG[06-03|19:08:12] wait txs alarm 
-DEBUG[06-03|19:08:13] waiting for txs 
-DEBUG[06-03|19:08:13] wait txs alarm 
-DEBUG[06-03|19:08:14] waiting for txs 
-DEBUG[06-03|19:08:14] wait txs alarm 
-DEBUG[06-03|19:08:15] waiting for txs 
-DEBUG[06-03|19:08:15] wait txs alarm 
-INFO [06-03|19:08:16] Got interrupt, shutting down... 
-INFO [06-03|19:08:16] HTTP endpoint closed: http://127.0.0.1:8545 
-DEBUG[06-03|19:08:16] RPC Server shutdown initiatied 
-INFO [06-03|19:08:16] IPC endpoint closed: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
-DEBUG[06-03|19:08:16] RPC Server shutdown initiatied 
-INFO [06-03|19:08:16] Blockchain manager stopped 
-INFO [06-03|19:08:16] Stopping Ethereum protocol 
-INFO [06-03|19:08:16] Ethereum protocol stopped 
-INFO [06-03|19:08:16] Transaction pool stopped 
-INFO [06-03|19:08:16] Database closed                          database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/chaindata
-TRACE[06-03|19:08:16] P2P networking is spinning down 
-DEBUG[06-03|19:08:16] Read error                               err="accept tcp [::]:30303: use of closed network connection"
-DEBUG[06-03|19:08:16] Deleting port mapping                    proto=tcp extport=30303 intport=30303 interface="UPnP or NAT-PMP"
+DEBUG[06-07|14:52:14] Reloaded keystore contents               accounts=1
+TRACE[06-07|14:52:14] Started watching keystore folder         path=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/keystore
+DEBUG[06-07|14:52:14] Reloaded keystore contents               accounts=1
+INFO [06-07|14:52:14] Starting peer-to-peer node               instance=Geth/v1.6.6-unstable-d89e4e1d/linux-amd64/go1.8
+INFO [06-07|14:52:14] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/chaindata cache=128 handles=1024
+INFO [06-07|14:52:14] Initialised chain configuration          config="{ChainID: 2234 Homestead: 1 DAO: <nil> DAOSupport: false EIP150: 2 EIP155: 3 EIP158: 3 Metropolis: <nil> Engine: ethash}"
+INFO [06-07|14:52:14] config bft is                            bft=true
+INFO [06-07|14:52:14] Initialising Ethereum protocol           versions="[63 62]" network=2234
+INFO [06-07|14:52:14] Loaded most recent local header          number=4 hash=b257be…c80c36 td=1048580
+INFO [06-07|14:52:14] Loaded most recent local full block      number=4 hash=b257be…c80c36 td=1048580
+INFO [06-07|14:52:14] Loaded most recent local fast block      number=4 hash=b257be…c80c36 td=1048580
+WARN [06-07|14:52:14] Blockchain not empty, fast sync disabled 
+INFO [06-07|14:52:14] Allocated cache and file handles         database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/bftData   cache=128 handles=1024
+DEBUG[06-07|14:52:14] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
+DEBUG[06-07|14:52:14] initialize locksets 
+DEBUG[06-07|14:52:14] CM Sign 
+DEBUG[06-07|14:52:14] addPrecommitVote to                      LOG15_ERROR=
+DEBUG[06-07|14:52:14] add inintial lockset 
+DEBUG[06-07|14:52:14] addPrecommitVote to                      LOG15_ERROR=
+DEBUG[06-07|14:52:14] addPrecommitVote to                      LOG15_ERROR=
+INFO [06-07|14:52:14] Preparing 
+DEBUG[06-07|14:52:14] CM Sign 
+INFO [06-07|14:52:14] Finalizing 
+DEBUG[06-07|14:52:14] There are                                peer count=0
+DEBUG[06-07|14:52:14] -----------------consensusManager Ready------------------------- 
+INFO [06-07|14:52:14] Starting P2P networking 
+INFO [06-07|14:52:14] RLPx listener up                         self="enode://d67104e65b61fca1fc73a74175667c11f16c037fa8e414499189df9d68706aca6e1a1b4ea02b702f101eb609c4cd2964d4790047a06458ba8a1a19040ab1fe0d@[::]:30303?discport=0"
+DEBUG[06-07|14:52:14] InProc registered *node.PrivateAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] InProc registered *node.PublicAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] InProc registered *debug.HandlerT under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *node.PublicWeb3API under 'web3' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicEthereumAPI under 'eth' 
+DEBUG[06-07|14:52:14] Executing EVM call finished              runtime=370.929µs
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-07|14:52:14] Release oracle not found                 contract=0xfa7b9770ca4cb04296cac84f37736d4041251cdf
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicTxPoolAPI under 'txpool' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PrivateAccountAPI under 'personal' 
+DEBUG[06-07|14:52:14] InProc registered *bft.API under 'bft' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PrivateMinerAPI under 'miner' 
+DEBUG[06-07|14:52:14] InProc registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PrivateAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] InProc registered *ethapi.PublicNetAPI under 'net' 
+DEBUG[06-07|14:52:14] IPC registered *node.PrivateAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] IPC registered *node.PublicAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] IPC registered *debug.HandlerT under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *node.PublicWeb3API under 'web3' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicEthereumAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicTxPoolAPI under 'txpool' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PrivateAccountAPI under 'personal' 
+DEBUG[06-07|14:52:14] IPC registered *bft.API under 'bft' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PrivateMinerAPI under 'miner' 
+DEBUG[06-07|14:52:14] IPC registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PrivateAdminAPI under 'admin' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] IPC registered *ethapi.PublicNetAPI under 'net' 
+DEBUG[06-07|14:52:14] HTTP registered *debug.HandlerT under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *node.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicEthereumAPI under 'eth' 
+INFO [06-07|14:52:14] IPC endpoint opened: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicBlockChainAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicTransactionPoolAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicAccountAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *eth.PublicEthereumAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *eth.PublicMinerAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *downloader.PublicDownloaderAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *filters.PublicFilterAPI under 'eth' 
+DEBUG[06-07|14:52:14] HTTP registered *eth.PublicDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *eth.PrivateDebugAPI under 'debug' 
+DEBUG[06-07|14:52:14] HTTP registered *ethapi.PublicNetAPI under 'net' 
+INFO [06-07|14:52:14] HTTP endpoint opened: http://127.0.0.1:8545 
+DEBUG[06-07|14:52:16] Couldn't add port mapping                proto=tcp extport=30303 intport=30303 interface="UPnP or NAT-PMP" err="no UPnP or NAT-PMP router discovered"
+INFO [06-07|14:52:20] Transaction pool price threshold updated price=18000000000
+INFO [06-07|14:52:20] Starting mining operation 
+INFO [06-07|14:52:20] Preparing 
+INFO [06-07|14:52:20] Finalizing 
+INFO [06-07|14:52:20] Commit new mining work                   number=5 txs=0 uncles=0 elapsed=100.132µs
+INFO [06-07|14:52:20] Sealing 
+DEBUG[06-07|14:52:20] ---------------process------------------ 
+DEBUG[06-07|14:52:20] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:20] no blockcandidate to commit 
+DEBUG[06-07|14:52:20] In RM Process                            height=5 round=0
+DEBUG[06-07|14:52:20] I am a proposer in                       height=5 round=0
+DEBUG[06-07|14:52:20] make proposal 
+DEBUG[06-07|14:52:20] CM Sign 
+DEBUG[06-07|14:52:20] Create block blockhash :                 LOG15_ERROR= LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:20] broadcast Blockproposal 
+DEBUG[06-07|14:52:20] voting on new proporsal 
+DEBUG[06-07|14:52:20] CM Sign 
+DEBUG[06-07|14:52:20] vote success in                          height=5
+DEBUG[06-07|14:52:20] In RM addvote                            round=0
+DEBUG[06-07|14:52:20] RM get timeoutPrecommit                  height=5 round=0
+DEBUG[06-07|14:52:20] broadcast Vote 
+DEBUG[06-07|14:52:20] precommit voteing 
+DEBUG[06-07|14:52:20] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:20] CM Sign 
+DEBUG[06-07|14:52:20] precommit vote success in H:             height=5
+DEBUG[06-07|14:52:20] broadcast Precommit Vote 
+DEBUG[06-07|14:52:20] in cleanup,current Head Number is        number=4
+DEBUG[06-07|14:52:20] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:20] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:20] RM gettimout                             height=5 round=1
+DEBUG[06-07|14:52:20] delay time :                             delay=4.500
+DEBUG[06-07|14:52:25] delay time up 
+DEBUG[06-07|14:52:25] ---------------process------------------ 
+DEBUG[06-07|14:52:25] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:52:25] In RM Process                            height=5 round=1
+DEBUG[06-07|14:52:25] I am a proposer in                       height=5 round=1
+DEBUG[06-07|14:52:25] CM Sign 
+INFO [06-07|14:52:25] have a consensus on the block 
+INFO [06-07|14:52:25] End Seal 
+INFO [06-07|14:52:25] Successfully sealed new block            number=5 hash=77543b…23a9d2
+DEBUG[06-07|14:52:25] Trie cache stats after commit            misses=17 unloads=0
+DEBUG[06-07|14:52:25] broadcast Votinginstruction 
+DEBUG[06-07|14:52:25] vote votinginstruction quorum 
+DEBUG[06-07|14:52:25] voting on instruction 
+DEBUG[06-07|14:52:25] CM Sign 
+INFO [06-07|14:52:25] 🔨 mined potential block                  number=5 hash=77543b…23a9d2
+INFO [06-07|14:52:25] Preparing 
+TRACE[06-07|14:52:25] Propagated block                         hash=77543b…23a9d2 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:25] Announced block                          hash=77543b…23a9d2 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:25] Announced block                          hash=77543b…23a9d2 recipients=0 duration=2562047h47m16.854s
+DEBUG[06-07|14:52:25] vote success in                          height=5
+DEBUG[06-07|14:52:25] In RM addvote                            round=1
+INFO [06-07|14:52:25] Finalizing 
+INFO [06-07|14:52:25] Commit new mining work                   number=6 txs=0 uncles=0 elapsed=139.399µs
+INFO [06-07|14:52:25] Sealing 
+DEBUG[06-07|14:52:25] ---------------process------------------ 
+DEBUG[06-07|14:52:25] RM get timeoutPrecommit                  height=5 round=1
+DEBUG[06-07|14:52:25] broadcast Vote 
+DEBUG[06-07|14:52:25] precommit voteing 
+DEBUG[06-07|14:52:25] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:25] CM Sign 
+DEBUG[06-07|14:52:25] precommit vote success in H:             height=5
+DEBUG[06-07|14:52:25] broadcast Precommit Vote 
+DEBUG[06-07|14:52:25] in cleanup,current Head Number is        number=5
+DEBUG[06-07|14:52:25] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:25] RM gettimout                             height=6 round=0
+DEBUG[06-07|14:52:25] delay time :                             delay=3.000
+DEBUG[06-07|14:52:25] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:25] no blockcandidate to commit 
+DEBUG[06-07|14:52:25] In RM Process                            height=6 round=0
+DEBUG[06-07|14:52:25] I am a proposer in                       height=6 round=0
+DEBUG[06-07|14:52:25] make proposal 
+INFO [06-07|14:52:25] multiple valid lockset on precommit lockset 
+DEBUG[06-07|14:52:25] CM Sign 
+DEBUG[06-07|14:52:25] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:25] broadcast Blockproposal 
+DEBUG[06-07|14:52:25] voting on new proporsal 
+DEBUG[06-07|14:52:25] CM Sign 
+DEBUG[06-07|14:52:25] vote success in                          height=6
+DEBUG[06-07|14:52:25] In RM addvote                            round=0
+DEBUG[06-07|14:52:25] RM get timeoutPrecommit                  height=6 round=0
+DEBUG[06-07|14:52:25] broadcast Vote 
+DEBUG[06-07|14:52:25] precommit voteing 
+DEBUG[06-07|14:52:25] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:25] CM Sign 
+DEBUG[06-07|14:52:25] precommit vote success in H:             height=6
+DEBUG[06-07|14:52:25] broadcast Precommit Vote 
+DEBUG[06-07|14:52:25] in cleanup,current Head Number is        number=5
+DEBUG[06-07|14:52:25] RM gettimout                             height=6 round=1
+DEBUG[06-07|14:52:25] delay time :                             delay=4.500
+DEBUG[06-07|14:52:32] delay time up 
+DEBUG[06-07|14:52:32] ---------------process------------------ 
+DEBUG[06-07|14:52:32] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:52:32] In RM Process                            height=6 round=1
+DEBUG[06-07|14:52:32] I am a proposer in                       height=6 round=1
+DEBUG[06-07|14:52:32] CM Sign 
+INFO [06-07|14:52:32] have a consensus on the block 
+INFO [06-07|14:52:32] End Seal 
+INFO [06-07|14:52:32] Successfully sealed new block            number=6 hash=dc6eb6…039bb2
+DEBUG[06-07|14:52:32] Trie cache stats after commit            misses=19 unloads=0
+INFO [06-07|14:52:32] 🔨 mined potential block                  number=6 hash=dc6eb6…039bb2
+DEBUG[06-07|14:52:32] broadcast Votinginstruction 
+DEBUG[06-07|14:52:32] vote votinginstruction quorum 
+DEBUG[06-07|14:52:32] voting on instruction 
+DEBUG[06-07|14:52:32] CM Sign 
+TRACE[06-07|14:52:32] Propagated block                         hash=dc6eb6…039bb2 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:32] Announced block                          hash=dc6eb6…039bb2 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:32] Announced block                          hash=dc6eb6…039bb2 recipients=0 duration=2562047h47m16.854s
+INFO [06-07|14:52:32] Preparing 
+DEBUG[06-07|14:52:32] vote success in                          height=6
+DEBUG[06-07|14:52:32] In RM addvote                            round=1
+INFO [06-07|14:52:32] Finalizing 
+INFO [06-07|14:52:32] Commit new mining work                   number=7 txs=0 uncles=0 elapsed=323.087µs
+INFO [06-07|14:52:32] Sealing 
+DEBUG[06-07|14:52:32] ---------------process------------------ 
+DEBUG[06-07|14:52:32] RM get timeoutPrecommit                  height=6 round=1
+DEBUG[06-07|14:52:32] broadcast Vote 
+DEBUG[06-07|14:52:32] precommit voteing 
+DEBUG[06-07|14:52:32] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:32] CM Sign 
+DEBUG[06-07|14:52:32] precommit vote success in H:             height=6
+DEBUG[06-07|14:52:32] broadcast Precommit Vote 
+DEBUG[06-07|14:52:32] in cleanup,current Head Number is        number=6
+DEBUG[06-07|14:52:32] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:32] RM gettimout                             height=7 round=0
+DEBUG[06-07|14:52:32] delay time :                             delay=3.000
+DEBUG[06-07|14:52:32] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:32] no blockcandidate to commit 
+DEBUG[06-07|14:52:32] In RM Process                            height=7 round=0
+DEBUG[06-07|14:52:32] I am a proposer in                       height=7 round=0
+DEBUG[06-07|14:52:32] make proposal 
+INFO [06-07|14:52:32] multiple valid lockset on precommit lockset 
+DEBUG[06-07|14:52:32] CM Sign 
+DEBUG[06-07|14:52:32] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:32] broadcast Blockproposal 
+DEBUG[06-07|14:52:32] voting on new proporsal 
+DEBUG[06-07|14:52:32] CM Sign 
+DEBUG[06-07|14:52:32] vote success in                          height=7
+DEBUG[06-07|14:52:32] In RM addvote                            round=0
+DEBUG[06-07|14:52:32] RM get timeoutPrecommit                  height=7 round=0
+DEBUG[06-07|14:52:32] broadcast Vote 
+DEBUG[06-07|14:52:32] precommit voteing 
+DEBUG[06-07|14:52:32] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:32] CM Sign 
+DEBUG[06-07|14:52:32] precommit vote success in H:             height=7
+DEBUG[06-07|14:52:32] broadcast Precommit Vote 
+DEBUG[06-07|14:52:32] in cleanup,current Head Number is        number=6
+DEBUG[06-07|14:52:32] RM gettimout                             height=7 round=1
+DEBUG[06-07|14:52:32] delay time :                             delay=4.500
+DEBUG[06-07|14:52:34] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
+DEBUG[06-07|14:52:40] delay time up 
+DEBUG[06-07|14:52:40] ---------------process------------------ 
+DEBUG[06-07|14:52:40] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:52:40] In RM Process                            height=7 round=1
+DEBUG[06-07|14:52:40] I am a proposer in                       height=7 round=1
+DEBUG[06-07|14:52:40] CM Sign 
+INFO [06-07|14:52:40] have a consensus on the block 
+INFO [06-07|14:52:40] End Seal 
+INFO [06-07|14:52:40] Successfully sealed new block            number=7 hash=17b362…c04e7b
+DEBUG[06-07|14:52:40] Trie cache stats after commit            misses=21 unloads=0
+INFO [06-07|14:52:40] 🔨 mined potential block                  number=7 hash=17b362…c04e7b
+DEBUG[06-07|14:52:40] broadcast Votinginstruction 
+DEBUG[06-07|14:52:40] vote votinginstruction quorum 
+INFO [06-07|14:52:40] Preparing 
+TRACE[06-07|14:52:40] Propagated block                         hash=17b362…c04e7b recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:40] Announced block                          hash=17b362…c04e7b recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:40] Announced block                          hash=17b362…c04e7b recipients=0 duration=2562047h47m16.854s
+INFO [06-07|14:52:40] Finalizing 
+INFO [06-07|14:52:40] Commit new mining work                   number=8 txs=0 uncles=0 elapsed=108.699µs
+DEBUG[06-07|14:52:40] voting on instruction 
+DEBUG[06-07|14:52:40] CM Sign 
+DEBUG[06-07|14:52:40] vote success in                          height=7
+DEBUG[06-07|14:52:40] In RM addvote                            round=1
+INFO [06-07|14:52:40] Sealing 
+DEBUG[06-07|14:52:40] ---------------process------------------ 
+DEBUG[06-07|14:52:40] RM get timeoutPrecommit                  height=7 round=1
+DEBUG[06-07|14:52:40] broadcast Vote 
+DEBUG[06-07|14:52:40] precommit voteing 
+DEBUG[06-07|14:52:40] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:40] CM Sign 
+DEBUG[06-07|14:52:40] precommit vote success in H:             height=7
+DEBUG[06-07|14:52:40] broadcast Precommit Vote 
+DEBUG[06-07|14:52:40] in cleanup,current Head Number is        number=7
+DEBUG[06-07|14:52:40] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:40] RM gettimout                             height=8 round=0
+DEBUG[06-07|14:52:40] delay time :                             delay=3.000
+DEBUG[06-07|14:52:40] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:40] no blockcandidate to commit 
+DEBUG[06-07|14:52:40] In RM Process                            height=8 round=0
+DEBUG[06-07|14:52:40] I am a proposer in                       height=8 round=0
+DEBUG[06-07|14:52:40] make proposal 
+INFO [06-07|14:52:40] multiple valid lockset on precommit lockset 
+DEBUG[06-07|14:52:40] CM Sign 
+DEBUG[06-07|14:52:40] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:40] broadcast Blockproposal 
+DEBUG[06-07|14:52:40] voting on new proporsal 
+DEBUG[06-07|14:52:40] CM Sign 
+DEBUG[06-07|14:52:40] vote success in                          height=8
+DEBUG[06-07|14:52:40] In RM addvote                            round=0
+DEBUG[06-07|14:52:40] RM get timeoutPrecommit                  height=8 round=0
+DEBUG[06-07|14:52:40] broadcast Vote 
+DEBUG[06-07|14:52:40] precommit voteing 
+DEBUG[06-07|14:52:40] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:40] CM Sign 
+DEBUG[06-07|14:52:40] precommit vote success in H:             height=8
+DEBUG[06-07|14:52:40] broadcast Precommit Vote 
+DEBUG[06-07|14:52:40] in cleanup,current Head Number is        number=7
+DEBUG[06-07|14:52:40] RM gettimout                             height=8 round=1
+DEBUG[06-07|14:52:40] delay time :                             delay=4.500
+DEBUG[06-07|14:52:47] delay time up 
+DEBUG[06-07|14:52:47] ---------------process------------------ 
+DEBUG[06-07|14:52:47] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:52:47] In RM Process                            height=8 round=1
+DEBUG[06-07|14:52:47] I am a proposer in                       height=8 round=1
+DEBUG[06-07|14:52:47] CM Sign 
+INFO [06-07|14:52:47] have a consensus on the block 
+INFO [06-07|14:52:47] End Seal 
+INFO [06-07|14:52:47] Successfully sealed new block            number=8 hash=94d4d8…7eedad
+DEBUG[06-07|14:52:47] Trie cache stats after commit            misses=23 unloads=0
+INFO [06-07|14:52:47] 🔨 mined potential block                  number=8 hash=94d4d8…7eedad
+INFO [06-07|14:52:47] Preparing 
+TRACE[06-07|14:52:47] Propagated block                         hash=94d4d8…7eedad recipients=0 duration=2562047h47m16.854s
+DEBUG[06-07|14:52:47] broadcast Votinginstruction 
+TRACE[06-07|14:52:47] Announced block                          hash=94d4d8…7eedad recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:47] Announced block                          hash=94d4d8…7eedad recipients=0 duration=2562047h47m16.854s
+INFO [06-07|14:52:47] Finalizing 
+INFO [06-07|14:52:47] Commit new mining work                   number=9 txs=0 uncles=0 elapsed=141.231µs
+DEBUG[06-07|14:52:47] vote votinginstruction quorum 
+DEBUG[06-07|14:52:47] voting on instruction 
+DEBUG[06-07|14:52:47] CM Sign 
+INFO [06-07|14:52:47] Sealing 
+DEBUG[06-07|14:52:47] ---------------process------------------ 
+DEBUG[06-07|14:52:47] vote success in                          height=8
+DEBUG[06-07|14:52:47] In RM addvote                            round=1
+DEBUG[06-07|14:52:47] RM get timeoutPrecommit                  height=8 round=1
+DEBUG[06-07|14:52:47] broadcast Vote 
+DEBUG[06-07|14:52:47] precommit voteing 
+DEBUG[06-07|14:52:47] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:47] CM Sign 
+DEBUG[06-07|14:52:47] precommit vote success in H:             height=8
+DEBUG[06-07|14:52:47] broadcast Precommit Vote 
+DEBUG[06-07|14:52:47] in cleanup,current Head Number is        number=8
+DEBUG[06-07|14:52:47] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:47] RM gettimout                             height=9 round=0
+DEBUG[06-07|14:52:47] delay time :                             delay=3.000
+DEBUG[06-07|14:52:47] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:47] no blockcandidate to commit 
+DEBUG[06-07|14:52:47] In RM Process                            height=9 round=0
+DEBUG[06-07|14:52:47] I am a proposer in                       height=9 round=0
+DEBUG[06-07|14:52:47] make proposal 
+INFO [06-07|14:52:47] multiple valid lockset on precommit lockset 
+DEBUG[06-07|14:52:47] CM Sign 
+DEBUG[06-07|14:52:47] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:47] broadcast Blockproposal 
+DEBUG[06-07|14:52:47] voting on new proporsal 
+DEBUG[06-07|14:52:47] CM Sign 
+DEBUG[06-07|14:52:47] vote success in                          height=9
+DEBUG[06-07|14:52:47] In RM addvote                            round=0
+DEBUG[06-07|14:52:47] RM get timeoutPrecommit                  height=9 round=0
+DEBUG[06-07|14:52:47] broadcast Vote 
+DEBUG[06-07|14:52:47] precommit voteing 
+DEBUG[06-07|14:52:47] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:47] CM Sign 
+DEBUG[06-07|14:52:47] precommit vote success in H:             height=9
+DEBUG[06-07|14:52:47] broadcast Precommit Vote 
+DEBUG[06-07|14:52:47] in cleanup,current Head Number is        number=8
+DEBUG[06-07|14:52:47] RM gettimout                             height=9 round=1
+DEBUG[06-07|14:52:47] delay time :                             delay=4.500
+DEBUG[06-07|14:52:54] Recalculated downloader QoS values       rtt=20s confidence=1.000 ttl=1m0s
+DEBUG[06-07|14:52:55] delay time up 
+DEBUG[06-07|14:52:55] ---------------process------------------ 
+DEBUG[06-07|14:52:55] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:52:55] In RM Process                            height=9 round=1
+DEBUG[06-07|14:52:55] I am a proposer in                       height=9 round=1
+INFO [06-07|14:52:55] have a consensus on the block 
+INFO [06-07|14:52:55] End Seal 
+INFO [06-07|14:52:55] Successfully sealed new block            number=9 hash=b85897…d0ab99
+DEBUG[06-07|14:52:55] Trie cache stats after commit            misses=25 unloads=0
+INFO [06-07|14:52:55] 🔨 mined potential block                  number=9 hash=b85897…d0ab99
+INFO [06-07|14:52:55] Preparing 
+INFO [06-07|14:52:55] Finalizing 
+INFO [06-07|14:52:55] Commit new mining work                   number=10 txs=0 uncles=0 elapsed=143.366µs
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] broadcast Votinginstruction 
+DEBUG[06-07|14:52:55] vote votinginstruction quorum 
+DEBUG[06-07|14:52:55] voting on instruction 
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] vote success in                          height=9
+DEBUG[06-07|14:52:55] In RM addvote                            round=1
+DEBUG[06-07|14:52:55] RM get timeoutPrecommit                  height=9 round=1
+DEBUG[06-07|14:52:55] broadcast Vote 
+DEBUG[06-07|14:52:55] precommit voteing 
+DEBUG[06-07|14:52:55] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] precommit vote success in H:             height=9
+DEBUG[06-07|14:52:55] broadcast Precommit Vote 
+DEBUG[06-07|14:52:55] in cleanup,current Head Number is        number=9
+DEBUG[06-07|14:52:55] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:55] RM gettimout                             height=10 round=0
+DEBUG[06-07|14:52:55] delay time :                             delay=3.000
+TRACE[06-07|14:52:55] Propagated block                         hash=b85897…d0ab99 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:55] Announced block                          hash=b85897…d0ab99 recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:52:55] Announced block                          hash=b85897…d0ab99 recipients=0 duration=2562047h47m16.854s
+INFO [06-07|14:52:55] Sealing 
+DEBUG[06-07|14:52:55] ---------------process------------------ 
+DEBUG[06-07|14:52:55] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:52:55] no blockcandidate to commit 
+DEBUG[06-07|14:52:55] In RM Process                            height=10 round=0
+DEBUG[06-07|14:52:55] I am a proposer in                       height=10 round=0
+DEBUG[06-07|14:52:55] make proposal 
+INFO [06-07|14:52:55] multiple valid lockset on precommit lockset 
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] Create block blockhash :                 LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:52:55] broadcast Blockproposal 
+DEBUG[06-07|14:52:55] voting on new proporsal 
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] vote success in                          height=10
+DEBUG[06-07|14:52:55] In RM addvote                            round=0
+DEBUG[06-07|14:52:55] RM get timeoutPrecommit                  height=10 round=0
+DEBUG[06-07|14:52:55] broadcast Vote 
+DEBUG[06-07|14:52:55] precommit voteing 
+DEBUG[06-07|14:52:55] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:52:55] CM Sign 
+DEBUG[06-07|14:52:55] precommit vote success in H:             height=10
+DEBUG[06-07|14:52:55] broadcast Precommit Vote 
+DEBUG[06-07|14:52:55] in cleanup,current Head Number is        number=9
+DEBUG[06-07|14:52:55] RM gettimout                             height=10 round=1
+DEBUG[06-07|14:52:55] delay time :                             delay=4.500
+DEBUG[06-07|14:53:02] delay time up 
+DEBUG[06-07|14:53:02] ---------------process------------------ 
+DEBUG[06-07|14:53:02] commit, blockcandidates:                 len=1
+DEBUG[06-07|14:53:02] In RM Process                            height=10 round=1
+DEBUG[06-07|14:53:02] I am a proposer in                       height=10 round=1
+DEBUG[06-07|14:53:02] CM Sign 
+INFO [06-07|14:53:02] have a consensus on the block 
+INFO [06-07|14:53:02] End Seal 
+INFO [06-07|14:53:02] Successfully sealed new block            number=10 hash=7bddca…6e72fc
+DEBUG[06-07|14:53:02] Trie cache stats after commit            misses=27 unloads=0
+INFO [06-07|14:53:02] 🔗 block reached canonical chain          number=5  hash=77543b…23a9d2
+INFO [06-07|14:53:02] 🔨 mined potential block                  number=10 hash=7bddca…6e72fc
+INFO [06-07|14:53:02] Preparing 
+DEBUG[06-07|14:53:02] broadcast Votinginstruction 
+TRACE[06-07|14:53:02] Propagated block                         hash=7bddca…6e72fc recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:53:02] Announced block                          hash=7bddca…6e72fc recipients=0 duration=2562047h47m16.854s
+TRACE[06-07|14:53:02] Announced block                          hash=7bddca…6e72fc recipients=0 duration=2562047h47m16.854s
+INFO [06-07|14:53:02] Finalizing 
+INFO [06-07|14:53:02] Commit new mining work                   number=11 txs=0 uncles=0 elapsed=154.078µs
+DEBUG[06-07|14:53:02] vote votinginstruction quorum 
+DEBUG[06-07|14:53:02] voting on instruction 
+DEBUG[06-07|14:53:02] CM Sign 
+INFO [06-07|14:53:02] Sealing 
+DEBUG[06-07|14:53:02] ---------------process------------------ 
+DEBUG[06-07|14:53:02] vote success in                          height=10
+DEBUG[06-07|14:53:02] In RM addvote                            round=1
+DEBUG[06-07|14:53:02] RM get timeoutPrecommit                  height=10 round=1
+DEBUG[06-07|14:53:02] broadcast Vote 
+DEBUG[06-07|14:53:02] precommit voteing 
+DEBUG[06-07|14:53:02] prevote quorum. vote precommit on block 
+DEBUG[06-07|14:53:02] CM Sign 
+DEBUG[06-07|14:53:02] precommit vote success in H:             height=10
+DEBUG[06-07|14:53:02] broadcast Precommit Vote 
+DEBUG[06-07|14:53:02] in cleanup,current Head Number is        number=10
+DEBUG[06-07|14:53:02] Delete BlockCandidte                     LOG15_ERROR=                                                   LOG15_ERROR="Normalized odd number of arguments by adding nil"
+DEBUG[06-07|14:53:02] wait txs alarm 
+DEBUG[06-07|14:53:02] commit, blockcandidates:                 len=0
+DEBUG[06-07|14:53:02] no blockcandidate to commit 
+DEBUG[06-07|14:53:02] In RM Process                            height=11 round=0
+DEBUG[06-07|14:53:02] proposing is not waiting for proposal 
+DEBUG[06-07|14:53:02] Timeout time not reach, curr vs timeout: LOG15_ERROR=
+DEBUG[06-07|14:53:02] In Vote: Waiting for proposal 
+DEBUG[06-07|14:53:02] in cleanup,current Head Number is        number=10
+DEBUG[06-07|14:53:02] wait txs alarm 
+DEBUG[06-07|14:53:03] waiting for txs 
+DEBUG[06-07|14:53:03] wait txs alarm 
+DEBUG[06-07|14:53:04] waiting for txs 
+DEBUG[06-07|14:53:04] wait txs alarm 
+DEBUG[06-07|14:53:05] waiting for txs 
+DEBUG[06-07|14:53:05] wait txs alarm 
+DEBUG[06-07|14:53:06] waiting for txs 
+DEBUG[06-07|14:53:06] wait txs alarm 
+DEBUG[06-07|14:53:07] waiting for txs 
+DEBUG[06-07|14:53:07] wait txs alarm 
+DEBUG[06-07|14:53:08] waiting for txs 
+DEBUG[06-07|14:53:08] wait txs alarm 
+DEBUG[06-07|14:53:09] waiting for txs 
+DEBUG[06-07|14:53:09] wait txs alarm 
+INFO [06-07|14:53:10] Got interrupt, shutting down... 
+INFO [06-07|14:53:10] HTTP endpoint closed: http://127.0.0.1:8545 
+DEBUG[06-07|14:53:10] RPC Server shutdown initiatied 
+INFO [06-07|14:53:10] IPC endpoint closed: /home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth.ipc 
+DEBUG[06-07|14:53:10] RPC Server shutdown initiatied 
+INFO [06-07|14:53:10] Blockchain manager stopped 
+INFO [06-07|14:53:10] Stopping Ethereum protocol 
+INFO [06-07|14:53:10] Ethereum protocol stopped 
+INFO [06-07|14:53:10] Transaction pool stopped 
+INFO [06-07|14:53:10] Database closed                          database=/home/blackzid/go-work/src/github.com/ethereum/go-ethereum/examples/bdata/node1/geth/chaindata
+TRACE[06-07|14:53:10] P2P networking is spinning down 
+DEBUG[06-07|14:53:10] Read error                               err="accept tcp [::]:30303: use of closed network connection"
+DEBUG[06-07|14:53:10] Deleting port mapping                    proto=tcp extport=30303 intport=30303 interface="UPnP or NAT-PMP"

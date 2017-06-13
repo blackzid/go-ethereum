@@ -1,15 +1,18 @@
 ../build/bin/geth \
 \
---networkid 52234 \
+--networkid 2234 \
 --port 30306 \
 --rpcport 8548 \
 --datadir "bdata/node4" \
 --nodiscover \
+--mine \
+--minerthreads 1 \
 \
 --rpc \
 --rpccorsdomain "*" \
 --rpcapi "eth,net,web3,debug" \
 \
+--verbosity 5 \
 --bft \
 --allow-empty \
 --num-validators 4 \

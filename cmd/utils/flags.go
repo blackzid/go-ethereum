@@ -921,6 +921,7 @@ func setBFT(ctx *cli.Context, cfg *eth.Config, stack *node.Node) {
 	cfg.Validators = MakeValidators(stack.AccountManager(), ctx)
 	cfg.BFT = ctx.GlobalBool(BFTFlag.Name)
 	cfg.PrivateKeyHex = MakeBFTPrivateKeyHex(ctx)
+	cfg.AllowEmpty = ctx.GlobalBool(AllowEmptyFlag.Name)
 }
 
 func checkExclusive(ctx *cli.Context, flags ...cli.Flag) {
