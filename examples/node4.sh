@@ -5,8 +5,6 @@
 --rpcport 8548 \
 --datadir "bdata/node4" \
 --nodiscover \
---mine \
---minerthreads 1 \
 \
 --rpc \
 --rpccorsdomain "*" \

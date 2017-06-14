@@ -224,26 +224,26 @@ func (cm *ConsensusManager) initializeLocksets() {
 		}
 	}
 
-	lastCommittingLockset := cm.loadLastCommittingLockset()
-	if lastCommittingLockset != nil {
-		// headNumber := cm.Head().Header().Number.Uint64()
-		_, hash := lastCommittingLockset.HasQuorum()
-		if hash != cm.Head().Hash() {
-			log.Error("initialize_locksets error: hash not match")
-			// panic("initialize_locksets error: hash not match")
-		}
-		for _, v := range lastCommittingLockset.PrecommitVotes {
-			cm.AddPrecommitVote(v, nil)
-		}
-		headNumber := cm.Head().Header().Number.Uint64()
-		result, _ := cm.getHeightManager(headNumber).HasQuorum()
-		if !result {
+	// lastCommittingLockset := cm.loadLastCommittingLockset()
+	// if lastCommittingLockset != nil {
+	// 	// headNumber := cm.Head().Header().Number.Uint64()
+	// 	_, hash := lastCommittingLockset.HasQuorum()
+	// 	if hash != cm.Head().Hash() {
+	// 		log.Error("initialize_locksets error: hash not match")
+	// 		// panic("initialize_locksets error: hash not match")
+	// 	}
+	// 	for _, v := range lastCommittingLockset.PrecommitVotes {
+	// 		cm.AddPrecommitVote(v, nil)
+	// 	}
+	// 	headNumber := cm.Head().Header().Number.Uint64()
+	// 	result, _ := cm.getHeightManager(headNumber).HasQuorum()
+	// 	if !result {
 
-			panic("initialize_locksets error: lastCommittingLockset2")
-		}
-	} else if int(cm.Head().Header().Number.Int64()) != 0 {
-		panic("Error occur in init state")
-	}
+	// 		panic("initialize_locksets error: lastCommittingLockset2")
+	// 	}
+	// } else if int(cm.Head().Header().Number.Int64()) != 0 {
+	// 	panic("Error occur in init state")
+	// }
 }
 
 // persist proposals and last committing lockset
@@ -337,16 +337,16 @@ func (cm *ConsensusManager) getPrecommitLocksetByHeight(height uint64) *types.Pr
 	}
 }
 
-func (cm *ConsensusManager) receivePrecommitLocksets(pls []*types.PrecommitLockSet) {
-	for _, ls := range pls {
-		if result, hash := ls.HasQuorum(); result == true {
-			cm.storePrecommitLockset(hash, ls)
-		} else {
-			log.Error("receive PrecommitLocksets invalid")
-			return
-		}
-	}
-}
+// func (cm *ConsensusManager) receivePrecommitLocksets(pls []*types.PrecommitLockSet) {
+// 	for _, ls := range pls {
+// 		if result, hash := ls.HasQuorum(); result == true {
+// 			cm.storePrecommitLockset(hash, ls)
+// 		} else {
+// 			log.Error("receive PrecommitLocksets invalid")
+// 			return
+// 		}
+// 	}
+// }
 
 func (cm *ConsensusManager) hasProposal(blockhash common.Hash) bool {
 	key := fmt.Sprintf("blockproposal:%s", blockhash)
@@ -1240,7 +1240,11 @@ func (rm *RoundManager) propose() types.Proposal {
 	} else {
 		quorum, _ := roundLockset.HasQuorum()
 		if !quorum {
-			proposal = rm.mkProposal()
+			if bp := rm.mkProposal(); bp != nil {
+				proposal = bp
+			} else {
+				return nil
+			}
 		} else {
 			if p, err := types.NewVotingInstruction(rm.height, rm.round, roundLockset); err != nil {
 				log.Error("error occur %v", err)
@@ -1271,7 +1275,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	}
 	isQuorum, _ := signingLockset.HasQuorum()
 	if !isQuorum {
-		log.Error("error occur: MkProposal error ")
+		log.Error("error occur: MkProposal error, no quorum ")
 		return nil
 	}
 	if !(roundLockset != nil || rm.round == 0) {

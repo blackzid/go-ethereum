@@ -180,6 +180,9 @@ func (pm *ProtocolManager) announce() {
 	pm.eventMu.Lock()
 	defer pm.eventMu.Unlock()
 	for !pm.consensusManager.isReady() {
+		if pm.consensusManager.synchronizer.Requested.Size() != 0 {
+			time.Sleep(5 * time.Second)
+		}
 		log.Debug("consensusManager not ready ")
 		pm.consensusManager.SendReady(false)
 		time.Sleep(0.5 * 1000 * 1000 * 1000)
@@ -231,7 +234,7 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		if err := msg.Decode(&pls); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}
-		pm.consensusManager.receivePrecommitLocksets(pls)
+		pm.consensusManager.synchronizer.receivePrecommitLocksets(pls)
 
 	case msg.Code == NewBlockProposalMsg:
 		var bpData newBlockProposals

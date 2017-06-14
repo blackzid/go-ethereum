@@ -54,16 +54,6 @@ func NewSynchronizer(cm *ConsensusManager) *Synchronizer {
 // }
 
 func (self *Synchronizer) request(height uint64) bool {
-	// if self.Requested.Size() != 0 {
-	// 	log.Debug("waiting for requested")
-	// 	return false
-	// }
-
-	// if self.Received.Size()+self.maxGetProposalsCount >= self.maxQueued {
-	// 	log.Debug("queue is full")
-	// 	return false
-	// }
-
 	var blockNumbers []RequestNumber
 
 	blockNumbers = append(blockNumbers, RequestNumber{height})
@@ -74,9 +64,21 @@ func (self *Synchronizer) request(height uint64) bool {
 	} else {
 		peer := self.cm.pm.peers.BestPeer()
 		peer.RequestPrecommitLocksets(blockNumbers)
+		self.Requested.Add(height)
 		log.Debug("no active protocol")
 	}
 	return true
+}
+func (self *Synchronizer) receivePrecommitLocksets(pls []*types.PrecommitLockSet) {
+	for _, ls := range pls {
+		if result, hash := ls.HasQuorum(); result == true {
+			self.Requested.Remove(ls.Height())
+			self.cm.storePrecommitLockset(hash, ls)
+		} else {
+			log.Error("receive PrecommitLocksets invalid")
+			return
+		}
+	}
 }
 
 // func (self *HDCSynchronizer) receiveBlockproposals(bps []*types.BlockProposal) {
