@@ -364,6 +364,7 @@ func (cm *ConsensusManager) setupAlarm(h uint64) {
 	cm.getHeightMu.Unlock()
 	if cm.isWaitingForProposal() {
 		delay := ar.getTimeout()
+		ar.setTimeoutPrecommit()
 		// if timeout is setup already, skip
 		if delay > 0 {
 			log.Debug("delay time :", "delay", delay)
@@ -397,8 +398,9 @@ func (cm *ConsensusManager) waitProposalAlarm(rm *RoundManager, delay float64, h
 			cm.Process(h)
 		}
 	} else {
-		log.Debug("not active round")
-		cm.Process(h)
+		log.Debug("pre active round,", "h", rm.height, "r", rm.round)
+		log.Debug("curr active round, to cm Process", "h", acr.height, "r", acr.round)
+		cm.Process(acr.height)
 	}
 }
 
@@ -438,6 +440,7 @@ func (cm *ConsensusManager) Process(h uint64) {
 }
 
 func (cm *ConsensusManager) commit() bool {
+	log.Debug("in commit")
 	cm.processMu.Lock()
 	defer cm.processMu.Unlock()
 	log.Debug("commit, blockcandidates:", "len", len(cm.blockCandidates))
@@ -610,7 +613,7 @@ func (cm *ConsensusManager) AddVote(v *types.Vote, peer *peer) bool {
 	cm.getHeightMu.Lock()
 	h := cm.getHeightManager(v.Height)
 	success := h.addVote(v, true)
-	log.Debug("addVote to ", "height", v.Height, "round", v.Round, "success", success)
+	log.Debug("addVote to ", "height", v.Height, "round", v.Round, "from", addr, "success", success)
 	// if !success {
 	// 	// ls := h.getRoundManager(v.Round).lockset
 	// 	// log.Debug("add vote failed in LockSet:", ls, v.Height,"round", v.Round)
@@ -626,10 +629,11 @@ func (cm *ConsensusManager) AddPrecommitVote(v *types.PrecommitVote, peer *peer)
 		return false
 	}
 	// log.Debug("addVote", v.From())
-	log.Debug("addPrecommitVote to ", "h", v.Height, "r", v.Round)
+	addr, _ := v.From()
 	cm.getHeightMu.Lock()
 	h := cm.getHeightManager(v.Height)
 	success := h.addPrecommitVote(v, true)
+	log.Debug("addPrecommitVote to ", "h", v.Height, "r", v.Round, "from", addr, "success", success)
 	// if !success {
 	// 	ls := h.getRoundManager(v.Round).precommitLockset
 	// 	log.Debug("add vote failed in Precommit LockSet:", ls, v.Height, v.Round)
@@ -759,7 +763,6 @@ func (cm *ConsensusManager) addBlockProposal(bp *types.BlockProposal) bool {
 	h := cm.getHeightManager(slH)
 	for _, v := range bp.SigningLockset.PrecommitVotes {
 		h.addPrecommitVote(v, false)
-		// cm.AddPrecommitVote(v, nil)
 	}
 	cm.getHeightMu.Unlock()
 	cm.addBlockCandidates(bp)
@@ -1076,7 +1079,7 @@ func (rm *RoundManager) setTimeoutPrecommit() {
 		return
 	}
 	now := rm.cm.Now()
-	timeout := 0.5
+	timeout := 1
 	timeoutFactor := 1.5
 	delay := float64(timeout) * math.Pow(timeoutFactor, float64(rm.round))
 	rm.timeoutPrecommit = float64(now) + delay
@@ -1091,18 +1094,11 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool, process bo
 			log.Error("err: ", "Add vote to lockset error", err)
 			return false
 		}
-		if rm.lockset.IsValid() {
-
-			// report faliure
-			if rm.proposal == nil && rm.lockset.NoQuorum() {
-				log.Debug("FailedToProposeEvidence")
-				rm.cm.trackedProtocolFailures = append(rm.cm.trackedProtocolFailures, "FailedToProposeEvidence")
-				return true
-			}
-			if process {
-				log.Debug("To rm process")
-				go rm.process()
-			}
+		if rm.lockset.IsValid() && process {
+			log.Debug("To cm process")
+			go rm.cm.Process(rm.height)
+		} else {
+			log.Debug("lockset is not valid")
 		}
 		return true
 	}
@@ -1111,17 +1107,20 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool, process bo
 }
 
 func (rm *RoundManager) addPrecommitVote(vote *types.PrecommitVote, force_replace bool, process bool) bool {
-	// rm.setTimeoutPrecommit()
 	if !rm.precommitLockset.Contain(vote) {
 		err := rm.precommitLockset.Add(vote, force_replace)
 		if err != nil {
 			log.Debug("Add precommit vote to lockset error", err)
 			return false
 		}
-		if process {
-			if quorum, _ := rm.precommitLockset.HasQuorum(); quorum {
-				rm.cm.commit()
+		if rm.precommitLockset.IsValid() && process {
+			if float64(rm.cm.Now()) >= rm.timeoutPrecommit {
+				go rm.cm.Process(rm.height)
+			} else {
+				log.Debug("timeoutPrecommit not reach")
 			}
+		} else {
+			log.Debug("pr lockset is not valid")
 		}
 		return true
 	}
@@ -1150,7 +1149,6 @@ func (rm *RoundManager) process() {
 	defer rm.roundProcessMu.Unlock()
 	////DEBUG
 	log.Debug("In RM Process", "height", rm.height, "round", rm.round)
-
 	if rm.hm.Round() != rm.round {
 		return
 	}
@@ -1381,7 +1379,7 @@ func (rm *RoundManager) vote() *types.Vote {
 	}
 	rm.cm.Sign(vote)
 	rm.voteLock = vote
-	// log.Debug("vote success in", "height", rm.height)
+	log.Debug("vote success in", "height", rm.height, "round", rm.round)
 	rm.addVote(vote, false, true)
 	// rm.setTimeoutPrecommit()
 	return vote

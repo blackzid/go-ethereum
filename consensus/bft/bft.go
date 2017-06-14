@@ -159,6 +159,7 @@ func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan 
 	select {
 	case <-stop:
 		b.pm.consensusManager.currentBlock = nil
+		b.pm.consensusManager.blockCh = nil
 		close(found)
 		return nil, nil
 	case result = <-found:
