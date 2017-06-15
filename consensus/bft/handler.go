@@ -248,7 +248,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.BroadcastBFTMsg(bp)
-			pm.consensusManager.Process(bp.Height)
 		} else {
 			log.Debug("NewBlockProposalMsg failed")
 			return nil
@@ -265,7 +264,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
 			pm.BroadcastBFTMsg(vi)
-			pm.consensusManager.Process(vi.Height)
 		}
 	case msg.Code == VoteMsg:
 		var vData voteData
@@ -280,7 +278,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		// log.Debug("receive vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
-			// pm.consensusManager.Process(vote.Height)
 		}
 	case msg.Code == PrecommitVoteMsg:
 		var vData precommitVoteData
@@ -296,7 +293,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		// log.Debug("receive precommit vote with HR ", vote.Height, vote.Round)
 		if isValid := pm.consensusManager.AddPrecommitVote(vote, p); isValid {
 			pm.BroadcastBFTMsg(vote)
-			// pm.consensusManager.Process(vote.Height)
 		}
 	case msg.Code == ReadyMsg:
 		var r readyData

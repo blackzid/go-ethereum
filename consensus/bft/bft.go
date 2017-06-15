@@ -3,6 +3,7 @@ package bft
 import (
 	"errors"
 	"math/big"
+	"math/rand"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -131,15 +132,12 @@ func (b *BFT) verifySeal(chain consensus.ChainReader, header *types.Header) erro
 }
 
 func (b *BFT) Prepare(chain consensus.ChainReader, header *types.Header) error {
-	log.Info("Preparing")
-
 	header.Difficulty = fixDifficulty
 	header.Coinbase = b.signer
 	return nil
 }
 
 func (b *BFT) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
-	log.Info("Finalizing")
 
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	header.UncleHash = types.CalcUncleHash(nil)
@@ -147,31 +145,60 @@ func (b *BFT) Finalize(chain consensus.ChainReader, header *types.Header, state 
 	return types.NewBlock(header, txs, nil, receipts), nil
 }
 
+// func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
+// 	// start voting mechanism
+// 	b.pm.consensusManager.currentBlock = block
+// 	found := make(chan *types.Block)
+// 	b.pm.consensusManager.blockCh = found
+
+// 	go b.pm.consensusManager.Process(block.Number().Uint64())
+// 	var result *types.Block
+
+// 	select {
+// 	case <-stop:
+// 		b.pm.consensusManager.currentBlock = nil
+// 		b.pm.consensusManager.blockCh = nil
+// 		close(found)
+// 		return nil, nil
+// 	case result = <-found:
+// 		log.Info("have a consensus on the block")
+// 	}
+// 	b.pm.consensusManager.currentBlock = nil
+// 	b.pm.consensusManager.blockCh = nil
+// 	close(found)
+// 	log.Info("End Seal")
+
+// 	if result.Header().Coinbase != b.signer {
+// 		return nil, nil
+// 	}
+// 	return result, nil
+// }
+
 func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
-	log.Info("Sealing")
 	// start voting mechanism
-	b.pm.consensusManager.currentBlock = block
+	log.Info("Sealing")
+	abort := make(chan struct{})
 	found := make(chan *types.Block)
-	b.pm.consensusManager.blockCh = found
-	go b.pm.consensusManager.Process(block.Number().Uint64())
+
+	go b.pm.consensusManager.Process(block, abort, found)
 	var result *types.Block
 
 	select {
 	case <-stop:
-		b.pm.consensusManager.currentBlock = nil
-		b.pm.consensusManager.blockCh = nil
-		close(found)
+		close(abort)
 		return nil, nil
 	case result = <-found:
 		log.Info("have a consensus on the block")
+		close(abort)
 	}
-	b.pm.consensusManager.currentBlock = nil
-	b.pm.consensusManager.blockCh = nil
-	close(found)
-	log.Info("End Seal")
-
 	if result.Header().Coinbase != b.signer {
-		return nil, nil
+		delay := time.Duration(rand.Intn(5)+2) * 500 * time.Millisecond
+
+		select {
+		case <-stop:
+			return nil, nil
+		case <-time.After(delay):
+		}
 	}
 	return result, nil
 }

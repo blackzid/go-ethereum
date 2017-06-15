@@ -58,15 +58,15 @@ func (self *Synchronizer) request(height uint64) bool {
 
 	blockNumbers = append(blockNumbers, RequestNumber{height})
 
-	if self.lastActiveProtocol != nil {
-		err := self.lastActiveProtocol.RequestPrecommitLocksets(blockNumbers)
-		log.Debug("request end, err:", err)
-	} else {
-		peer := self.cm.pm.peers.BestPeer()
-		peer.RequestPrecommitLocksets(blockNumbers)
-		self.Requested.Add(height)
-		log.Debug("no active protocol")
-	}
+	// if self.lastActiveProtocol != nil {
+	// 	err := self.lastActiveProtocol.RequestPrecommitLocksets(blockNumbers)
+	// 	log.Debug("request end", "err", err)
+	// } else {
+	peer := self.cm.pm.peers.BestPeer()
+	peer.RequestPrecommitLocksets(blockNumbers)
+	self.Requested.Add(height)
+	log.Debug("no active protocol")
+	// }
 	return true
 }
 func (self *Synchronizer) receivePrecommitLocksets(pls []*types.PrecommitLockSet) {
