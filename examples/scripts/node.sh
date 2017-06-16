@@ -1,6 +1,6 @@
 ./go-ethereum/build/bin/geth \
 \
---networkid 52234 \
+--networkid 2234 \
 --port 30303 \
 --rpcport 8545 \
 --datadir "bdata/node" \
@@ -8,8 +8,9 @@
 \
 --rpc \
 --rpccorsdomain "*" \
---rpcapi "eth,net,web3,debug,admin" \
+--rpcapi "eth,net,web3,debug,admin,miner" \
 \
 --bft \
---num-validators 16 \
---node-num 7
+--allow-empty \
+--num-validators 2 \
+--node-num 0
