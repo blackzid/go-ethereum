@@ -225,7 +225,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 			found = append(found, ls)
 		}
 		if len(found) != 0 {
-			log.Info("Send pls: ", found)
 			p.SendPrecommitLocksets(found)
 		}
 
@@ -243,13 +242,11 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		bp := bpData.BlockProposal
 		if p.broadcastFilter.Has(bp.Hash()) {
-			log.Debug("NewBlockProposalMsg filtered")
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(bp, p); isValid {
 			pm.BroadcastBFTMsg(bp)
 		} else {
-			log.Debug("NewBlockProposalMsg failed")
 			return nil
 		}
 	case msg.Code == VotingInstructionMsg:
@@ -259,7 +256,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		}
 		vi := viData.VotingInstruction
 		if p.broadcastFilter.Has(vi.Hash()) {
-			log.Debug("votinginstruction filtered")
 			return nil
 		}
 		if isValid := pm.consensusManager.AddProposal(vi, p); isValid {
@@ -287,7 +283,6 @@ func (pm *ProtocolManager) handleBFTMsg(p *peer) error {
 		vote := vData.PrecommitVote
 
 		if p.broadcastFilter.Has(vote.Hash()) {
-			log.Debug("vote filtered")
 			return nil
 		}
 		// log.Debug("receive precommit vote with HR ", vote.Height, vote.Round)

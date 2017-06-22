@@ -5,15 +5,13 @@
 --rpcport 8545 \
 --datadir "bdata/node1" \
 --nodiscover \
---mine \
---minerthreads 1 \
 \
 --rpc \
 --rpccorsdomain "*" \
 --rpcapi "eth,net,debug" \
 \
+--verbosity 5 \
 --bft \
 --allow-empty \
---num-validators 4 \
---verbosity 5 \
+--num-validators 2 \
 --node-num 0

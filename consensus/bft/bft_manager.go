@@ -26,7 +26,6 @@ var (
 )
 
 type ConsensusContract struct {
-	// eth eth.Ethereum
 	eventMux   *event.TypeMux
 	coinbase   common.Address
 	txpool     *core.TxPool
@@ -313,7 +312,6 @@ func (cm *ConsensusManager) getPrecommitLocksetByHeight(height uint64) *types.Pr
 }
 
 func (cm *ConsensusManager) setupTimeout(h uint64) {
-	log.Error("in set up alarm", "height", h)
 	cm.getHeightMu.Lock()
 	ar := cm.activeRound()
 	if cm.isWaitingForProposal() {
@@ -347,20 +345,21 @@ func (cm *ConsensusManager) Process(block *types.Block, abort chan struct{}, fou
 
 	cm.currentBlock = block
 	cm.found = found
+
 	if cm.Height() != block.Number().Uint64() || !cm.Enable {
 		return
 	}
 	for {
 		select {
 		case <-abort:
-			break
+			cm.currentBlock = nil
+			// cm.found = nil
+			return
 		default:
+			time.Sleep(100 * time.Millisecond)
 			cm.process()
-			time.Sleep(0.4 * 1000 * 1000 * 1000)
 		}
 	}
-	cm.currentBlock = nil
-	cm.found = nil
 }
 
 func (cm *ConsensusManager) process() {
@@ -384,8 +383,8 @@ func (cm *ConsensusManager) process() {
 func (cm *ConsensusManager) commitPrecommitLockset(hash common.Hash, pls *types.PrecommitLockSet) {
 	cm.writeMapMu.Lock()
 	defer cm.writeMapMu.Unlock()
-	proposal := cm.blockCandidates[hash]
-	if proposal != nil {
+	proposal, ok := cm.blockCandidates[hash]
+	if ok {
 		if proposal.Block.ParentHash() != cm.Head().Hash() {
 			log.Debug("wrong parent hash: ", proposal.Block.ParentHash(), cm.Head().Hash())
 			return
@@ -402,7 +401,8 @@ func (cm *ConsensusManager) commitPrecommitLockset(hash common.Hash, pls *types.
 					default:
 						log.Debug("no chan")
 					}
-
+				} else {
+					log.Debug("cm.found is nil")
 				}
 				return
 			}
@@ -419,8 +419,6 @@ func (cm *ConsensusManager) commitPrecommitLockset(hash common.Hash, pls *types.
 }
 
 func (cm *ConsensusManager) verifyVotes(header *types.Header) error {
-	log.Debug("verify votes")
-
 	number := header.Number.Uint64()
 	blockhash := header.Hash()
 
@@ -441,7 +439,7 @@ func (cm *ConsensusManager) verifyVotes(header *types.Header) error {
 }
 
 func (cm *ConsensusManager) cleanup() {
-	log.Debug("in cleanup,current Head Number is ", "number", cm.Head().Header().Number.Uint64())
+	// log.Debug("in cleanup,current Head Number is ", "number", cm.Head().Header().Number.Uint64())
 	cm.writeMapMu.Lock()
 	for hash, p := range cm.blockCandidates {
 		if cm.Head().Header().Number.Uint64() >= p.GetHeight() {
@@ -553,11 +551,9 @@ func (cm *ConsensusManager) AddPrecommitVote(v *types.PrecommitVote, peer *peer)
 		return false
 	}
 	// log.Debug("addVote", v.From())
-	addr, _ := v.From()
 	cm.getHeightMu.Lock()
 	h := cm.getHeightManager(v.Height)
 	success := h.addPrecommitVote(v, true)
-	log.Debug("addPrecommitVote to ", "h", v.Height, "r", v.Round, "from", addr, "success", success)
 	cm.getHeightMu.Unlock()
 	return success
 }
@@ -675,7 +671,6 @@ func (cm *ConsensusManager) addBlockCandidates(bp *types.BlockProposal) {
 func (cm *ConsensusManager) lastCommittingLockset() *types.PrecommitLockSet {
 	ls := cm.getHeightManager(cm.Height() - 1).lastQuorumPrecommitLockSet()
 	if ls == nil {
-		log.Info("lastCommittingLockset ERROR")
 		return nil
 	}
 	return ls
@@ -984,12 +979,15 @@ func (rm *RoundManager) addVote(vote *types.Vote, force_replace bool, process bo
 
 func (rm *RoundManager) addPrecommitVote(vote *types.PrecommitVote, force_replace bool, process bool) bool {
 	if !rm.precommitLockset.Contain(vote) {
+		addr, _ := vote.From()
+		log.Debug("addPrecommitVote to ", "h", vote.Height, "r", vote.Round, "from", addr)
 		err := rm.precommitLockset.Add(vote, force_replace)
 		if err != nil {
 			log.Debug("Add precommit vote to lockset error", err)
 			return false
 		}
 		if result, hash := rm.precommitLockset.HasQuorum(); result {
+			log.Debug("There is a quorum ", "height", rm.height, "round", rm.round)
 			rm.cm.commitPrecommitLockset(hash, rm.precommitLockset)
 		}
 		return true
@@ -1061,7 +1059,7 @@ func (rm *RoundManager) process() {
 	}
 
 	// wait no more precommit vote if timeout reached
-	if rm.timeoutPrecommit != 0 && float64(rm.cm.Now()) >= rm.timeoutPrecommit {
+	if rm.timeoutPrecommit != 0 && float64(rm.cm.Now()) >= rm.timeoutPrecommit && rm.precommitLockset.IsValid() {
 		rm.hm.activeRound += 1
 	}
 }
@@ -1106,7 +1104,8 @@ func (rm *RoundManager) propose() types.Proposal {
 			return nil
 		}
 	} else if roundLockset == nil {
-		log.Error("no valid round lockset for height")
+
+		log.Error("no valid round lockset for height", "height", rm.height, "round", rm.round)
 		return nil
 	} else {
 		quorum, _ := roundLockset.HasQuorum()
@@ -1135,7 +1134,7 @@ func (rm *RoundManager) mkProposal() *types.BlockProposal {
 	var roundLockset *types.LockSet
 	signingLockset := rm.cm.lastCommittingLockset()
 	if signingLockset == nil {
-		log.Error("error occur: no last committing lockset")
+		// log.Error("error occur: no last committing lockset")
 		return nil
 	}
 	if rm.round > 0 {

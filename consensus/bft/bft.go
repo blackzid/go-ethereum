@@ -145,38 +145,9 @@ func (b *BFT) Finalize(chain consensus.ChainReader, header *types.Header, state 
 	return types.NewBlock(header, txs, nil, receipts), nil
 }
 
-// func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
-// 	// start voting mechanism
-// 	b.pm.consensusManager.currentBlock = block
-// 	found := make(chan *types.Block)
-// 	b.pm.consensusManager.blockCh = found
-
-// 	go b.pm.consensusManager.Process(block.Number().Uint64())
-// 	var result *types.Block
-
-// 	select {
-// 	case <-stop:
-// 		b.pm.consensusManager.currentBlock = nil
-// 		b.pm.consensusManager.blockCh = nil
-// 		close(found)
-// 		return nil, nil
-// 	case result = <-found:
-// 		log.Info("have a consensus on the block")
-// 	}
-// 	b.pm.consensusManager.currentBlock = nil
-// 	b.pm.consensusManager.blockCh = nil
-// 	close(found)
-// 	log.Info("End Seal")
-
-// 	if result.Header().Coinbase != b.signer {
-// 		return nil, nil
-// 	}
-// 	return result, nil
-// }
-
 func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
 	// start voting mechanism
-	log.Info("Sealing")
+	log.Info("Sealing", "block n", block.Number())
 	abort := make(chan struct{})
 	found := make(chan *types.Block)
 
@@ -185,6 +156,7 @@ func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan 
 
 	select {
 	case <-stop:
+		log.Info("stop by outside", "height", block.Number())
 		close(abort)
 		return nil, nil
 	case result = <-found:
@@ -192,8 +164,7 @@ func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan 
 		close(abort)
 	}
 	if result.Header().Coinbase != b.signer {
-		delay := time.Duration(rand.Intn(5)+2) * 500 * time.Millisecond
-
+		delay := time.Duration(rand.Intn(5)+10) * 500 * time.Millisecond
 		select {
 		case <-stop:
 			return nil, nil

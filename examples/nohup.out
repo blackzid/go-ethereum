@@ -20225,3 +20225,5 @@ Fatal: Error starting protocol stack: listen tcp :30306: bind: address already i
 Fatal: Error starting protocol stack: listen tcp :30303: bind: address already in use
 Fatal: Error starting protocol stack: listen tcp :30304: bind: address already in use
 Fatal: Error starting protocol stack: listen tcp :30305: bind: address already in use
+Fatal: Error starting protocol stack: resource temporarily unavailable
+Fatal: Error starting protocol stack: resource temporarily unavailable

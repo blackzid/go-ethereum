@@ -5,8 +5,6 @@
 --rpcport 8546 \
 --datadir "bdata/node2" \
 --nodiscover \
---mine \
---minerthreads 1 \
 \
 --rpc \
 --rpccorsdomain "*" \
@@ -15,5 +13,5 @@
 --verbosity 5 \
 --bft \
 --allow-empty \
---num-validators 4 \
+--num-validators 2 \
 --node-num 1
