@@ -184,18 +184,13 @@ func (cm *ConsensusManager) activeRound() *RoundManager {
 	return hm.getRoundManager(hm.Round())
 }
 
-// func (cm *ConsensusManager) Start() bool {
-// 	cm.Enable = true
-// 	cm.Process(cm.Height())
-// 	log.Debug("Start Consensus")
-// 	return true
-// }
+func (cm *ConsensusManager) enable() {
+	cm.Enable = true
+}
 
-// func (cm *ConsensusManager) Stop() bool {
-// 	cm.Enable = false
-// 	log.Debug("Stop Consensus")
-// 	return true
-// }
+func (cm *ConsensusManager) disable() {
+	cm.Enable = false
+}
 
 func (cm *ConsensusManager) initializeLocksets() {
 	// initializing locksets
@@ -345,19 +340,21 @@ func (cm *ConsensusManager) Process(block *types.Block, abort chan struct{}, fou
 
 	cm.currentBlock = block
 	cm.found = found
+	cm.enable()
 
 	if cm.Height() != block.Number().Uint64() || !cm.Enable {
 		return
 	}
-	for {
+	for cm.Enable {
 		select {
 		case <-abort:
 			cm.currentBlock = nil
 			// cm.found = nil
 			return
 		default:
-			time.Sleep(100 * time.Millisecond)
 			cm.process()
+			time.Sleep(100 * time.Millisecond)
+
 		}
 	}
 }
@@ -370,13 +367,14 @@ func (cm *ConsensusManager) process() {
 		return
 	} else {
 		log.Debug("---------------process------------------")
+		cm.setupTimeout(cm.Height())
 		cm.getHeightMu.Lock()
 		heightManager := cm.getHeightManager(cm.Height())
 		log.Debug("hm process")
 		heightManager.process()
 		cm.getHeightMu.Unlock()
 		cm.cleanup()
-		cm.setupTimeout(cm.Height())
+
 	}
 }
 
@@ -398,6 +396,7 @@ func (cm *ConsensusManager) commitPrecommitLockset(hash common.Hash, pls *types.
 					case cm.found <- proposal.Block:
 						log.Debug("store precommit lockset")
 						cm.storePrecommitLockset(hash, pls)
+						cm.disable()
 					default:
 						log.Debug("no chan")
 					}

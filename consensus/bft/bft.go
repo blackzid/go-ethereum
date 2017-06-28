@@ -164,7 +164,7 @@ func (b *BFT) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan 
 		close(abort)
 	}
 	if result.Header().Coinbase != b.signer {
-		delay := time.Duration(rand.Intn(5)+10) * 500 * time.Millisecond
+		delay := time.Duration(rand.Intn(5)+6) * 500 * time.Millisecond
 		select {
 		case <-stop:
 			return nil, nil
